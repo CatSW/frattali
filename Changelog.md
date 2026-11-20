@@ -5,7 +5,7 @@ author: IK0VCK
 type: changelog
 product: fractal-explorer
 license: MIT
-updated: 2026-11-20
+updated: 2026-11-21
 ---
 # Changelog — Esploratore di Frattali
 
@@ -15,6 +15,24 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 - `1.x.0` = incrementi funzionali successivi (una release per ogni blocco di lavoro concluso).
 
 Le date sono nel formato `AAAA-MM-GG`.
+
+## [1.1.0] — 2026-11-21
+
+### Novità
+- Pulsante in testata «Condividi» con icona: copia il link `?s=` (stato serializzato in base64url) negli appunti e mostra conferma.
+- Pulsante «Condividi stato» nella barra sotto la vista: apre un pannello con textarea, «Copia JSON», «Applica» e «Chiudi».
+- Stato serializzabile versionato (`getState` / `applyState`, schema `{v:1,…}`) con vista, parametri di famiglia, iterazioni, qualità e intero blocco colore (inclusa palette `custom`).
+- All’apertura, se è presente `?s=` valido, lo stato viene caricato al posto del preset iniziale.
+- Clipboard con fallback su `document.execCommand('copy')` e selezione manuale se anche il fallback fallisce.
+- Chiusura pannello con Esc o «Chiudi»; messaggi di esito/errore in `#headmsg` e `#status`.
+
+### Limiti noti
+- Interpolazione delle palette in sRGB: possibili cali di luminanza nelle transizioni tra colori complementari.
+- Profondità di zoom limitata dalla precisione a 64 bit (circa 10¹³).
+- Distance Estimator numerico (non analitico) per tutte le famiglie oltre Mandelbrot e Julia.
+- Ricalcolo completo dell’immagine a ogni variazione anche quando i worker lavorano su frame già scartati.
+- Campo `rot` nella vista è salvato (sempre 0) ma ignorato dal motore.
+- Lunghezza del link `?s=` limitata dal browser (stati molto grandi possono risultare troppo lunghi).
 
 ## [1.0.0] — 2026-11-20 — Prima pubblicazione
 

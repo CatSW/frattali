@@ -73,10 +73,10 @@ a{color:inherit}
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
-  <button class="tbtn" id="share" type="button" title="Condividi lo stato dell'esplorazione">Condividi</button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.0</a></div></div>
+  <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.1</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.0.0 · 20 novembre 2026</p>
+<p class="updated">Versione 1.1.0 · 20 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -87,6 +87,7 @@ a{color:inherit}
    <div class="hud"><span id="hudl"></span><span id="hudr"></span></div>
   </div>
   <div class="bar">
+   <button class="tbtn" id="sharestate" type="button">Condividi stato</button>
    <button class="tbtn" id="reset">Vista iniziale</button>
    <button class="tbtn" id="back">Indietro</button>
    <button class="tbtn" id="tojulia">Julia da qui</button>
@@ -95,9 +96,19 @@ a{color:inherit}
    <button class="tbtn" id="save">Salva PNG</button>
    <button class="tbtn" id="ptog">Nascondi pannello</button>
   </div>
+  <div id="sharepanel" class="card" style="display:none;margin:10px 0 6px">
+   <h3>Condividi stato</h3>
+   <textarea id="sharetxt" rows="8" style="width:100%;font:12px/1.4 var(--mono);padding:8px;border:1px solid var(--rule);border-radius:10px;background:var(--ground);color:var(--ink);resize:vertical" spellcheck="false"></textarea>
+   <div class="bar" style="margin-top:8px">
+    <button class="tbtn" id="copyjson" type="button">Copia JSON</button>
+    <button class="tbtn" id="applyjson" type="button">Applica</button>
+    <button class="tbtn" id="closeshare" type="button">Chiudi</button>
+   </div>
+  </div>
   <p id="status"></p>
   <p id="famtxt"></p>
  </div>
+
 
  <div class="panel">
   <div class="card">
@@ -885,14 +896,129 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.0.0',APP_VERSION_SHORT='1.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.1.0',APP_VERSION_SHORT='1.1',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+/* ---------- stato serializzabile + Condividi ---------- */
+function getState(){
+ const fam=S.fam,P={...S.P[fam]},v={cx:String(S.view.cx),cy:String(S.view.cy),span:+S.view.span,rot:0};
+ const st={v:1,fam,layout:'1',views:[v],P,iterBase:S.iterBase[fam],auto:!!S.auto,qual:S.qual,
+  pal:S.pal,mode:S.mode,inmode:S.inmode,incol:S.incol,dens:+S.dens,off:+S.off,glow:+S.glow,
+  light:+S.light,az:+S.az,el:+S.el,relief:+S.relief,shin:+S.shin,irid:+S.irid};
+ if(S.pal==='custom')st.custom=PALS.custom.c.slice();
+ return st;
+}
+function clamp(v,lo,hi){v=+v;if(!isFinite(v))return lo;return Math.min(hi,Math.max(lo,v));}
+function applyState(obj){
+ if(!obj||typeof obj!=='object'){const m='Stato non valido';$('headmsg').textContent=m;setStatus(m);return false;}
+ if(obj.v!==1){const m='Versione stato non supportata (v='+(obj.v??'?')+')';$('headmsg').textContent=m;setStatus(m);return false;}
+ const fam=obj.fam; if(!fam||!FAM[fam]){const m='Famiglia sconosciuta: '+(fam||'?');$('headmsg').textContent=m;setStatus(m);return false;}
+ // valida e prepara
+ const views=Array.isArray(obj.views)&&obj.views[0]?obj.views[0]:null;
+ let cx=0,cy=0,span=3;
+ if(views){
+  cx=parseFloat(views.cx);cy=parseFloat(views.cy);span=+views.span;
+  if(!isFinite(cx))cx=0;if(!isFinite(cy))cy=0;if(!(span>0))span=FAM[fam].view.span;
+ }
+ const Psrc=obj.P&&typeof obj.P==='object'?obj.P:{};
+ const P={...S.P[fam]};
+ for(const k of Object.keys(P)){if(k in Psrc){let v=Psrc[k];const d=PARAMDEF[k];
+  if(d&&d.options){v=Math.round(+v);if(v<0||v>=d.options.length)v=0;}
+  else if(d){v=clamp(v,d.min,d.max);if(d.step===1)v=Math.round(v);}
+  else v=+v; if(isFinite(v))P[k]=v;}}
+ let iterBase=obj.iterBase!=null?Math.round(clamp(obj.iterBase,20,50000)):S.iterBase[fam];
+ const auto=obj.auto!=null?!!obj.auto:S.auto;
+ const qual=['veloce','normale','alta','ultra'].includes(obj.qual)?obj.qual:S.qual;
+ let pal=obj.pal&&PALS[obj.pal]?obj.pal:S.pal;
+ if(pal==='custom'&&Array.isArray(obj.custom)&&obj.custom.length){
+  for(let i=0;i<5&&i<obj.custom.length;i++){const c=obj.custom[i];if(typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c))PALS.custom.c[i]=c;}
+ }
+ const mode=['smooth','equal','neon','stalk'].includes(obj.mode)?obj.mode:S.mode;
+ const inmode=['flat','tp','tx'].includes(obj.inmode)?obj.inmode:S.inmode;
+ let incol=typeof obj.incol==='string'&&/^#[0-9a-fA-F]{6}$/.test(obj.incol)?obj.incol:S.incol;
+ const dens=clamp(obj.dens!=null?obj.dens:S.dens,0.1,10);
+ const off=clamp(obj.off!=null?obj.off:S.off,0,1);
+ const glow=clamp(obj.glow!=null?obj.glow:S.glow,0.2,5);
+ const light=clamp(obj.light!=null?obj.light:S.light,0,1);
+ const az=clamp(obj.az!=null?obj.az:S.az,0,360);
+ const el=clamp(obj.el!=null?obj.el:S.el,10,85);
+ const relief=clamp(obj.relief!=null?obj.relief:S.relief,0.5,30);
+ const shin=clamp(obj.shin!=null?obj.shin:S.shin,2,200);
+ const irid=clamp(obj.irid!=null?obj.irid:S.irid,0,0.6);
+ // applica
+ pushHist();
+ S.P[fam]=P; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
+ S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
+ S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid;
+ S.view={cx,cy,span}; S.views[fam]=S.view;
+ setFam(fam,true); // keepView già impostata
+ if(fam==='ifs'){S.view={cx,cy,span};S.views.ifs=S.view;} // non lasciare che fitIFS sovrascriva la vista serializzata
+ $('fam').value=fam; $('qual').value=qual; $('auto').checked=auto;
+
+ $('style').value=''; $('preset').value='-1';
+ // aggiorna color inputs custom
+ if(pal==='custom'){const inps=$('custom').querySelectorAll('input[type=color]');PALS.custom.c.forEach((c,i)=>{if(inps[i])inps[i].value=c;});}
+ syncColorUI(); buildLUT();
+ if(mode==='equal'){if(cur.pre)buildCDF(cur.pre);if(cur.full)buildCDF(cur.full);}
+ render();
+ const m='Stato applicato';$('headmsg').textContent=m;setStatus(m);
+ clearTimeout(applyState._tm);applyState._tm=setTimeout(()=>{$('headmsg').textContent='';},3500);
+ return true;
+}
+function toB64url(str){
+ try{const bytes=new TextEncoder().encode(str);let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}catch(e){return null;}
+}
+function fromB64url(s){
+ try{s=(s||'').replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';
+  const bin=atob(s);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);}catch(e){return null;}
+}
+function copyText(t){
+ if(navigator.clipboard&&navigator.clipboard.writeText){
+  return navigator.clipboard.writeText(t).then(()=>true).catch(()=>fallbackCopy(t));
+ }
+ return Promise.resolve(fallbackCopy(t));
+}
+function fallbackCopy(t){
+ const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';
+ document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);
+ let ok=false;try{ok=document.execCommand('copy');}catch(e){}
+ ta.remove();
+ if(!ok){const st=$('sharetxt');if(st){st.focus();st.select();}$('headmsg').textContent='Seleziona e copia manualmente (Ctrl+C)';}
+ return ok;
+}
+function showMsg(m,ms){ms=ms||4000;$('headmsg').textContent=m;setStatus(m);clearTimeout(showMsg._tm);showMsg._tm=setTimeout(()=>{$('headmsg').textContent='';},ms);}
+function buildShareLink(){
+ const j=JSON.stringify(getState());const b=toB64url(j);
+ if(!b)return null;
+ const base=location.href.split(/[?#]/)[0];
+ return base+'?s='+b;
+}
 (function(){
  const g=$('guide');g.textContent='Guida - Ver. '+APP_VERSION_SHORT;g.href=GUIDE_URL;g.target='_blank';g.rel='noopener noreferrer';
- let tm=0;
+ const panel=$('sharepanel'),txt=$('sharetxt');
+ let open=false;
+ function closeShare(){open=false;panel.style.display='none';}
+ function openShare(){open=true;panel.style.display='';txt.value=JSON.stringify(getState(),null,2);}
+ // Header «Condividi» (icona): copia solo il link
  $('share').addEventListener('click',()=>{
-  const m='Condivisione non ancora disponibile (dalla versione 1.1)';
-  $('headmsg').textContent=m;setStatus(m);
-  clearTimeout(tm);tm=setTimeout(()=>{$('headmsg').textContent='';},4500);
+  const link=buildShareLink();
+  if(!link){showMsg('Codifica non disponibile');return;}
+  copyText(link).then(ok=>{
+   if(ok)showMsg('Link copiato negli appunti');
+   else showMsg('Copia fallita: seleziona e copia manualmente');
+  });
+ });
+ // Pulsante in barra: apre/chiude il pannello stato
+ $('sharestate').addEventListener('click',()=>{if(open)closeShare();else openShare();});
+ $('closeshare').addEventListener('click',closeShare);
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){closeShare();e.preventDefault();}});
+ $('copyjson').addEventListener('click',()=>{
+  const j=JSON.stringify(getState(),null,2);txt.value=j;
+  copyText(j).then(ok=>{if(ok)showMsg('JSON copiato');else showMsg('Copia fallita: testo selezionato');});
+ });
+ $('applyjson').addEventListener('click',()=>{
+  let o;try{o=JSON.parse(txt.value);}catch(e){showMsg('JSON non valido');return;}
+  applyState(o);
  });
 })();
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
@@ -924,6 +1050,20 @@ initWorkers();
 buildColorUI();
 setFam('mandel');
 syncColorUI();buildLUT();
-applyPreset(0);
+(function(){
+ let loaded=false;
+ try{
+  const m=location.search.match(/[?&]s=([^&]*)/);
+  if(m){
+   const raw=fromB64url(decodeURIComponent(m[1]));
+   if(raw){
+    const o=JSON.parse(raw);
+    if(applyState(o))loaded=true;
+   }else showMsg('Parametro s non decodificabile');
+  }
+ }catch(e){showMsg('Stato da URL non valido');}
+ if(!loaded)applyPreset(0);
+})();
 </script>
 </body></html>
+
