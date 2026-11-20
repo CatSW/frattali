@@ -9,9 +9,11 @@ updated: 2026-11-20
 ---
 # [Esploratore di Frattali](https://catsw.github.io/frattali/fractal-explorer.html) <img src="CatSW.png" width=30 />
 
-- Guida Rapida Esploratore di Frattali - WIP
+[Guida Rapida Esploratore di Frattali](Guida_Rapida_Esploratore_Frattali.md)
 
-- Manuale Esploratore di Frattali - WIP
+[Manuale Esploratore di Frattali](Manuale_Esploratore_Frattali.md)
+
+[Esploratore di polinomi](https://catsw.github.io/polinomi-fz/Esploratore_di_Polinomi.html)
 
 [Changelog](Changelog.md)
 

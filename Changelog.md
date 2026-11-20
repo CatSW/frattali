@@ -10,19 +10,33 @@ updated: 2026-11-20
 # Changelog — Esploratore di Frattali
 
 Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versionamento semantico adattato:
-- `0.x.0` = versioni di pre-pubblicazione (una per ogni blocco di lavoro concluso);
-- `1.0.0` = prima versione pubblicata su GitHub Pages, quando sarà ritenuta sufficientemente matura.
+- `0.1.0` e `0.2.0` = i due proof of concept iniziali (pre-pubblicazione);
+- `1.0.0` = prima versione pubblicata su GitHub Pages;
+- `1.x.0` = incrementi funzionali successivi (una release per ogni blocco di lavoro concluso).
 
 Le date sono nel formato `AAAA-MM-GG`.
 
----
+## [1.0.0] — 2026-11-20 — Prima pubblicazione
 
-## [Non rilasciato]
+Release minimale: base POC 0.2.0, funzionalità invariate, più intestazione e una correzione.
 
-_Vuoto: le voci vengono aggiunte al termine di ogni sessione di lavoro e spostate sotto un numero di versione alla chiusura del blocco._
+### Novità
+- Intestazione «Esploratore di Frattali» con i pulsanti «Condividi» e «Guida - Ver. 1.0».
+- «Guida - Ver. 1.0» apre il Readme su GitHub in una nuova scheda.
+- «Condividi» è predisposto in testata: fino alla 1.1 mostra un avviso chiaro («Condivisione non ancora disponibile»).
+- Versione 1.0.0 indicata nel codice e nell'intestazione.
+- Parametri di avvio: Mandelbrot e Multibrot, «Vista intera» (d = 2, 300 iterazioni, automatiche), stile personalizzato con palette Pavone metallico, modo esterno Sfumato continuo, interno Tinta unita nera, luce 0,85 / 135° / 45°, rilievo 8, lucentezza 40, cangiante 0,15 (prima: Julia «Neuroni» con interno a trappola punto).
 
----
-## [0.3.0] - 2026-11-20 — Pre-pubblicazione (baseline)
+### Correzioni
+- Il cursore *Cangiante* ora agisce sulla pendenza anche a luce spenta (stili piatti come *Fuoco piatto*, *Nebulosa*, *Classico piatto*); prima non produceva alcun effetto con Intensità = 0. Aggiornata la nota nella scheda «Luce e rilievo».
+
+### Limiti noti
+- Nessun salvataggio/condivisione dei parametri (arriva con la 1.1).
+- Interpolazione delle palette in sRGB: possibili cali di luminanza nelle transizioni tra colori complementari.
+- Profondità di zoom limitata dalla precisione a 64 bit (circa 10¹³).
+- Distance Estimator numerico (non analitico) per tutte le famiglie oltre Mandelbrot e Julia.
+- Ricalcolo completo dell'immagine a ogni variazione anche quando i worker lavorano su frame già scartati.
+
 
 ## [0.2.0] — 2026-10-24 — Pre-pubblicazione (baseline)
 

@@ -9,7 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Esploratore di frattali</title>
+<title>Esploratore di Frattali</title>
 <style>
 :root{--ground:#F3F3F3;--card:#FFFFFF;--ink:#141414;--muted:#6E6C68;--rule:#DCDAD5;
 --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace}
@@ -19,6 +19,11 @@ body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 var(--sans
 .wrap{max-width:none;margin:0 auto}
 h1{font:600 clamp(26px,6vw,32px)/1.05 var(--serif);letter-spacing:-.01em;margin:16px 0 6px}
 h2{font:400 24px/1.15 var(--serif);margin:40px 0 12px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin:16px 0 6px}
+.head h1{margin:0}
+.headbtn{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+a.tbtn{display:inline-block;text-decoration:none}
+#headmsg{font:12px/1.4 var(--mono);color:var(--muted)}
 .kicker{font:17px/1.4 var(--sans);color:var(--muted);margin:0 0 2px}
 .updated{font:13px/1.4 var(--sans);color:var(--muted);margin:4px 0 12px}
 .lede{font:400 clamp(16px,4vw,19px)/1.35 var(--sans);margin:10px 0 16px}
@@ -66,9 +71,12 @@ a{color:inherit}
 </style>
 </head>
 <body><div class="wrap">
-<h1>Esploratore di frattali</h1>
+<div class="head"><h1>Esploratore di Frattali</h1>
+ <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
+  <button class="tbtn" id="share" type="button" title="Condividi lo stato dell'esplorazione">Condividi</button>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Creato il 24 ottobre 2026, 17:10</p>
+<p class="updated">Versione 1.0.0 · 20 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -118,7 +126,7 @@ a{color:inherit}
   <div class="card">
    <h3>Luce e rilievo</h3>
    <div id="lightctl" style="display:grid;gap:6px"></div>
-   <p class="note">Il rilievo nasce dal gradiente del campo colore: diventa una superficie illuminata, con riflesso metallico tinto.</p>
+   <p class="note">Il rilievo nasce dal gradiente del campo colore: diventa una superficie illuminata, con riflesso metallico tinto. «Cangiante» agisce sulla pendenza anche a luce spenta (Intensità = 0).</p>
   </div>
  </div>
 </div>
@@ -459,8 +467,8 @@ const STYLES={
 };
 
 /* ---------- stato ---------- */
-const S={fam:'julia',P:{},views:{},view:null,iterBase:{},auto:true,qual:'normale',
- pal:'pavone',mode:'smooth',inmode:'tp',incol:'#000000',dens:1,off:0,glow:1,
+const S={fam:'mandel',P:{},views:{},view:null,iterBase:{},auto:true,qual:'normale',
+ pal:'pavone',mode:'smooth',inmode:'flat',incol:'#000000',dens:1,off:0,glow:1,
  light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false};
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0};S.iterBase[f]=FAM[f].iter;S.views[f]={...FAM[f].view};}
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
@@ -553,20 +561,22 @@ function colorize(B){
    const p=row+i,q=p*4;
    if(fl[p]){D[q]=inc[0]*255;D[q+1]=inc[1]*255;D[q+2]=inc[2]*255;D[q+3]=255;continue;}
    let tt=t[p],r,g,bl;
-   if(L>0){
+   if(L>0||irid>0){
     const pl=(i>0&&!fl[p-1])?p-1:p,pr=(i<W-1&&!fl[p+1])?p+1:p,pu=!fl[p+ju]?p+ju:p,pd=!fl[p+jd]?p+jd:p;
     const gx=(h[pr]-h[pl])/((pr-pl)||1),gy=(h[pd]-h[pu])/(((pd-pu)/W)||1);
     const gm=Math.hypot(gx,gy);let nx=0,ny=0,nz=1;
     if(gm>0){const mm=ra*Math.log(1+gm*bump/0.004);nx=-gx/gm*mm;ny=-gy/gm*mm;const nn=Math.hypot(nx,ny,1);nx/=nn;ny/=nn;nz=1/nn;}
-    const dif=Math.max(0,nx*lx+ny*ly+nz*lz);
-    const sp=Math.pow(Math.max(0,nx*hx+ny*hy+nz*hz),shin);
     tt+=irid*(1-nz);
     let li=((tt%1)+1)%1*LUTN|0; if(li>=LUTN)li=LUTN-1; li*=3;
     const br=b[p];
     const cr0=LUT[li]*br,cg0=LUT[li+1]*br,cb0=LUT[li+2]*br;
-    const shade=0.22+0.95*dif, sk=1.1*sp;
-    const sr=Math.min(1,cr0*1.3+0.35),sg=Math.min(1,cg0*1.3+0.35),sb=Math.min(1,cb0*1.3+0.35);
-    r=cr0*(1-L)+L*(cr0*shade+sr*sk);g=cg0*(1-L)+L*(cg0*shade+sg*sk);bl=cb0*(1-L)+L*(cb0*shade+sb*sk);
+    if(L>0){
+     const dif=Math.max(0,nx*lx+ny*ly+nz*lz);
+     const sp=Math.pow(Math.max(0,nx*hx+ny*hy+nz*hz),shin);
+     const shade=0.22+0.95*dif, sk=1.1*sp;
+     const sr=Math.min(1,cr0*1.3+0.35),sg=Math.min(1,cg0*1.3+0.35),sb=Math.min(1,cb0*1.3+0.35);
+     r=cr0*(1-L)+L*(cr0*shade+sr*sk);g=cg0*(1-L)+L*(cg0*shade+sg*sk);bl=cb0*(1-L)+L*(cb0*shade+sb*sk);
+    } else {r=cr0;g=cg0;bl=cb0;}
    } else {
     let li=((tt%1)+1)%1*LUTN|0; if(li>=LUTN)li=LUTN-1; li*=3;
     const br=b[p];r=LUT[li]*br;g=LUT[li+1]*br;bl=LUT[li+2]*br;
@@ -875,6 +885,16 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
+const APP_VERSION='1.0.0',APP_VERSION_SHORT='1.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+(function(){
+ const g=$('guide');g.textContent='Guida - Ver. '+APP_VERSION_SHORT;g.href=GUIDE_URL;g.target='_blank';g.rel='noopener noreferrer';
+ let tm=0;
+ $('share').addEventListener('click',()=>{
+  const m='Condivisione non ancora disponibile (dalla versione 1.1)';
+  $('headmsg').textContent=m;setStatus(m);
+  clearTimeout(tm);tm=setTimeout(()=>{$('headmsg').textContent='';},4500);
+ });
+})();
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
 $('reset').addEventListener('click',()=>{pushHist();if(S.fam==='ifs')fitIFS();else{S.view={...FAM[S.fam].view};S.views[S.fam]=S.view;}render();});
@@ -902,7 +922,8 @@ window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.t
 /* ---------- avvio ---------- */
 initWorkers();
 buildColorUI();
-setFam('julia');
+setFam('mandel');
+syncColorUI();buildLUT();
 applyPreset(0);
 </script>
 </body></html>
