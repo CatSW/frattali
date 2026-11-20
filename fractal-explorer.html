@@ -16,16 +16,18 @@
 @media (prefers-color-scheme:dark){:root{--ground:#0F0F0F;--card:#1B1B1B;--ink:#F1F0EE;--muted:#9C9994;--rule:#2C2C2C;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 var(--sans);padding:8px 12px 64px}
-.wrap{max-width:1180px;margin:0 auto}
+.wrap{max-width:none;margin:0 auto}
 h1{font:600 clamp(26px,6vw,32px)/1.05 var(--serif);letter-spacing:-.01em;margin:16px 0 6px}
 h2{font:400 24px/1.15 var(--serif);margin:40px 0 12px}
 .kicker{font:17px/1.4 var(--sans);color:var(--muted);margin:0 0 2px}
 .updated{font:13px/1.4 var(--sans);color:var(--muted);margin:4px 0 12px}
 .lede{font:400 clamp(16px,4vw,19px)/1.35 var(--sans);margin:10px 0 16px}
 .app{display:grid;gap:14px}
-@media (min-width:900px){.app{grid-template-columns:minmax(0,1fr) 360px;align-items:start}.panel{max-height:calc(100vh - 24px);overflow:auto;position:sticky;top:12px}}
+@media (min-width:900px){.app{grid-template-columns:minmax(0,1fr) 340px;align-items:start}.app.full{grid-template-columns:minmax(0,1fr)}.panel{max-height:calc(100vh - 24px);overflow:auto;position:sticky;top:12px}}
+.app.full .panel{display:none}
 .stage{position:relative;background:#000;border-radius:18px;overflow:hidden;aspect-ratio:1/1;touch-action:none;user-select:none;-webkit-user-select:none}
-@media (min-width:900px){.stage{aspect-ratio:4/3}}
+@media (min-width:900px){.stage{aspect-ratio:auto;height:max(480px,calc(100vh - 215px))}.app.full .stage{height:max(480px,calc(100vh - 175px))}.kicker,.updated{display:none}h1{margin:8px 0 2px}.lede{margin:2px 0 10px;font-size:15px}}
+.stage:fullscreen{height:100vh!important;border-radius:0;aspect-ratio:auto}.stage:-webkit-full-screen{height:100vh!important;border-radius:0;aspect-ratio:auto}
 #cv{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .hud{position:absolute;left:8px;right:8px;bottom:8px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;font:11px/1.3 var(--mono);color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}
 .hud span{background:rgba(0,0,0,.35);padding:3px 7px;border-radius:8px}
@@ -67,13 +69,13 @@ a{color:inherit}
 <h1>Esploratore di frattali</h1>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
 <p class="updated">Creato il 24 ottobre 2026, 17:10</p>
-<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare.</p>
+<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
-<div class="app">
+<div class="app" id="app">
  <div>
   <div class="stage" id="stage">
    <canvas id="cv"></canvas>
-   <div class="fab"><button id="zin" aria-label="Ingrandisci">+</button><button id="zout" aria-label="Riduci">−</button></div>
+   <div class="fab"><button id="zin" aria-label="Ingrandisci">+</button><button id="zout" aria-label="Riduci">−</button><button id="fs" aria-label="Schermo intero">⤢</button></div>
    <div class="hud"><span id="hudl"></span><span id="hudr"></span></div>
   </div>
   <div class="bar">
@@ -83,6 +85,7 @@ a{color:inherit}
    <button class="tbtn" id="pick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
    <button class="tbtn" id="save">Salva PNG</button>
+   <button class="tbtn" id="ptog">Nascondi pannello</button>
   </div>
   <p id="status"></p>
   <p id="famtxt"></p>
@@ -97,7 +100,7 @@ a{color:inherit}
    <div id="iterbox" style="display:grid;gap:6px"></div>
    <label class="chk" id="autobox"><input type="checkbox" id="auto" checked> Iterazioni automatiche con lo zoom</label>
    <div class="sel"><span class="cl">Qualità</span><select id="qual">
-     <option value="veloce">Veloce</option><option value="normale" selected>Normale</option><option value="alta">Alta</option><option value="ultra">Ultra (sovracampionata)</option></select></div>
+     <option value="veloce">Veloce (½ risoluzione)</option><option value="normale" selected>Normale (nativa)</option><option value="alta">Alta (1,5× sovracampionata)</option><option value="ultra">Ultra (2,2× sovracampionata)</option></select></div>
   </div>
   <div class="card">
    <h3>Colore</h3>
@@ -133,6 +136,10 @@ a{color:inherit}
 <details class="more"><summary><b>Interno ed equalizzato</b><span>Colorare anche i punti che non scappano mai.</span></summary><ul>
 <li>Trappola punto e croce colorano l'interno con la distanza minima dell'orbita da 0 o dagli assi.</li>
 <li>Equalizzato distribuisce i colori in base all'istogramma dell'immagine, così nessuna tinta domina.</li></ul></details>
+<details class="more"><summary><b>Famiglie aggiunte</b><span>Varianti con valore assoluto, Magnet e Buddhabrot.</span></summary><ul>
+<li>Burning Ship e varianti: nel passo z² si inseriscono valori assoluti. Celtic usa |Re z²|; Heart (|x|+iy)²; Perpendicolare (|x|−iy)²; Nave perpendicolare cambia il segno di y dentro il prodotto. L'interruttore Julia fissa c e fa variare z.</li>
+<li>Magnet I: z → ((z² + c − 1)/(2z + c − 2))². Le orbite o scappano o convergono a 1.</li>
+<li>Buddhabrot: non colora il punto di partenza ma disegna le traiettorie dei punti che scappano, accumulandole. L'immagine si affina man mano che arrivano campioni; il colore segue la lunghezza delle orbite.</li></ul></details>
 <details class="more"><summary><b>Limiti</b><span>Precisione, tempi e cosa non fa.</span></summary><ul>
 <li>Il calcolo è in doppia precisione: oltre uno zoom di circa 10¹³ i dettagli si sgranano, e la pagina lo segnala.</li>
 <li>La qualità Ultra e le molte iterazioni richiedono qualche secondo su telefono.</li></ul></details>
@@ -146,14 +153,14 @@ function computeBand(J){
   var fam=J.fam, maxIt=J.maxIt, s=J.s, x0=J.x0, y0=J.y0, d=J.d|0, cr=J.cr, ci=J.ci;
   var R2=1e6, lnR=Math.log(1000), lnd=Math.log(d>1?d:2);
   var k=0;
-  if(fam<=4){
+  if(fam<=4||fam===8){
     for(var j=r0;j<r1;j++){
       var py=y0-j*s;
       for(var i=0;i<W;i++,k++){
         var px=x0+i*s;
         var zx,zy,c1,c2,dx,dy;
-        if(fam===1||fam===4){zx=px;zy=py;c1=cr;c2=ci;dx=1;dy=0;} else {zx=0;zy=0;c1=px;c2=py;dx=0;dy=0;}
-        if(fam===2){c2=-py;}
+        if(fam===1||fam===4||((fam===2||fam===8)&&J.jul)){zx=px;zy=py;c1=cr;c2=ci;dx=1;dy=0;} else {zx=0;zy=0;c1=px;c2=py;dx=0;dy=0;}
+        if(fam===2&&!J.jul){c2=-py;}
         var pzx=0,pzy=0;
         var mtp=1e30,mtx=1e30,it=0,esc=false,szx=zx,szy=zy,per=8,pc=0,r2=zx*zx+zy*zy;
         for(it=0;it<maxIt;it++){
@@ -173,8 +180,16 @@ function computeBand(J){
               nx=ax*zx-ay*zy+c1; ny=ax*zy+ay*zx+c2;
             }
           } else if(fam===2){
-            var ax2=Math.abs(zx), ay2=Math.abs(zy);
-            nx=ax2*ax2-ay2*ay2+c1; ny=2*ax2*ay2+c2;
+            var vv=J.v|0, xx=zx*zx-zy*zy, yy=2*zx*zy;
+            if(vv===0){var ax2=Math.abs(zx),ay2=Math.abs(zy);xx=ax2*ax2-ay2*ay2;yy=2*ax2*ay2;}
+            else if(vv===1){xx=Math.abs(xx);}
+            else if(vv===2){yy=-2*Math.abs(zx)*zy;}
+            else if(vv===3){yy=-2*zx*Math.abs(zy);}
+            else {yy=2*Math.abs(zx)*zy;}
+            nx=xx+c1; ny=yy+c2;
+          } else if(fam===8){
+            var tr=zx*zx-zy*zy+c1-1, ti=2*zx*zy+c2, mbr=2*zx+c1-2, mbi=2*zy+c2, mdn=mbr*mbr+mbi*mbi;
+            if(mdn<1e-30){nx=1e4;ny=0;} else {var qx=(tr*mbr+ti*mbi)/mdn, qy=(ti*mbr-tr*mbi)/mdn; nx=qx*qx-qy*qy; ny=2*qx*qy;}
           } else if(fam===3){
             var bx=zx, by=-zy, ex=1, ey=0;
             for(var q2=0;q2<d;q2++){var t2=ex*bx-ey*by; ey=ex*by+ey*bx; ex=t2;}
@@ -198,7 +213,7 @@ function computeBand(J){
         tp[k]=mtp; tx[k]=mtx;
         if(esc){
           var lz=0.5*Math.log(r2);
-          var dd=(fam===2||fam===3)?2:(fam===4?2:d);
+          var dd=(fam===2||fam===3||fam===4||fam===8)?2:d;
           var m=it+1-Math.log(lz/lnR)/Math.log(dd);
           if(m<0)m=0;
           mu[k]=m; kind[k]=0;
@@ -271,10 +286,30 @@ function computeIFS(J){
   }
   return {cnt:cnt,col:col,seed:seed};
 }
+function computeBuddha(J){
+  var W=J.W,H=J.H,cnt=new Float32Array(W*H),col=new Float32Array(W*H),seed=J.seed>>>0||1,inv=1/J.s,x0=J.x0,y0=J.y0,M=J.maxIt,N=J.n,lm=Math.log(M);
+  var ox=new Float64Array(M),oy=new Float64Array(M);
+  function rnd(){seed^=seed<<13;seed>>>=0;seed^=seed>>>17;seed^=seed<<5;seed>>>=0;return seed/4294967296;}
+  for(var n=0;n<N;n++){
+    var cx=-2.1+2.7*rnd(), cy=-1.3+2.6*rnd(), q=(cx-0.25)*(cx-0.25)+cy*cy;
+    if(q*(q+cx-0.25)<cy*cy*0.25||(cx+1)*(cx+1)+cy*cy<0.0625)continue;
+    var zx=0,zy=0,it=0;
+    for(;it<M;it++){var t=zx*zx-zy*zy+cx;zy=2*zx*zy+cy;zx=t;if(zx*zx+zy*zy>16)break;ox[it]=zx;oy[it]=zy;}
+    if(it>=M||it<20)continue;
+    var cc=Math.log(it)/lm;
+    for(var k=0;k<it;k++){
+      var j=Math.floor((y0-ox[k])*inv); if(j<0||j>=H)continue;
+      var i=Math.floor((oy[k]-x0)*inv), i2=Math.floor((-oy[k]-x0)*inv);
+      if(i>=0&&i<W){cnt[j*W+i]+=1;col[j*W+i]+=cc;}
+      if(i2>=0&&i2<W){cnt[j*W+i2]+=1;col[j*W+i2]+=cc;}
+    }
+  }
+  return {cnt:cnt,col:col,seed:seed};
+}
 if(typeof importScripts==='function'){
   self.onmessage=function(e){
     var J=e.data;
-    if(J.type==='ifs'){var R=computeIFS(J); self.postMessage({id:J.id,type:'ifs',cnt:R.cnt,col:R.col},[R.cnt.buffer,R.col.buffer]);}
+    if(J.type==='ifs'||J.type==='buddha'){var R=J.type==='ifs'?computeIFS(J):computeBuddha(J); self.postMessage({id:J.id,type:'ifs',cnt:R.cnt,col:R.col},[R.cnt.buffer,R.col.buffer]);}
     else {var B=computeBand(J); self.postMessage({id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,mu:B.mu,de:B.de,tp:B.tp,tx:B.tx,kind:B.kind},[B.mu.buffer,B.de.buffer,B.tp.buffer,B.tx.buffer,B.kind.buffer]);}
   };
 }
@@ -284,9 +319,10 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,computeIFS:computeIFS};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,computeIFS:computeIFS,computeBuddha:computeBuddha};')();
 
 /* ---------- definizioni ---------- */
+const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
 const POLYS=[
  {name:'z³ − 1',c:[1,0,0,-1]},
  {name:'z⁴ − 1',c:[1,0,0,0,-1]},
@@ -326,12 +362,18 @@ const FAM={
    {name:'Fulmini (−0,4 + 0,6i)',p:{d:2,cr:-0.4,ci:0.6},style:'neon'},
    {name:'Germogli (0,285 + 0,01i)',p:{d:2,cr:0.285,ci:0.01},style:'smeraldo'},
    {name:'Cubica (d = 3, c = 0,4 + 0,5i)',p:{d:3,cr:0.4,ci:0.5},style:'scarabeo'}]},
- ship:{name:'Burning Ship',code:2,de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:[],
-  txt:'Come il Mandelbrot, ma prima di elevare al quadrato si prende il valore assoluto di parte reale e immaginaria. La funzione non è più analitica: nascono forme spigolose, come la "nave in fiamme" lungo l\'asse reale negativo.',
+ ship:{name:'Burning Ship e varianti',code:2,de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
+  txt:'Come il Mandelbrot, ma con valori assoluti dentro il passo: Burning Ship (|x|, |y|)², Celtic |Re z²|, Heart (|x| + iy)², Perpendicolare (|x| − iy)², Nave perpendicolare. Le funzioni non sono analitiche e nascono forme spigolose. L\'interruttore Julia fissa c e fa variare il punto di partenza.',
   presets:[
-   {name:'Vista intera',view:{cx:-0.5,cy:0.5,span:2.6}},
-   {name:'La nave',view:{cx:-1.76,cy:0.025,span:0.1},style:'fuoco'},
-   {name:'Armada',view:{cx:-1.861,cy:0.0008,span:0.012},style:'bronzo'}]},
+   {name:'Burning Ship, vista intera',view:{cx:-0.5,cy:0.5,span:2.6},p:{v:0,jul:0}},
+   {name:'La nave',view:{cx:-1.76,cy:0.025,span:0.1},p:{v:0,jul:0},style:'fuoco'},
+   {name:'Armada',view:{cx:-1.861,cy:0.0008,span:0.012},p:{v:0,jul:0},style:'bronzo'},
+   {name:'Celtic',view:CELTIC,p:{v:1,jul:0},style:'scarabeo'},
+   {name:'Heart',view:HEART,p:{v:4,jul:0},style:'pavone'},
+   {name:'Perpendicolare',view:PERP,p:{v:2,jul:0},style:'smeraldo'},
+   {name:'Nave perpendicolare',view:PSHIP,p:{v:3,jul:0},style:'bronzo'},
+   {name:'Burning Ship Julia',view:{cx:0,cy:0,span:3},p:{v:0,jul:1,cr:BJC[0],ci:BJC[1]},style:'neon'},
+   {name:'Celtic Julia',view:{cx:0,cy:0,span:3},p:{v:1,jul:1,cr:CJC[0],ci:CJC[1]},style:'pavone'}]},
  tricorn:{name:'Tricorno e Multicorn',code:3,de:false,view:{cx:-0.65,cy:0,span:2.8},iter:300,params:['d'],
   txt:'Si itera il coniugato: z → z̄^d + c. Con d = 2 è il Tricorno, con tre punte; in generale le punte sono d + 1. I confini hanno tratti rettilinei che nel Mandelbrot non esistono.',
   presets:[
@@ -361,6 +403,17 @@ const FAM={
    {name:'Fenice classica (p = 0,56667, q = −0,5)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0},style:'fuoco'},
    {name:'q complesso (q = −0,5 + 0,1i)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0.1},style:'pavone'},
    {name:'Filamenti (p = 0,269, q = 0,01i)',p:{cr:0.269,ci:0,qr:0,qi:0.01},style:'scarabeo'}]},
+ magnet:{name:'Magnet I',code:8,de:false,view:MAGV,iter:300,params:['jul','cr','ci'],
+  txt:'Dalla fisica statistica: z → ((z² + c − 1)/(2z + c − 2))², partendo da z = 0. Le orbite o scappano all\'infinito o convergono al punto fisso 1. Il confine ha una struttura a petali molto diversa dal Mandelbrot. Con l\'interruttore Julia c resta fisso.',
+  presets:[
+   {name:'Vista intera',view:MAGV,p:{jul:0},style:'oro'},
+   {name:'Julia Magnet',view:{cx:1,cy:0,span:5},p:{jul:1,cr:MJC[0],ci:MJC[1]},style:'scarabeo'}]},
+ buddha:{name:'Buddhabrot (traiettorie)',code:-2,de:false,view:{cx:0,cy:-0.5,span:3.1},iter:1000,noauto:true,params:[],
+  txt:'Si campionano c a caso, si seguono le orbite z → z² + c e si tengono solo quelle che scappano: ogni punto toccato dall\'orbita accende un pixel. Ne esce una figura simile a un Buddha in meditazione. Più iterazioni e più campioni, più dettaglio: l\'immagine si affina man mano che arrivano punti. Il colore dipende dalla lunghezza delle orbite.',
+  presets:[
+   {name:'Vista intera',view:{cx:0,cy:-0.5,span:3.1},style:'nebulosa'},
+   {name:'Testa e cuore (zoom)',view:{cx:0,cy:-0.3,span:1.3},style:'nebulosa'},
+   {name:'Oro su verde',view:{cx:0,cy:-0.5,span:3.1},style:'oro'}]},
  ifs:{name:'IFS e chaos game (felce, draghi)',code:-1,de:false,view:{cx:0,cy:5,span:11},iter:0,params:['ifs'],
   txt:'Un sistema di funzioni iterate: poche trasformazioni affini, scelte a caso migliaia di volte. I punti si addensano su un\'unica figura autosimile. La felce di Barnsley ne usa solo quattro; il colore segue la densità dei punti e le trasformazioni usate.',
   presets:IFSS.map((f,i)=>({name:f.name,p:{ifs:i},style:i===0?'smeraldo':'oro'}))}
@@ -374,6 +427,8 @@ const PARAMDEF={
  ar:{label:'Re a',min:0.1,max:2,step:0.01},
  ai:{label:'Im a',min:-1,max:1,step:0.01},
  n:{label:'Grado n',min:3,max:8,step:1},
+ v:{label:'Variante',options:['Burning Ship','Celtic','Perpendicolare','Nave perpendicolare','Heart']},
+ jul:{label:'Modo',options:['Mandelbrot (c = pixel)','Julia (c fisso)']},
  poly:{label:'Polinomio',options:POLYS.map(p=>p.name)},
  ifs:{label:'Figura',options:IFSS.map(p=>p.name)}
 };
@@ -399,6 +454,7 @@ const STYLES={
  bronzo:{name:'Bronzo e patina',pal:'bronzo',mode:'equal',inmode:'tx',dens:2,light:0.9,relief:6,shin:20,irid:0.05},
  oro:{name:'Oro su verde',pal:'oro',mode:'smooth',inmode:'flat',dens:1,light:0.6,relief:4,shin:50,irid:0.05},
  fuoco:{name:'Fuoco piatto',pal:'fuoco',mode:'smooth',inmode:'flat',dens:1,light:0,relief:8,shin:40,irid:0},
+ nebulosa:{name:'Nebulosa (Buddhabrot)',pal:'oceano',mode:'smooth',inmode:'flat',dens:1,light:0,relief:4,shin:30,irid:0},
  classico:{name:'Classico piatto',pal:'ultra',mode:'smooth',inmode:'flat',dens:1,light:0,relief:8,shin:40,irid:0}
 };
 
@@ -406,7 +462,7 @@ const STYLES={
 const S={fam:'julia',P:{},views:{},view:null,iterBase:{},auto:true,qual:'normale',
  pal:'pavone',mode:'smooth',inmode:'tp',incol:'#000000',dens:1,off:0,glow:1,
  light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false};
-for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0};S.iterBase[f]=FAM[f].iter;S.views[f]={...FAM[f].view};}
+for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0};S.iterBase[f]=FAM[f].iter;S.views[f]={...FAM[f].view};}
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
 S.view=S.views.julia;
 const hist=[];
@@ -439,7 +495,7 @@ function buildCDF(B){
  B.cdf={cdf,lo,hi,NB};
 }
 function colorize(B){
- const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs',hasDE=FAM[fam].de;
+ const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha',hasDE=FAM[fam].de;
  const dens=S.dens,off=S.off,res=H/700,glowW=3*S.glow*Math.max(0.5,res),stw=0.04*S.glow;
  const inc=hex(S.incol); let nroots=1; if(isNewton)nroots=POLYS[S.P.newton.poly].c.length-1;
  const mu=B.mu,de=B.de,tp=B.tp,tx=B.tx,kind=B.kind,h=B.h,t=B.t,b=B.b,fl=B.fl;
@@ -453,7 +509,7 @@ function colorize(B){
    if(isIFS){
     const c=mu[p]; if(c<=0){fl[p]=1;h[p]=0;continue;}
     const br=Math.pow(Math.log1p(c)/lmax,0.45);
-    t[p]=off+dens*(de[p]/c); b[p]=br; h[p]=br*3; continue;
+    const mm=de[p]/c; t[p]=off+(fam==='buddha'?dens*0.75*Math.min(1,Math.max(0,(mm-0.4)/0.6)):dens*mm); b[p]=br; h[p]=br*3; continue;
    }
    if(k===1){
     if(S.inmode==='flat'){fl[p]=1;h[p]=0;continue;}
@@ -515,7 +571,7 @@ function colorize(B){
     let li=((tt%1)+1)%1*LUTN|0; if(li>=LUTN)li=LUTN-1; li*=3;
     const br=b[p];r=LUT[li]*br;g=LUT[li+1]*br;bl=LUT[li+2]*br;
    }
-   D[q]=Math.min(255,r*255);D[q+1]=Math.min(255,g*255);D[q+2]=Math.min(255,bl*255);D[q+3]=255;
+   const dn=(52.9829189*((0.06711056*i+0.00583715*j)%1))%1-0.5;D[q]=Math.min(255,r*255+dn);D[q+1]=Math.min(255,g*255+dn);D[q+2]=Math.min(255,bl*255+dn);D[q+3]=255;
   }
  }
  if(!B.cv){B.cv=document.createElement('canvas');}
@@ -528,7 +584,7 @@ let workers=[],useWorkers=true,jobId=0,queue=[],busy=[],passes=null;
 function initWorkers(){
  try{
   const url=URL.createObjectURL(new Blob([SRC],{type:'text/javascript'}));
-  const n=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
+  const n=Math.max(2,Math.min(16,(navigator.hardwareConcurrency||4)-1));
   for(let i=0;i<n;i++){const w=new Worker(url);w.onmessage=e=>onResult(i,e.data);w.onerror=()=>{fallback();};workers.push(w);busy.push(false);}
  }catch(e){useWorkers=false;workers=[];}
 }
@@ -537,17 +593,17 @@ function pump(){
  if(useWorkers){
   for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'){const X=LIB.computeIFS(J);R={id:J.id,type:'ifs',cnt:X.cnt,col:X.col};}else{const B=LIB.computeBand(J);R={id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'){const X=J.type==='ifs'?LIB.computeIFS(J):LIB.computeBuddha(J);R={id:J.id,type:'ifs',cnt:X.cnt,col:X.col};}else{const B=LIB.computeBand(J);R={id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,...B};}onResult(-1,R);}pump();},0);
  }
 }
 
 /* ---------- rendering ---------- */
 const cv=$('cv'),ctx=cv.getContext('2d');
-let cur={pre:null,full:null},t0=0,renderPending=0;
+let cur={pre:null,full:null},t0=0,renderPending=0,lastRS='';
 function dims(){
  const r=cv.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,3);
- const q={veloce:[0.5,350e3],normale:[0.75,800e3],alta:[1,1.6e6],ultra:[1.5,3.6e6]}[S.qual];
- const f=q[0]*Math.max(1,1.6/dpr);
+ const q={veloce:[0.5,0.9e6],normale:[1,3e6],alta:[1.5,5e6],ultra:[2.2,8e6]}[S.qual],sm=innerWidth<900?0.45:1;
+ const f=q[0];q[1]*=sm;
  let W=Math.max(64,Math.round(r.width*dpr*f)),H=Math.max(64,Math.round(r.height*dpr*f));
  const k=Math.sqrt(q[1]/(W*H)); if(k<1){W=Math.round(W*k);H=Math.round(H*k);}
  return {W,H};
@@ -574,7 +630,7 @@ function findRoots(c){
 }
 function baseJob(W,H){
  const f=FAM[S.fam],P=S.P[S.fam],s=S.view.span/H;
- const J={fam:f.code,W,H,s,x0:S.view.cx-(W/2-0.5)*s,y0:S.view.cy+(H/2-0.5)*s,maxIt:curIter(),d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai};
+ const J={fam:f.code,W,H,s,x0:S.view.cx-(W/2-0.5)*s,y0:S.view.cy+(H/2-0.5)*s,maxIt:curIter(),d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai,v:P.v,jul:P.jul};
  if(S.fam==='mandel'){J.cr=0;J.ci=0;}
  if(S.fam==='newton'){const c=POLYS[P.poly].c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=findRoots(c);J.roots=new Float64Array(r.flat());}
  if(S.fam==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
@@ -584,8 +640,8 @@ function render(){
  clearTimeout(renderPending);
  const id=++jobId;queue=[];
  const {W,H}=dims();
- cv.width=W;cv.height=H;t0=performance.now();
- if(S.fam==='ifs'){renderIFS(id,W,H);return;}
+ cv.width=W;cv.height=H;t0=performance.now();{const rr=cv.getBoundingClientRect();lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
+ if(S.fam==='ifs'||S.fam==='buddha'){renderIFS(id,W,H);return;}
  const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
  const pre=newBuf(pw,ph),full=newBuf(W,H);cur={pre,full,id,W,H,left:0};
  const mk=(B,pass)=>{const J=baseJob(B.W,B.H);const nb=Math.max(1,(useWorkers?workers.length:1)*6);const bh=Math.max(2,Math.ceil(B.H/nb));const jobs=[];for(let r=0;r<B.H;r+=bh){jobs.push({...J,id,pass,r0:r,r1:Math.min(B.H,r+bh)});}return jobs;};
@@ -610,7 +666,7 @@ function onResult(wi,R){
  pump();
 }
 let progT=0;
-function scheduleProgress(){if(progT)return;progT=setTimeout(()=>{progT=0;if(cur.full&&cur.left1>0){colorize(cur.full);draw();setStatus('Calcolo… '+Math.round(100*(1-cur.left1/cur.n1))+'%');}},120);}
+function scheduleProgress(){if(progT)return;progT=setTimeout(()=>{progT=0;if(cur.full&&cur.left1>0){colorize(cur.full);draw();setStatus('Calcolo… '+Math.round(100*(1-cur.left1/cur.n1))+'%');}},Math.max(120,cur.W*cur.H/10000));}
 function precWarn(){const s=S.view.span/cv.height,m=Math.max(1,Math.abs(S.view.cx),Math.abs(S.view.cy));return s<4e-16*m*8?' · limite di precisione raggiunto':'';}
 function draw(){
  ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
@@ -619,7 +675,7 @@ function draw(){
  if(cur.full&&cur.full.cv)ctx.drawImage(cur.full.cv,0,0);
 }
 function recolor(){
- if(S.fam==='ifs'){if(cur.full&&cur.full.cv){colorize(cur.full);draw();}return;}
+ if(S.fam==='ifs'||S.fam==='buddha'){if(cur.full&&cur.full.cv){colorize(cur.full);draw();}return;}
  if(cur.pre&&cur.pre.img)colorize(cur.pre);
  if(cur.full&&cur.full.img)colorize(cur.full);
  draw();
@@ -641,9 +697,9 @@ function fitIFS(){
 }
 function renderIFS(id,W,H){
  const full=newBuf(W,H);full.done.fill(1);full.kind.fill(1);cur={pre:null,full,id,W,H,left1:0,n1:1};
- const {maps,cum}=ifsMaps(),s=S.view.span/H;
- const target=W*H*14,nw=useWorkers?workers.length:1,per=Math.ceil(Math.min(1.5e6,target/(nw*6)));
- cur.ifsLeft=target;cur.ifsPer=per;cur.ifsBase={type:'ifs',id,W,H,maps,cum,n:per,x0:S.view.cx-W/2*s,y0:S.view.cy+H/2*s,s};cur.seed=1;cur.inflight=0;
+ const bd=S.fam==='buddha',{maps,cum}=bd?{}:ifsMaps(),s=S.view.span/H;
+ const target=bd?Math.min(5e7,W*H*30):W*H*14,nw=useWorkers?workers.length:1,per=bd?4e5:Math.ceil(Math.min(1.5e6,target/(nw*6)));
+ cur.ifsLeft=target;cur.ifsPer=per;cur.ifsBase={type:bd?'buddha':'ifs',id,W,H,maps,cum,maxIt:curIter(),n:per,x0:S.view.cx-W/2*s,y0:S.view.cy+H/2*s,s};cur.seed=1;cur.inflight=0;
  for(let i=0;i<nw*2;i++)queueIFS();
  pump();setStatus('Calcolo punti…');updateHud();
 }
@@ -653,7 +709,7 @@ function onIFS(R){
  let mx=0;for(let i=0;i<n;i++)if(B.mu[i]>mx)mx=B.mu[i];B.max=mx;
  cur.inflight--;queueIFS();
  if(cur.inflight===0){colorize(B);draw();setStatus('Pronto in '+((performance.now()-t0)/1000).toFixed(2).replace('.',',')+' s · '+B.W+'×'+B.H+' px');}
- else if(!progT){progT=setTimeout(()=>{progT=0;colorize(B);draw();},150);}
+ else if(!progT){progT=setTimeout(()=>{progT=0;colorize(B);draw();},Math.max(150,B.W*B.H/8000));}
 }
 
 /* ---------- gesti ---------- */
@@ -745,7 +801,7 @@ function buildParams(){
   const d=PARAMDEF[k];
   if(d.options){selRow(box,d.label,d.options,()=>P[k],v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();}render();});continue;}
   let label=d.label;
-  if(S.fam==='julia'&&k==='cr')label='Re c';if(S.fam==='julia'&&k==='ci')label='Im c';
+  const jl=S.fam==='julia'||S.fam==='ship'||S.fam==='magnet';if(jl&&k==='cr')label='Re c';if(jl&&k==='ci')label='Im c';
   if(S.fam==='phoenix'&&k==='cr')label='Re p';if(S.fam==='phoenix'&&k==='ci')label='Im p';
   paramRows.push(ctlRow(box,{label,min:d.min,max:d.max,step:d.step,int:d.step===1,dec:d.step===1?0:4,get:()=>P[k],set:v=>{P[k]=v;},live:()=>{if(d.step!==1)scheduleRender(90);},done:()=>render()}));
  }
@@ -832,7 +888,16 @@ function animLoop(){if(!S.anim)return;S.off=(S.off+0.0025)%1;colRows[1]&&colRows
 $('save').addEventListener('click',()=>{
  cv.toBlob(b=>{if(!b)return;const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='frattale-'+S.fam+'-'+Date.now()+'.png';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);},'image/png');
 });
-let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(S.fam==='ifs')fitIFS();render();},250);});
+let rsT=0;
+new ResizeObserver(()=>{clearTimeout(rsT);rsT=setTimeout(()=>{const r=cv.getBoundingClientRect();if(Math.round(r.width)+'x'+Math.round(r.height)===lastRS)return;if(S.fam==='ifs')fitIFS();render();},250);}).observe(cv);
+const stg=$('stage');
+function toggleFS(){if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else (stg.requestFullscreen||stg.webkitRequestFullscreen).call(stg);}
+if(!(stg.requestFullscreen||stg.webkitRequestFullscreen))$('fs').style.display='none';
+$('fs').addEventListener('click',toggleFS);
+function togglePanel(){const f=$('app').classList.toggle('full');$('ptog').textContent=f?'Mostra pannello':'Nascondi pannello';}
+$('ptog').addEventListener('click',togglePanel);
+window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();
+ if(k==='+'||k==='=')$('zin').click();else if(k==='-')$('zout').click();else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();});
 
 /* ---------- avvio ---------- */
 initWorkers();
