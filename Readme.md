@@ -1,0 +1,38 @@
+---
+title: Esploratore di Frattali
+copyright: © 2026 Stefano Vesco (IK0VCK) - CatSW. All rights reserved.
+author: IK0VCK
+product: fractal-explorer
+type: root-readme
+version: 1.0
+updated: 2026-11-20
+---
+# [Esploratore di Frattali](https://catsw.github.io/frattali/fractal-explorer.html) <img src="CatSW.png" width=30 />
+
+- Guida Rapida Esploratore di Frattali - WIP
+
+- Manuale Esploratore di Frattali - WIP
+
+[Changelog](Changelog.md)
+
+## Installazione
+
+**Non è necessario scaricare od installare nessun file** per usare questo esploratore di funzioni perchè è pubblicato tramite Github Pages.
+Sfruttando Github Pages è anche possibile usare il link html comprendente le info inserite nel link per condividere un polinomio con un amico,
+basta cliccare sul pulsante di condivisione a lato del tasto Readme e ad esempio mandarglelo via whats up o altro sistema.
+
+### Uso offline
+
+Se si vuole usarlo offline, è sufficiente scaricare il singolo file `fractal-explorer.html`.
+Puoi anche mandarlo via email sul tuo cellulare come allegato e scaricarlo ad esempio in Download per poterlo eseguire da tale folder.
+In modalità offline non si possono usare i link html per aprire il laboratorio su un esempio, ma si può comunque salvare la versione json dei dati per poterli ricaricare anche quando si è offline.
+
+## Licenza & Note Legali
+
+Questo progetto è distribuito sotto Licenza MIT. Per il testo completo, consultare il file `LICENSE` presente nella radice del repository.
+
+<div><img style="margin-left: 30px; margin-bottom: 5px;" src="CatSW_2.png"/></div>
+
+- Copyright: © 2026 Stefano Vesco (IK0VCK) - CatSW.
+- Uso Commerciale e Privato: Gratuito e consentito senza restrizioni.
+
