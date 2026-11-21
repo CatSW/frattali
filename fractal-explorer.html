@@ -33,7 +33,8 @@ a.tbtn{display:inline-block;text-decoration:none}
 .stage{position:relative;background:#000;border-radius:18px;overflow:hidden;aspect-ratio:1/1;touch-action:none;user-select:none;-webkit-user-select:none}
 @media (min-width:900px){.stage{aspect-ratio:auto;height:max(480px,calc(100vh - 215px))}.app.full .stage{height:max(480px,calc(100vh - 175px))}.kicker,.updated{display:none}h1{margin:8px 0 2px}.lede{margin:2px 0 10px;font-size:15px}}
 .stage:fullscreen{height:100vh!important;border-radius:0;aspect-ratio:auto}.stage:-webkit-full-screen{height:100vh!important;border-radius:0;aspect-ratio:auto}
-#cv{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#cv{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+
 .hud{position:absolute;left:8px;right:8px;bottom:8px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;font:11px/1.3 var(--mono);color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}
 .hud span{background:rgba(0,0,0,.35);padding:3px 7px;border-radius:8px}
 .fab{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
@@ -77,9 +78,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.2</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.3</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.2.0 · 21 novembre 2026</p>
+<p class="updated">Versione 1.3.0 · 21 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo usa «Zoom area» (su desktop anche Maiusc + trascina). Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -88,21 +89,23 @@ a{color:inherit}
    <canvas id="cv"></canvas>
    <div id="selrect"></div>
    <div class="fab"><button id="fs" type="button" aria-label="Schermo intero" title="Schermo intero"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div>
-   <div class="hud"><span id="hudl"></span><span id="hudr"></span></div>
+   <div class="hud"><span id="hudl"></span><span id="hudm"></span><span id="hudr"></span></div>
+
   </div>
   <div class="bar">
-   <button class="tbtn" id="sharestate" type="button">Condividi stato</button>
-   <button class="tbtn" id="reset">Vista iniziale</button>
-   <button class="tbtn" id="back">Indietro</button>
-   <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire (desktop: Maiusc+trascina)">Zoom area</button>
+   <button class="tbtn" id="reset" type="button" title="Vista iniziale" aria-label="Vista iniziale" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg><span>Vista iniziale</span></button>
+   <button class="tbtn" id="back" type="button" title="Indietro" aria-label="Indietro" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/></svg><span>Indietro</span></button>
+   <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><rect x="8" y="8" width="6" height="6" rx="0.5"/></svg><span>Zoom area</span></button>
    <button class="tbtn" id="tojulia">Julia da qui</button>
    <button class="tbtn" id="pick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
    <button class="tbtn" id="save">Salva PNG</button>
    <button class="tbtn" id="ptog">Nascondi pannello</button>
+   <button class="tbtn" id="sharestate" type="button">Esporta JSON</button>
   </div>
   <div id="sharepanel" class="card" style="display:none;margin:10px 0 6px">
-   <h3>Condividi stato</h3>
+   <h3>Esporta / importa stato</h3>
+
    <textarea id="sharetxt" rows="8" style="width:100%;font:12px/1.4 var(--mono);padding:8px;border:1px solid var(--rule);border-radius:10px;background:var(--ground);color:var(--ink);resize:vertical" spellcheck="false"></textarea>
    <div class="bar" style="margin-top:8px">
     <button class="tbtn" id="copyjson" type="button">Copia JSON</button>
@@ -246,31 +249,87 @@ function computeBand(J){
       }
     }
   } else {
-    var co=J.co, nc=co.length/2, rt=J.roots, nr=rt?rt.length/2:0;
-    var ar=J.ar, ai=J.ai, tol=1e-12, nova=(fam===6);
+    var co=J.co, nc=co?co.length/2:0, rt=J.roots, nr=rt?rt.length/2:0;
+    var ar=J.ar, ai=J.ai, tol=1e-12, nova=(fam===6), trans=J.trans|0, a0=J.a0||0, a1=J.a1||0;
+    var Rmax=1e6, dmin=1e-14, DIVK=254, SINGK=253;
     for(var j2=r0;j2<r1;j2++){
       var py2=y0-j2*s;
       for(var i2=0;i2<W;i2++,k++){
         var px2=x0+i2*s, zx2, zy2, cx=0, cy=0;
         if(nova){zx2=1;zy2=0;cx=px2;cy=py2;} else {zx2=px2;zy2=py2;}
-        var prev=1e30, it2=0, conv=false, mtp2=1e30, mtx2=1e30, lastd=0;
+        var prev=1e30, it2=0, conv=false, mtp2=1e30, mtx2=1e30, lastd=0, exitk=1;
         for(it2=0;it2<maxIt;it2++){
-          var pr=co[0],pi=co[1],qr=0,qi=0;
-          for(var u=1;u<nc;u++){
-            var tq=qr*zx2-qi*zy2+pr; qi=qr*zy2+qi*zx2+pi; qr=tq;
-            var tp2=pr*zx2-pi*zy2+co[2*u]; pi=pr*zy2+pi*zx2+co[2*u+1]; pr=tp2;
+          var nzx, nzy, dlt, den;
+          if(trans>=0){
+            // funzioni trascendenti: passo di Newton in forma chiusa o f/f'
+            var xr=zx2, xi=zy2, fr, fi, dfr, dfi;
+            if(trans===0){ // sin: z - tan z
+              // tan stabile: sin/cos con formula per |Im| grande
+              var e2y=Math.exp(-2*Math.abs(xi)), t=Math.tan(xr), denT=1+e2y*e2y-2*e2y*Math.cos(2*xr); // approx
+              // usa formula: tan(z) = sin(2x)/(cosh(2y)+cos(2x)) + i sinh(2y)/(cosh(2y)+cos(2x))
+              var s2x=Math.sin(2*xr), c2x=Math.cos(2*xr), sh2y=Math.sinh(2*Math.min(20,Math.abs(xi)))*(xi>=0?1:-1), ch2y=Math.cosh(2*Math.min(20,Math.abs(xi)));
+              var dd=ch2y+c2x; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              fr=s2x/dd; fi=sh2y/dd;
+              nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr; // a * tan
+            } else if(trans===1){ // cos: z + cot z
+              var s2x=Math.sin(2*xr), c2x=Math.cos(2*xr), sh2y=Math.sinh(2*Math.min(20,Math.abs(xi)))*(xi>=0?1:-1), ch2y=Math.cosh(2*Math.min(20,Math.abs(xi)));
+              var dd=ch2y-c2x; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              fr=s2x/dd; fi=-sh2y/dd; // cot = cos/sin ~ 
+              // cot z = sin(2x)/(cosh(2y)-cos(2x)) - i sinh(2y)/(...)
+              nzx=xr+ar*fr-ai*fi; nzy=xi+ar*fi+ai*fr;
+            } else if(trans===2){ // tan: z - sin(2z)/2
+              var s2r=Math.sin(2*xr)*Math.cosh(2*Math.min(20,xi)), s2i=Math.cos(2*xr)*Math.sinh(2*Math.min(20,xi));
+              fr=0.5*s2r; fi=0.5*s2i;
+              nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr;
+            } else if(trans===3){ // sinh: z - tanh z
+              // tanh z = sinh(2x)/(cosh(2x)+cos(2y)) + i sin(2y)/(...)
+              var sh2x=Math.sinh(2*Math.min(20,Math.abs(xr)))*(xr>=0?1:-1), ch2x=Math.cosh(2*Math.min(20,Math.abs(xr)));
+              var s2y=Math.sin(2*xi), c2y=Math.cos(2*xi);
+              var dd=ch2x+c2y; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              fr=sh2x/dd; fi=s2y/dd;
+              nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr;
+            } else if(trans===4){ // cosh: z - coth z
+              var sh2x=Math.sinh(2*Math.min(20,Math.abs(xr)))*(xr>=0?1:-1), ch2x=Math.cosh(2*Math.min(20,Math.abs(xr)));
+              var s2y=Math.sin(2*xi), c2y=Math.cos(2*xi);
+              var dd=ch2x-c2y; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              fr=sh2x/dd; fi=-s2y/dd;
+              nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr;
+            } else if(trans===5){ // e^z - a : z - 1 + a e^{-z}
+              var er=Math.exp(-Math.min(40,Math.max(-40,xr)))*Math.cos(-xi), ei=Math.exp(-Math.min(40,Math.max(-40,xr)))*Math.sin(-xi);
+              fr=1 - (a0*er - a1*ei); fi= -(a0*ei + a1*er);
+              nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr;
+            } else { // sin z - a z : f = sin - a*z, f' = cos - a
+              var er=Math.exp(-Math.abs(xi)), sr=Math.sin(xr)*(er+1/er)*0.5, si=Math.cos(xr)*(er-1/er)*0.5*(xi>=0?1:-1); // sin approx stable?
+              // better: sin(z) = sinx coshy + i cosx sinhy
+              var chy=Math.cosh(Math.min(20,Math.abs(xi))), shy=Math.sinh(Math.min(20,Math.abs(xi)))*(xi>=0?1:-1);
+              fr=Math.sin(xr)*chy - a0*xr + a1*xi; fi=Math.cos(xr)*shy - a0*xi - a1*xr;
+              dfr=Math.cos(xr)*chy - a0; dfi=-Math.sin(xr)*shy - a1;
+              den=dfr*dfr+dfi*dfi; if(den<dmin*dmin){exitk=SINGK;break;}
+              var invd=1/den; var qr=(fr*dfr+fi*dfi)*invd, qi=(fi*dfr-fr*dfi)*invd;
+              nzx=xr - (ar*qr - ai*qi); nzy=xi - (ar*qi + ai*qr);
+            }
+            if(trans<=5 && !isFinite(nzx+nzy)){exitk=SINGK;break;}
+            dlt=(nzx-xr)*(nzx-xr)+(nzy-xi)*(nzy-xi);
+            zx2=nzx; zy2=nzy;
+          } else {
+            // polinomio (esistente)
+            var pr=co[0],pi=co[1],qr=0,qi=0;
+            for(var u=1;u<nc;u++){
+              var tq=qr*zx2-qi*zy2+pr; qi=qr*zy2+qi*zx2+pi; qr=tq;
+              var tp2=pr*zx2-pi*zy2+co[2*u]; pi=pr*zy2+pi*zx2+co[2*u+1]; pr=tp2;
+            }
+            den=qr*qr+qi*qi;
+            if(den<dmin*dmin){exitk=SINGK;break;}
+            var fr=(pr*qr+pi*qi)/den, fi=(pi*qr-pr*qi)/den;
+            var sx=ar*fr-ai*fi, sy=ar*fi+ai*fr;
+            nzx=zx2-sx+cx; nzy=zy2-sy+cy;
+            dlt=(nzx-zx2)*(nzx-zx2)+(nzy-zy2)*(nzy-zy2);
+            zx2=nzx; zy2=nzy;
           }
-          var den=qr*qr+qi*qi;
-          if(den<1e-300){break;}
-          var fr=(pr*qr+pi*qi)/den, fi=(pi*qr-pr*qi)/den;
-          var sx=ar*fr-ai*fi, sy=ar*fi+ai*fr;
-          var nzx=zx2-sx+cx, nzy=zy2-sy+cy;
-          var ddx2=nzx-zx2, ddy2=nzy-zy2, dlt=ddx2*ddx2+ddy2*ddy2;
-          zx2=nzx; zy2=nzy;
           var a2=Math.sqrt(zx2*zx2+zy2*zy2); if(a2<mtp2)mtp2=a2;
           var m3=Math.min(Math.abs(zx2),Math.abs(zy2)); if(m3<mtx2)mtx2=m3;
+          if(!isFinite(zx2) || !isFinite(zy2) || a2>Rmax){exitk=DIVK;break;}
           if(dlt<tol && it2>0){conv=true; lastd=dlt; break;}
-          if(zx2*zx2+zy2*zy2>1e20)break;
           prev=dlt;
         }
         tp[k]=mtp2; tx[k]=mtx2; de[k]=-1;
@@ -283,15 +342,26 @@ function computeBand(J){
           }
           mu[k]=it2+fr2;
           if(nova){kind[k]=0;}
-          else {
+          else if(trans>=0){
+            // indice k periodico
+            var kk=0;
+            if(trans===0||trans===2) kk=Math.round(zx2/Math.PI);
+            else if(trans===1) kk=Math.round((zx2-Math.PI/2)/Math.PI);
+            else if(trans===3) kk=Math.round(zy2/Math.PI);
+            else if(trans===4) kk=Math.round((zy2-Math.PI/2)/Math.PI);
+            else if(trans===5){var arga=Math.atan2(a1,a0); kk=Math.round((zy2-arga)/(2*Math.PI));}
+            else kk=Math.round(zx2/Math.PI); // mixed quantize
+            kind[k]=2+((kk%8)+8)%8;
+          } else {
             var best=-1,bd=1e30;
             for(var r=0;r<nr;r++){var ex2=zx2-rt[2*r], ey2=zy2-rt[2*r+1], e2=ex2*ex2+ey2*ey2; if(e2<bd){bd=e2;best=r;}}
             kind[k]=(best>=0&&bd<1e-6)?2+best:1;
           }
-        } else {mu[k]=0;kind[k]=1;}
+        } else {mu[k]=0;kind[k]=exitk;}
       }
     }
   }
+
   return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
 }
 function computeIFS(J){
@@ -353,8 +423,16 @@ const POLYS=[
  {name:'z⁵ − 1',c:[1,0,0,0,0,-1]},
  {name:'z⁶ + z³ − 1',c:[1,0,0,1,0,0,-1]},
  {name:'z³ − 2z + 2 (cicli neri)',c:[1,0,-2,2]},
- {name:'z⁸ + 15z⁴ − 16',c:[1,0,0,0,15,0,0,0,-16]}
+ {name:'z⁸ + 15z⁴ − 16',c:[1,0,0,0,15,0,0,0,-16]},
+ {name:'sin z',trans:0},
+ {name:'cos z',trans:1},
+ {name:'tan z',trans:2},
+ {name:'sinh z',trans:3},
+ {name:'cosh z',trans:4},
+ {name:'eᶻ − a',trans:5},
+ {name:'sin z − a·z',trans:6}
 ];
+
 const IFSS=[
  {name:'Felce di Barnsley',m:[[0,0,0,0.16,0,0,0.01],[0.85,0.04,-0.04,0.85,0,1.6,0.85],[0.2,-0.26,0.23,0.22,0,1.6,0.07],[-0.15,0.28,0.26,0.24,0,0.44,0.07]]},
  {name:'Albero',m:[[0,0,0,0.5,0,0,0.05],[0.42,-0.42,0.42,0.42,0,0.2,0.4],[0.42,0.42,-0.42,0.42,0,0.2,0.4],[0.1,0,0,0.1,0,0.2,0.15]]},
@@ -404,8 +482,8 @@ const FAM={
    {name:'Tricorno',view:{cx:-0.65,cy:0,span:2.8},p:{d:2}},
    {name:'Multicorn d = 3',view:{cx:0,cy:0,span:2.3},p:{d:3},style:'scarabeo'},
    {name:'Multicorn d = 5',view:{cx:0,cy:0,span:2.6},p:{d:5},style:'pavone'}]},
- newton:{name:'Newton',code:5,de:false,view:{cx:0,cy:0,span:3},iter:60,noauto:true,params:['poly','ar','ai'],
-  txt:'Si applica il metodo di Newton z → z − a·p(z)/p\'(z) da ogni punto. Il colore dice a quale radice si arriva, la luminosità quanto in fretta. I confini fra i bacini sono frattali: ogni loro punto tocca tutti i bacini. Il nero è dove il metodo non converge.',
+ newton:{name:'Newton',code:5,de:false,view:{cx:0,cy:0,span:3},iter:60,noauto:true,params:['poly','ar','ai','a0','a1'],
+  txt:'Si applica il metodo di Newton z → z − a·f(z)/f\'(z) da ogni punto. Per i polinomi il colore indica la radice raggiunta; per le funzioni trascendenti (sin, cos, tan, sinh, cosh, eᶻ−a, sin z − a·z) le radici sono infinite e periodiche, i bacini formano strisce. Nero = timeout, rosso = divergenza, magenta = singolarità/NaN. I confini fra bacini sono frattali.',
   presets:[
    {name:'z³ − 1',p:{poly:0,ar:1,ai:0},view:{cx:0,cy:0,span:3},style:'pavone'},
    {name:'z⁴ − 1',p:{poly:1,ar:1,ai:0},view:{cx:0,cy:0,span:3},style:'scarabeo'},
@@ -413,7 +491,15 @@ const FAM={
    {name:'z³ − 2z + 2: cicli che non convergono',p:{poly:4,ar:1,ai:0},view:{cx:0,cy:0,span:3.2},style:'smeraldo'},
    {name:'z⁸ + 15z⁴ − 16',p:{poly:5,ar:1,ai:0},view:{cx:0,cy:0,span:5},style:'pavone'},
    {name:'Newton rilassato (a = 1,5)',p:{poly:0,ar:1.5,ai:0},view:{cx:0,cy:0,span:3},style:'scarabeo'},
-   {name:'Newton complesso (a = 1 + 0,5i)',p:{poly:0,ar:1,ai:0.5},view:{cx:0,cy:0,span:3},style:'pavone'}]},
+   {name:'Newton complesso (a = 1 + 0,5i)',p:{poly:0,ar:1,ai:0.5},view:{cx:0,cy:0,span:3},style:'pavone'},
+   {name:'sin z (radici kπ)',p:{poly:6,ar:1,ai:0},view:{cx:0,cy:0,span:12},style:'pavone'},
+   {name:'cos z',p:{poly:7,ar:1,ai:0},view:{cx:0,cy:0,span:12},style:'scarabeo'},
+   {name:'tan z',p:{poly:8,ar:1,ai:0},view:{cx:0,cy:0,span:8},style:'bronzo'},
+   {name:'sinh z',p:{poly:9,ar:1,ai:0},view:{cx:0,cy:0,span:10},style:'smeraldo'},
+   {name:'cosh z',p:{poly:10,ar:1,ai:0},view:{cx:0,cy:0,span:10},style:'oro'},
+   {name:'eᶻ − 1',p:{poly:11,ar:1,ai:0,a0:1,a1:0},view:{cx:0,cy:0,span:8},style:'pavone'},
+   {name:'sin z − 0,5 z',p:{poly:12,ar:1,ai:0,a0:0.5,a1:0},view:{cx:0,cy:0,span:10},style:'scarabeo'}]},
+
  nova:{name:'Nova',code:6,de:false,view:{cx:-0.4,cy:0,span:2.6},iter:200,params:['n','ar','ai'],
   txt:'Un incrocio tra Newton e Mandelbrot: z → z − a·(zⁿ − 1)/(n·zⁿ⁻¹) + c, partendo da z = 1, con c che varia da pixel a pixel. Dove l\'orbita non si stabilizza compaiono copie del Mandelbrot circondate dai motivi di Newton.',
   presets:[
@@ -453,7 +539,10 @@ const PARAMDEF={
  n:{label:'Grado n',min:3,max:8,step:1},
  v:{label:'Variante',options:['Burning Ship','Celtic','Perpendicolare','Nave perpendicolare','Heart']},
  jul:{label:'Modo',options:['Mandelbrot (c = pixel)','Julia (c fisso)']},
- poly:{label:'Polinomio',options:POLYS.map(p=>p.name)},
+ poly:{label:'Funzione',options:POLYS.map(p=>p.name)},
+ a0:{label:'Re a',min:-2,max:2,step:0.01},
+ a1:{label:'Im a',min:-2,max:2,step:0.01},
+
  ifs:{label:'Figura',options:IFSS.map(p=>p.name)}
 };
 const PALS={
@@ -486,7 +575,8 @@ const STYLES={
 const S={fam:'mandel',P:{},views:{},view:null,iterBase:{},auto:true,qual:'normale',
  pal:'pavone',mode:'smooth',inmode:'flat',incol:'#000000',dens:1,off:0,glow:1,
  light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false};
-for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0};S.iterBase[f]=FAM[f].iter;S.views[f]={...FAM[f].view};}
+for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0};S.iterBase[f]=FAM[f].iter;S.views[f]={...FAM[f].view};}
+
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
 S.view=S.views.julia;
 const hist=[];
@@ -561,8 +651,10 @@ function buildCDF(B){
 function colorize(B){
  const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha',hasDE=FAM[fam].de;
  const dens=S.dens,off=S.off,res=H/700,glowW=3*S.glow*Math.max(0.5,res),stw=0.04*S.glow;
- const inc=hex(S.incol); let nroots=1; if(isNewton)nroots=POLYS[S.P.newton.poly].c.length-1;
+ const inc=hex(S.incol); let nroots=1; if(isNewton){const pp=POLYS[S.P.newton.poly];nroots=pp.c?pp.c.length-1:8;}
  const mu=B.mu,de=B.de,tp=B.tp,tx=B.tx,kind=B.kind,h=B.h,t=B.t,b=B.b,fl=B.fl;
+ const DIV_KIND=254, SING_KIND=253; // divergenza rosso, singolarità magenta
+
  let lmax=1; if(isIFS){lmax=Math.log1p(B.max||1);}
  const cdf=B.cdf;
  for(let j=0;j<H;j++){
@@ -580,10 +672,19 @@ function colorize(B){
     const sv=S.inmode==='tp'?-Math.log(tp[p]+1e-9)*0.35:-Math.log(tx[p]+1e-9)*0.25;
     t[p]=off+0.5+dens*sv; b[p]=1; h[p]=sv; continue;
    }
+   if(k===DIV_KIND){ // divergenza: rosso piatto
+    fl[p]=2; // marker speciale
+    continue;
+   }
+   if(k===SING_KIND){ // singolarità/NaN: magenta piatto
+    fl[p]=3;
+    continue;
+   }
    if(k>=2){
     const m=mu[p];
-    t[p]=off+(k-2)/nroots+dens*0.03*m; b[p]=0.3+0.7*Math.exp(-0.06*m); h[p]=Math.sqrt(m)*0.6; continue;
+    t[p]=off+((k-2)%nroots)/nroots+dens*0.03*m; b[p]=0.3+0.7*Math.exp(-0.06*m); h[p]=Math.sqrt(m)*0.6; continue;
    }
+
    const m=mu[p], sm=0.12*Math.sqrt(m);
    if(S.mode==='smooth'){t[p]=off+dens*sm; b[p]=1; h[p]=sm;}
    else if(S.mode==='equal'){
@@ -615,7 +716,13 @@ function colorize(B){
   const ju=(j>0&&B.done[j-1])?-W:0, jd=(j<H-1&&B.done[j+1])?W:0;
   for(let i=0;i<W;i++){
    const p=row+i,q=p*4;
-   if(fl[p]){D[q]=inc[0]*255;D[q+1]=inc[1]*255;D[q+2]=inc[2]*255;D[q+3]=255;continue;}
+   if(fl[p]){
+    if(fl[p]===2){D[q]=220;D[q+1]=30;D[q+2]=30;D[q+3]=255;} // divergenza rosso
+    else if(fl[p]===3){D[q]=220;D[q+1]=40;D[q+2]=200;D[q+3]=255;} // singolarità magenta
+    else {D[q]=inc[0]*255;D[q+1]=inc[1]*255;D[q+2]=inc[2]*255;D[q+3]=255;}
+    continue;
+   }
+
    let tt=t[p],r,g,bl;
    if(L>0||irid>0){
     const pl=(i>0&&!fl[p-1])?p-1:p,pr=(i<W-1&&!fl[p+1])?p+1:p,pu=!fl[p+ju]?p+ju:p,pd=!fl[p+jd]?p+jd:p;
@@ -698,7 +805,12 @@ function baseJob(W,H){
  const f=FAM[S.fam],P=S.P[S.fam],s=S.view.span/H;
  const J={fam:f.code,W,H,s,x0:S.view.cx-(W/2-0.5)*s,y0:S.view.cy+(H/2-0.5)*s,maxIt:curIter(),d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai,v:P.v,jul:P.jul};
  if(S.fam==='mandel'){J.cr=0;J.ci=0;}
- if(S.fam==='newton'){const c=POLYS[P.poly].c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=findRoots(c);J.roots=new Float64Array(r.flat());}
+ if(S.fam==='newton'){
+  const pp=POLYS[P.poly];
+  if(pp.c){const c=pp.c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=findRoots(c);J.roots=new Float64Array(r.flat());J.trans=-1;}
+  else {J.trans=pp.trans;J.a0=P.a0;J.a1=P.a1;J.co=null;J.roots=null;}
+ }
+
  if(S.fam==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
  return J;
 }
@@ -816,16 +928,38 @@ function drawGesture(){
 }
 function endGesture(){if(!gest)return;gest=null;S.views[S.fam]=S.view;render();}
 function zoomAt(px,py,f){const [zx,zy]=pxToC(px,py),ns=S.view.span/f,o=screenToWorld({cx:0,cy:0,span:ns,rot:S.view.rot},cv.width,cv.height,px,py);S.view={cx:zx-o[0],cy:zy-o[1],span:ns};}
-cv.addEventListener('pointerdown',e=>{if(sel)return;if(ptrs.size===0&&(zoomMode||(e.shiftKey&&e.pointerType==='mouse'&&e.button===0))){startSel(e);return;}cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,toPx(e));if(ptrs.size===1)tapStart={p:toPx(e),t:performance.now(),moved:false};else tapStart&&(tapStart.moved=true);});
+let longT=0, panBtn=false;
+cv.addEventListener('contextmenu',e=>{e.preventDefault();});
+cv.addEventListener('pointerdown',e=>{
+ if(sel)return;
+ if(ptrs.size===0&&zoomMode&&e.button===0){startSel(e);return;}
+ const isRight=e.button===2||e.buttons===2;
+ const isTouch=e.pointerType==='touch'||e.pointerType==='pen';
+ cv.setPointerCapture(e.pointerId);
+ ptrs.set(e.pointerId,toPx(e));
+ if(ptrs.size===1){
+  tapStart={p:toPx(e),t:performance.now(),moved:false,right:isRight};
+  if(isRight){panBtn=true;startGesture();}
+  else if(!zoomMode){
+   longT=setTimeout(()=>{if(tapStart&&!tapStart.moved){panBtn=true;startGesture();tapStart.moved=true;}},450);
+  }
+ } else {if(longT){clearTimeout(longT);longT=0;}tapStart&&(tapStart.moved=true);}
+});
 cv.addEventListener('pointermove',e=>{
+ // coordinate cursore
+ if(!gest&&!sel&&ptrs.size===0){
+  const p=toPx(e),c=pxToC(p[0],p[1]);
+  if($('hudm'))$('hudm').textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
+ }
  if(sel){if(e.pointerId===sel.id)moveSel(e);return;}
- if(!ptrs.has(e.pointerId))return;const old=ptrs.get(e.pointerId),now=toPx(e);
+ if(!ptrs.has(e.pointerId))return;
+ const old=ptrs.get(e.pointerId),now=toPx(e);
  if(ptrs.size===1){
   if(tapStart&&!tapStart.moved&&Math.hypot(now[0]-tapStart.p[0],now[1]-tapStart.p[1])<cv.width*0.012){return;}
-  if(tapStart)tapStart.moved=true;startGesture();
-  S.view=panView(S.view,cv.width,cv.height,old,now);
-  ptrs.set(e.pointerId,now);requestAnimationFrame(drawGesture);
+  if(tapStart){tapStart.moved=true;if(longT){clearTimeout(longT);longT=0;}}
+  if(panBtn||tapStart&&tapStart.right){startGesture();S.view=panView(S.view,cv.width,cv.height,old,now);ptrs.set(e.pointerId,now);requestAnimationFrame(drawGesture);}
  } else if(ptrs.size===2){
+  if(longT){clearTimeout(longT);longT=0;}
   startGesture();
   const ids=[...ptrs.keys()],a=ptrs.get(ids[0]),b=ptrs.get(ids[1]);
   const ma=[(a[0]+b[0])/2,(a[1]+b[1])/2],da=Math.hypot(a[0]-b[0],a[1]-b[1]);
@@ -837,11 +971,13 @@ cv.addEventListener('pointermove',e=>{
  }
 });
 function ptrEnd(e){
+ if(longT){clearTimeout(longT);longT=0;}
  if(sel){if(e.pointerId===sel.id){if(e.type==='pointerup')moveSel(e);endSel(e.type==='pointerup');}return;}
  if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);
  if(ptrs.size===0){
+  const wasPan=panBtn;panBtn=false;
   if(gest){endGesture();}
-  else if(tapStart&&!tapStart.moved&&performance.now()-tapStart.t<400){
+  else if(tapStart&&!tapStart.moved&&!wasPan&&performance.now()-tapStart.t<450){
    const [px,py]=tapStart.p;
    if(S.pick&&S.fam==='mandel'){const [x,y]=pxToC(px,py);juliaFrom(x,y);}
    else {const now=performance.now();if(now-lastTap<350){lastTap=0;pushHist();zoomAt(px,py,2);S.views[S.fam]=S.view;render();}else lastTap=now;}
@@ -850,13 +986,16 @@ function ptrEnd(e){
  }
 }
 cv.addEventListener('pointerup',ptrEnd);cv.addEventListener('pointercancel',ptrEnd);
+cv.addEventListener('pointerleave',e=>{if($('hudm'))$('hudm').textContent='';});
+
 /* ---------- zoom rettangolare ---------- */
 let zoomMode=false,sel=null;const selEl=$('selrect');
 function setZoomMode(on){
  zoomMode=!!on;const b=$('zoomarea');b.classList.toggle('on',zoomMode);b.setAttribute('aria-pressed',zoomMode?'true':'false');cv.classList.toggle('zsel',zoomMode);
- if(zoomMode){S.pick=false;$('pick').classList.remove('on');setStatus('Zoom area: trascina un rettangolo sulla vista (Esc annulla)');}
+ if(zoomMode){S.pick=false;$('pick').classList.remove('on');setStatus('Zoom area: trascina un rettangolo (Esc annulla). Pan con tasto destro o pressione lunga.');}
  else{if(sel)endSel(false);setStatus('');}
 }
+
 function selPt(e){const p=toPx(e);return [Math.min(cv.width,Math.max(0,p[0])),Math.min(cv.height,Math.max(0,p[1]))];}
 function startSel(e){
  const p=selPt(e);sel={id:e.pointerId,a:p,b:p};
@@ -885,9 +1024,11 @@ function applyZoomRect(x0,y0,x1,y1){
  const lim=v.span<minSpan;if(lim)v.span=minSpan;
  pushHist();
  S.view={cx:v.cx,cy:v.cy,span:v.span};S.views[S.fam]=S.view; // IFS incluso: la vista resta quella scelta, fitIFS non viene richiamata
+ setZoomMode(false);
  render();
  if(lim)showMsg('Zoom limitato dalla precisione a 64 bit');
 }
+
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&sel){endSel(false);e.preventDefault();}});
 let wheelT=0;
 cv.addEventListener('wheel',e=>{e.preventDefault();if(sel)return;startGesture();const [px,py]=toPx(e);zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(drawGesture);clearTimeout(wheelT);wheelT=setTimeout(endGesture,250);},{passive:false});
@@ -900,6 +1041,7 @@ function updateHud(){
  $('hudl').textContent='Centro '+fmt(S.view.cx,8)+(S.view.cy<0?' − ':' + ')+fmt(Math.abs(S.view.cy),8)+'i';
  $('hudr').textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
 }
+
 function pushHist(){hist.push({fam:S.fam,view:{...S.view},P:{...S.P[S.fam]}});if(hist.length>60)hist.shift();}
 function ctlRow(parent,o){
  const row=document.createElement('label');row.className='ctl';
@@ -1003,7 +1145,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.2.0',APP_VERSION_SHORT='1.2',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.3.0',APP_VERSION_SHORT='1.3',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 function getState(){
  const fam=S.fam,P={...S.P[fam]},v={cx:String(S.view.cx),cy:String(S.view.cy),span:+S.view.span,rot:0};

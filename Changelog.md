@@ -16,6 +16,26 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## [1.3.0] — 2026-11-21
+
+### Novità
+- Famiglia Newton estesa a funzioni trascendenti: sin z, cos z, tan z, sinh z, cosh z, eᶻ−a (a complesso), sin z − a·z (a regolabile).
+- Passi di Newton in forma chiusa dove possibile (z−tan z, z+cot z, z−sin(2z)/2, z−tanh z, z−coth z, z−1+a e^{−z}) con formule stabili anti-overflow.
+- Stati di uscita distinti: convergenza (tinta da radice/indice periodico), timeout (nero), divergenza (rosso), singolarità/NaN (magenta). kind 253/254.
+- Indice intero k per radici infinite (round(Re z/π) ecc.) mappato su 8 tinte cicliche della palette.
+- Preset dedicati e testo didattico su bacini a strisce e radici periodiche.
+- UI: «Esporta JSON» (ex Condividi stato) dopo «Nascondi pannello»; icone su Vista iniziale / Indietro / Zoom area.
+- Pan solo con tasto destro o pressione lunga (mobile); Zoom area solo rettangolo; cursore crosshair + coordinate live sotto il puntatore; dopo zoom rettangolare la modalità si spegne.
+
+### Correzioni
+- Guard-rail espliciti: |Δz|<1e-12, |f'|<1e-14 → singolarità, |z|>1e6 o non-finito → divergenza, maxIt → timeout.
+- nroots e colorize gestiscono sia polinomi finiti sia 8 canali ciclici per trascendenti senza collisione di kind.
+
+### Limiti noti
+- Formule di tan/cot/tanh/coth usano clamp su |Re|/|Im| ≤20 per stabilità; ai bordi estremi possono apparire artefatti.
+- Nessuna derivata analitica aggiuntiva per DE su trascendenti (de resta −1).
+- Verifica automatica 100 punti non eseguita in questo ambiente; consigliato test manuale sui preset nuovi.
+
 ## [1.2.0] — 2026-11-21
 
 ### Novità
