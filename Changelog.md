@@ -16,6 +16,27 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.6 — 21 novembre 2026
+
+### Novità
+- Cornici proiettate: in ogni vista M si vede il campo visivo delle altre viste N, disegnato su un overlay separato dal canvas (nessun ricalcolo dell'immagine). Il rettangolo matematico di N è proiettato in M con `worldToScreen`; con rotazione diversa da zero diventa un quadrilatero.
+- Ogni cornice ha il colore della vista N, contorno doppio (scuro e chiaro, leggibile su sfondi chiari e scuri) e un badge con l'identificativo («V2»).
+- Clipping sui bordi della vista (Sutherland–Hodgman): se la cornice esce in parte si disegnano solo i lati visibili (linea aperta a «C») con una freccia sul lato tagliato; se è tutta fuori resta una freccia sul bordo, verso N; se M è interamente dentro N, l'intera vista M ha un bordo tratteggiato col colore di N.
+- Aggiornamento in tempo reale durante pan, zoom e ricalcolo, con `requestAnimationFrame`.
+- Interruttore «Cornici» nella barra (compare con due viste, attivo all'avvio).
+- Funziona con tutte le famiglie, IFS e a densità comprese: le cornici dipendono solo dalle viste, non dal tipo di calcolo.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Rimossi i pulsanti + e − dalle singole viste; restano le scorciatoie da tastiera + e − (sulla vista attiva) e la rotella.
+- Una cornice più piccola di circa 10 px è ingrandita a 10 px attorno al suo centro, per restare visibile (non è più in scala).
+- Le frecce sui lati tagliati compaiono solo per lati lunghi almeno 28 px (al massimo 4).
+- Lo stato dell'interruttore «Cornici» non è salvato in JSON/URL: a ogni avvio è attivo.
+- Le cornici non sono incluse nel PNG esportato.
+- L'interfaccia non ha ancora controlli di rotazione: il caso rot≠0 è gestito dal codice ed è verificato sulle funzioni di calcolo, non dall'interfaccia.
+
 ## 1.5 — 21 novembre 2026
 
 ### Novità
