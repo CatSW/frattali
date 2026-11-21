@@ -16,6 +16,30 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.5 — 21 novembre 2026
+
+### Novità
+- Astrazione Viewport: ogni vista ha canvas, overlay, vista propria {cx, cy, span, rot}, buffer e cache (pre/full/CDF), generazione dei job e HUD. Lo stato frattale/colore resta unico e condiviso.
+- Controllo «Viste: 1 / 2». Due viste affiancate su schermo largo (orientamento orizzontale) o impilate su schermo stretto (verticale).
+- Vista attiva con bordo e badge nel colore della vista (4 colori fissi, assegnati per id). Tastiera (+ − R B F P), «Salva PNG», «Julia da qui» e «Tocca per scegliere c» agiscono sulla vista attiva; il pannello controlla tutte le viste.
+- Ogni vista ha pan, zoom, gesti e HUD propri; a layout 2 ha anche i pulsanti ⌂ + −. Creando la seconda vista si copia la vista attiva.
+- Pool di worker condiviso: i job portano `target` (id vista), i risultati sono instradati alla vista corretta, la cancellazione è per vista.
+- Cronologia con snapshot globale {views[], layout}: `B` annulla un'azione, anche il cambio di layout.
+- `getState` / `applyState`: `views[]` e `layout` ('1' o '2'); gli stati a una vista si caricano come prima.
+- Zoom a finestra con mouse: trascinando con il tasto sinistro sulla vista si disegna la finestra dal punto premuto a quello di rilascio, senza premere «Zoom area». Al rilascio fit del rettangolo (con `pushHist()`, limiti di precisione invariati); sotto 8 px non applica nulla. La pressione lunga resta il pan; touch e pulsante «Zoom area» invariati.
+
+### Correzioni
+- Il riavvio dei worker per risultati obsoleti rimette in coda i job validi ancora in corso, invece di perderli (con il pool condiviso avrebbe bloccato la seconda vista).
+- Nessun errore se mancano ResizeObserver, setPointerCapture o canvas.toBlob.
+- Il testo introduttivo citava «Maiusc + trascina», mai implementato: ora descrive il trascinamento col mouse.
+
+### Limiti noti
+- `rot` è presente nel modello della vista ma non viene ancora applicato (sempre 0).
+- A layout 2 il calcolo si raddoppia; Buddhabrot e Ultra restano pesanti su telefono.
+- Passando da 2 a 1 la seconda vista viene scartata; riaprendola si copia la vista attiva.
+- La vista attiva non è salvata in JSON/URL (al caricamento è la vista 1).
+- Cornici proiettate, layout a 4 e chiusura singola delle viste: release successive.
+
 ## [1.4.0] — 2026-11-21
 
 ### Novità
