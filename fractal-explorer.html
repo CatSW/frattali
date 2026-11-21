@@ -78,9 +78,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.3</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.3.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.3.0 · 21 novembre 2026</p>
+<p class="updated">Versione 1.3.5 · 21 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo usa «Zoom area» (su desktop anche Maiusc + trascina). Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -250,8 +250,8 @@ function computeBand(J){
     }
   } else {
     var co=J.co, nc=co?co.length/2:0, rt=J.roots, nr=rt?rt.length/2:0;
-    var ar=J.ar, ai=J.ai, tol=1e-12, nova=(fam===6), trans=J.trans|0, a0=J.a0||0, a1=J.a1||0;
-    var Rmax=1e6, dmin=1e-14, DIVK=254, SINGK=253;
+    var ar=J.ar, ai=J.ai, tol=(J.tol>0&&J.tol<1)?J.tol:1e-12, nova=(fam===6), trans=J.trans|0, a0=J.a0||0, a1=J.a1||0;
+    var Rmax=(J.Rmax>0)?J.Rmax:1e6, dmin=(J.dmin>0)?J.dmin:1e-14, ddmin=(J.ddmin>0)?J.ddmin:1e-30, rootTol=Math.max(1e-6,16*tol), DIVK=254, SINGK=253;
     for(var j2=r0;j2<r1;j2++){
       var py2=y0-j2*s;
       for(var i2=0;i2<W;i2++,k++){
@@ -268,12 +268,12 @@ function computeBand(J){
               var e2y=Math.exp(-2*Math.abs(xi)), t=Math.tan(xr), denT=1+e2y*e2y-2*e2y*Math.cos(2*xr); // approx
               // usa formula: tan(z) = sin(2x)/(cosh(2y)+cos(2x)) + i sinh(2y)/(cosh(2y)+cos(2x))
               var s2x=Math.sin(2*xr), c2x=Math.cos(2*xr), sh2y=Math.sinh(2*Math.min(20,Math.abs(xi)))*(xi>=0?1:-1), ch2y=Math.cosh(2*Math.min(20,Math.abs(xi)));
-              var dd=ch2y+c2x; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              var dd=ch2y+c2x; if(Math.abs(dd)<ddmin){exitk=SINGK;break;}
               fr=s2x/dd; fi=sh2y/dd;
               nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr; // a * tan
             } else if(trans===1){ // cos: z + cot z
               var s2x=Math.sin(2*xr), c2x=Math.cos(2*xr), sh2y=Math.sinh(2*Math.min(20,Math.abs(xi)))*(xi>=0?1:-1), ch2y=Math.cosh(2*Math.min(20,Math.abs(xi)));
-              var dd=ch2y-c2x; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              var dd=ch2y-c2x; if(Math.abs(dd)<ddmin){exitk=SINGK;break;}
               fr=s2x/dd; fi=-sh2y/dd; // cot = cos/sin ~ 
               // cot z = sin(2x)/(cosh(2y)-cos(2x)) - i sinh(2y)/(...)
               nzx=xr+ar*fr-ai*fi; nzy=xi+ar*fi+ai*fr;
@@ -285,13 +285,13 @@ function computeBand(J){
               // tanh z = sinh(2x)/(cosh(2x)+cos(2y)) + i sin(2y)/(...)
               var sh2x=Math.sinh(2*Math.min(20,Math.abs(xr)))*(xr>=0?1:-1), ch2x=Math.cosh(2*Math.min(20,Math.abs(xr)));
               var s2y=Math.sin(2*xi), c2y=Math.cos(2*xi);
-              var dd=ch2x+c2y; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              var dd=ch2x+c2y; if(Math.abs(dd)<ddmin){exitk=SINGK;break;}
               fr=sh2x/dd; fi=s2y/dd;
               nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr;
             } else if(trans===4){ // cosh: z - coth z
               var sh2x=Math.sinh(2*Math.min(20,Math.abs(xr)))*(xr>=0?1:-1), ch2x=Math.cosh(2*Math.min(20,Math.abs(xr)));
               var s2y=Math.sin(2*xi), c2y=Math.cos(2*xi);
-              var dd=ch2x-c2y; if(Math.abs(dd)<1e-30){exitk=SINGK;break;}
+              var dd=ch2x-c2y; if(Math.abs(dd)<ddmin){exitk=SINGK;break;}
               fr=sh2x/dd; fi=-s2y/dd;
               nzx=xr-ar*fr+ai*fi; nzy=xi-ar*fi-ai*fr;
             } else if(trans===5){ // e^z - a : z - 1 + a e^{-z}
@@ -355,7 +355,7 @@ function computeBand(J){
           } else {
             var best=-1,bd=1e30;
             for(var r=0;r<nr;r++){var ex2=zx2-rt[2*r], ey2=zy2-rt[2*r+1], e2=ex2*ex2+ey2*ey2; if(e2<bd){bd=e2;best=r;}}
-            kind[k]=(best>=0&&bd<1e-6)?2+best:1;
+            kind[k]=(best>=0&&bd<rootTol)?2+best:1;
           }
         } else {mu[k]=0;kind[k]=exitk;}
       }
@@ -578,6 +578,7 @@ const S={fam:'mandel',P:{},views:{},view:null,iterBase:{},auto:true,qual:'normal
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0};S.iterBase[f]=FAM[f].iter;S.views[f]={...FAM[f].view};}
 
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
+S.nw={}; // override soglie Newton (solo campi diversi dal default, già validati)
 S.view=S.views.julia;
 const hist=[];
 
@@ -654,6 +655,8 @@ function colorize(B){
  const inc=hex(S.incol); let nroots=1; if(isNewton){const pp=POLYS[S.P.newton.poly];nroots=pp.c?pp.c.length-1:8;}
  const mu=B.mu,de=B.de,tp=B.tp,tx=B.tx,kind=B.kind,h=B.h,t=B.t,b=B.b,fl=B.fl;
  const DIV_KIND=254, SING_KIND=253; // divergenza rosso, singolarità magenta
+ const nwc=isNewton&&S.nw?S.nw:{};
+ const dvc=(nwc.divergenceColor?hex(nwc.divergenceColor).map(x=>Math.round(x*255)):[220,30,30]), sgc=(nwc.singularityColor?hex(nwc.singularityColor).map(x=>Math.round(x*255)):[220,40,200]);
 
  let lmax=1; if(isIFS){lmax=Math.log1p(B.max||1);}
  const cdf=B.cdf;
@@ -717,8 +720,8 @@ function colorize(B){
   for(let i=0;i<W;i++){
    const p=row+i,q=p*4;
    if(fl[p]){
-    if(fl[p]===2){D[q]=220;D[q+1]=30;D[q+2]=30;D[q+3]=255;} // divergenza rosso
-    else if(fl[p]===3){D[q]=220;D[q+1]=40;D[q+2]=200;D[q+3]=255;} // singolarità magenta
+    if(fl[p]===2){D[q]=dvc[0];D[q+1]=dvc[1];D[q+2]=dvc[2];D[q+3]=255;} // divergenza rosso
+    else if(fl[p]===3){D[q]=sgc[0];D[q+1]=sgc[1];D[q+2]=sgc[2];D[q+3]=255;} // singolarità magenta
     else {D[q]=inc[0]*255;D[q+1]=inc[1]*255;D[q+2]=inc[2]*255;D[q+3]=255;}
     continue;
    }
@@ -809,6 +812,10 @@ function baseJob(W,H){
   const pp=POLYS[P.poly];
   if(pp.c){const c=pp.c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=findRoots(c);J.roots=new Float64Array(r.flat());J.trans=-1;}
   else {J.trans=pp.trans;J.a0=P.a0;J.a1=P.a1;J.co=null;J.roots=null;}
+  const nw=S.nw||{};
+  if(nw.divergenceRadius)J.Rmax=nw.divergenceRadius;
+  if(nw.convergenceTolerance)J.tol=nw.convergenceTolerance*nw.convergenceTolerance;
+  if(nw.minDerivativeThreshold){J.dmin=nw.minDerivativeThreshold;J.ddmin=2*nw.minDerivativeThreshold*nw.minDerivativeThreshold;}
  }
 
  if(S.fam==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
@@ -1042,7 +1049,7 @@ function updateHud(){
  $('hudr').textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
 }
 
-function pushHist(){hist.push({fam:S.fam,view:{...S.view},P:{...S.P[S.fam]}});if(hist.length>60)hist.shift();}
+function pushHist(){hist.push({fam:S.fam,view:{...S.view},P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
 function ctlRow(parent,o){
  const row=document.createElement('label');row.className='ctl';
  row.innerHTML='<span class="cl"></span><input type="range"><input type="number" step="any">';
@@ -1086,7 +1093,7 @@ function buildParams(){
 }
 function scheduleRender(ms){clearTimeout(renderPending);renderPending=setTimeout(render,ms);}
 function setFam(f,keepView){
- S.fam=f;$('fam').value=f;S.view=keepView?S.view:S.views[f];buildParams();
+ S.fam=f;$('fam').value=f;S.view=keepView?S.view:S.views[f];if(!keepView)S.nw={};buildParams();
  if(f==='ifs')fitIFS();
 }
 function applyStyle(k){
@@ -1095,7 +1102,7 @@ function applyStyle(k){
  $('style').value=k;syncColorUI();buildLUT();
 }
 function applyPreset(i){
- const p=FAM[S.fam].presets[i];if(!p)return;pushHist();
+ const p=FAM[S.fam].presets[i];if(!p)return;pushHist();S.nw={};
  if(p.p)Object.assign(S.P[S.fam],p.p);
  if(S.fam==='ifs'){buildParams();fitIFS();}
  else {S.view={...(p.view||FAM[S.fam].view)};S.views[S.fam]=S.view;buildParams();}
@@ -1145,14 +1152,63 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.3.0',APP_VERSION_SHORT='1.3',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.3.5',APP_VERSION_SHORT='1.3.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
+/* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
+const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
+const NW_RANGE={divergenceRadius:[1,1e12],convergenceTolerance:[1e-12,1e-2],minDerivativeThreshold:[1e-20,1]};
+const NW_KEYS=['divergenceRadius','convergenceTolerance','minDerivativeThreshold'];
+function nwNum(v){return ((typeof v==='number')||(typeof v==='string'&&v.trim()!==''))&&isFinite(+v)?+v:null;}
+function nwNorm(s){return String(s).toLowerCase().replace(/\s+/g,'').replace(/−/g,'-').replace(/·/g,'*').replace(/ᶻ/g,'z');}
+function nwFn(v){
+ if(typeof v==='number'||(typeof v==='string'&&/^\s*\d+\s*$/.test(v))){const i=Math.round(+v);return (i>=0&&i<POLYS.length)?i:-1;}
+ if(typeof v!=='string')return -1;
+ const t=nwNorm(v);
+ for(let i=0;i<POLYS.length;i++)if(nwNorm(POLYS[i].name).replace(/\(.*\)$/,'')===t)return i;
+ const AL={sin:6,cos:7,tan:8,sinh:9,cosh:10,exp:11,'exp-a':11,'e^z-a':11,'sin-az':12,'sinz-az':12,sinaz:12};
+ return t in AL?AL[t]:-1;
+}
+function nwA(v){
+ let re,im=0;
+ if(Array.isArray(v)){re=v[0];im=v.length>1?v[1]:0;}
+ else if(v&&typeof v==='object'){re=v.re!=null?v.re:v.a0;im=v.im!=null?v.im:(v.a1!=null?v.a1:0);}
+ else re=v;
+ re=nwNum(re);im=nwNum(im);
+ return (re===null||im===null)?null:[clamp(re,-2,2),clamp(im,-2,2)];
+}
+// legge obj.newton: applica fn/a su P (copia) e restituisce le soglie diverse dal default; non solleva eccezioni
+function nwParse(src,P){
+ const out={};
+ try{
+  if(!src||typeof src!=='object'||Array.isArray(src))return out;
+  if(src.fn!=null){const i=nwFn(src.fn);if(i>=0)P.poly=i;}
+  if(src.a!=null){const a=nwA(src.a);if(a){P.a0=a[0];P.a1=a[1];}}
+  for(const k of NW_KEYS){
+   if(src[k]==null)continue;const n=nwNum(src[k]);if(n===null)continue;
+   const v=clamp(n,NW_RANGE[k][0],NW_RANGE[k][1]);
+   if(v!==NW_DEF[k])out[k]=v;
+  }
+  for(const k of ['divergenceColor','singularityColor']){
+   const c=src[k];if(typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c)){const l=c.toLowerCase();if(l!==NW_COL[k])out[k]=l;}
+  }
+ }catch(e){return {};}
+ return out;
+}
+const NW_COL={divergenceColor:'#dc1e1e',singularityColor:'#dc28c8'};
+// blocco da esportare: solo soglie/colori diversi dal default (undefined se nessuno); fn e a viaggiano già in P.poly / P.a0 / P.a1
+function nwExport(){
+ const b={};
+ const nw=S.nw||{};
+ for(const k of NW_KEYS.concat(['divergenceColor','singularityColor']))if(nw[k]!==undefined)b[k]=nw[k];
+ return Object.keys(b).length?b:undefined;
+}
 function getState(){
  const fam=S.fam,P={...S.P[fam]},v={cx:String(S.view.cx),cy:String(S.view.cy),span:+S.view.span,rot:0};
  const st={v:1,fam,layout:'1',views:[v],P,iterBase:S.iterBase[fam],auto:!!S.auto,qual:S.qual,
   pal:S.pal,mode:S.mode,inmode:S.inmode,incol:S.incol,dens:+S.dens,off:+S.off,glow:+S.glow,
   light:+S.light,az:+S.az,el:+S.el,relief:+S.relief,shin:+S.shin,irid:+S.irid};
  if(S.pal==='custom')st.custom=PALS.custom.c.slice();
+ if(fam==='newton'){const nb=nwExport();if(nb)st.newton=nb;}
  return st;
 }
 function clamp(v,lo,hi){v=+v;if(!isFinite(v))return lo;return Math.min(hi,Math.max(lo,v));}
@@ -1173,6 +1229,7 @@ function applyState(obj){
   if(d&&d.options){v=Math.round(+v);if(v<0||v>=d.options.length)v=0;}
   else if(d){v=clamp(v,d.min,d.max);if(d.step===1)v=Math.round(v);}
   else v=+v; if(isFinite(v))P[k]=v;}}
+ const nw=fam==='newton'?nwParse(obj.newton,P):{};
  let iterBase=obj.iterBase!=null?Math.round(clamp(obj.iterBase,20,50000)):S.iterBase[fam];
  const auto=obj.auto!=null?!!obj.auto:S.auto;
  const qual=['veloce','normale','alta','ultra'].includes(obj.qual)?obj.qual:S.qual;
@@ -1194,7 +1251,7 @@ function applyState(obj){
  const irid=clamp(obj.irid!=null?obj.irid:S.irid,0,0.6);
  // applica
  pushHist();
- S.P[fam]=P; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
+ S.P[fam]=P; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
  S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
  S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid;
  S.view={cx,cy,span}; S.views[fam]=S.view;
@@ -1273,7 +1330,7 @@ function buildShareLink(){
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
 $('reset').addEventListener('click',()=>{pushHist();if(S.fam==='ifs')fitIFS();else{S.view={...FAM[S.fam].view};S.views[S.fam]=S.view;}render();});
-$('back').addEventListener('click',()=>{const h=hist.pop();if(!h)return;if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;}S.P[h.fam]=h.P;S.view=h.view;S.views[h.fam]=h.view;buildParams();render();});
+$('back').addEventListener('click',()=>{const h=hist.pop();if(!h)return;if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;}S.P[h.fam]=h.P;S.nw=h.nw?{...h.nw}:{};S.view=h.view;S.views[h.fam]=h.view;buildParams();render();});
 function zoomStep(f){pushHist();S.view={...S.view,span:S.view.span/f};S.views[S.fam]=S.view;render();}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
 $('tojulia').addEventListener('click',()=>{const c=screenToWorld(S.view,cv.width,cv.height,cv.width/2,cv.height/2);juliaFrom(c[0],c[1]);});

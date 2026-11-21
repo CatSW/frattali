@@ -16,6 +16,23 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.3.5 — 21 novembre 2026
+
+### Novità
+- Stato JSON e link `?s=`: nuovo blocco opzionale `newton` con `fn`, `a`, `divergenceRadius`, `convergenceTolerance`, `minDerivativeThreshold`, `divergenceColor`, `singularityColor`. Campo assente → default del codice; valori fuori range → clamp; valori non validi → ignorati.
+- `getState()` e l'esportazione JSON includono in `newton` solo soglie e colori diversi dal default.
+- Soglie del kernel di Newton (raggio di divergenza, tolleranza, soglia sulla derivata) e colori di divergenza/singolarità resi parametrizzabili. Default invariati: JSON e link precedenti producono la stessa immagine.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Nessun controllo UI per le soglie: si impostano solo via «Condividi» (JSON).
+- Gli override si azzerano con preset e cambio famiglia; il cambio di funzione dal menu li mantiene.
+- `minDerivativeThreshold` non ha effetto su tan e eᶻ−a.
+- Con tolleranze molto alte, nei polinomi la soglia di riconoscimento della radice si allarga (16 × tolleranza al quadrato, minimo 1e-6).
+- Nova: il kernel la fa passare dal ramo trascendente (`J.trans` indefinito → 0), come nella 1.3. Non toccato in questa release.
+
 ## [1.3.0] — 2026-11-21
 
 ### Novità
