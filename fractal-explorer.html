@@ -78,9 +78,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.3.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.4</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.3.5 · 21 novembre 2026</p>
+<p class="updated">Versione 1.4 · 21 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo usa «Zoom area» (su desktop anche Maiusc + trascina). Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -364,6 +364,54 @@ function computeBand(J){
 
   return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
 }
+function computeMS(J){
+  // Mariani-Silver: perimeter first; if all interior (kind===1) and fillFlat, fill block; else recurse to 4 or direct
+  var W=J.W,H=J.H,fillFlat=!!J.fillFlat,minS=4;
+  if(W<=minS||H<=minS||!J.ms)return computeBand(J);
+  // compute only borders by 4 thin jobs (reuse computeBand on thin rects)
+  function borderJob(x0,y0,tw,th){
+    var Jj=Object.assign({},J,{W:tw,H:th,x0:x0,y0:y0,r0:0,r1:th,ms:false});
+    return computeBand(Jj);
+  }
+  var s=J.s, x0=J.x0, y0=J.y0;
+  // top
+  var top=borderJob(x0,y0,W,1);
+  // bottom
+  var bot=borderJob(x0,y0-(H-1)*s,W,1);
+  // left (excluding corners already done)
+  var left=H>2?borderJob(x0,y0-s,1,H-2):{kind:new Uint8Array(0)};
+  // right
+  var right=H>2?borderJob(x0+(W-1)*s,y0-s,1,H-2):{kind:new Uint8Array(0)};
+  var allIn=true;
+  for(var i=0;i<W;i++){if(top.kind[i]!==1||bot.kind[i]!==1){allIn=false;break;}}
+  if(allIn)for(var j=0;j<left.kind.length;j++){if(left.kind[j]!==1||right.kind[j]!==1){allIn=false;break;}}
+  if(allIn&&fillFlat){
+    var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n);
+    for(var p=0;p<n;p++){kind[p]=1;tp[p]=1e-6;tx[p]=1e-6;}
+    return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
+  }
+  // recurse 4 quadrants
+  var hw=W>>1,hh=H>>1;
+  if(hw<minS||hh<minS)return computeBand(J);
+  var q1=computeMS(Object.assign({},J,{W:hw,H:hh,x0:x0,y0:y0,ms:true,fillFlat:fillFlat}));
+  var q2=computeMS(Object.assign({},J,{W:W-hw,H:hh,x0:x0+hw*s,y0:y0,ms:true,fillFlat:fillFlat}));
+  var q3=computeMS(Object.assign({},J,{W:hw,H:H-hh,x0:x0,y0:y0-hh*s,ms:true,fillFlat:fillFlat}));
+  var q4=computeMS(Object.assign({},J,{W:W-hw,H:H-hh,x0:x0+hw*s,y0:y0-hh*s,ms:true,fillFlat:fillFlat}));
+  // merge
+  var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n);
+  function blit(src,ox,oy,sw,sh){
+    for(var jj=0;jj<sh;jj++){
+      var so=jj*sw, do_=(oy+jj)*W+ox;
+      mu.set(src.mu.subarray(so,so+sw),do_);
+      de.set(src.de.subarray(so,so+sw),do_);
+      tp.set(src.tp.subarray(so,so+sw),do_);
+      tx.set(src.tx.subarray(so,so+sw),do_);
+      kind.set(src.kind.subarray(so,so+sw),do_);
+    }
+  }
+  blit(q1,0,0,hw,hh);blit(q2,hw,0,W-hw,hh);blit(q3,0,hh,hw,H-hh);blit(q4,hw,hh,W-hw,H-hh);
+  return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
+}
 function computeIFS(J){
   var W=J.W,H=J.H,cnt=new Float32Array(W*H),col=new Float32Array(W*H);
   var m=J.maps, nm=m.length/7, cum=J.cum, x=0,y=0,c=0.5, seed=J.seed>>>0||1;
@@ -404,7 +452,10 @@ if(typeof importScripts==='function'){
   self.onmessage=function(e){
     var J=e.data;
     if(J.type==='ifs'||J.type==='buddha'){var R=J.type==='ifs'?computeIFS(J):computeBuddha(J); self.postMessage({id:J.id,type:'ifs',cnt:R.cnt,col:R.col},[R.cnt.buffer,R.col.buffer]);}
-    else {var B=computeBand(J); self.postMessage({id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,mu:B.mu,de:B.de,tp:B.tp,tx:B.tx,kind:B.kind},[B.mu.buffer,B.de.buffer,B.tp.buffer,B.tx.buffer,B.kind.buffer]);}
+    else {
+      var B=J.ms?computeMS(J):computeBand(J);
+      self.postMessage({id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,mu:B.mu,de:B.de,tp:B.tp,tx:B.tx,kind:B.kind},[B.mu.buffer,B.de.buffer,B.tp.buffer,B.tx.buffer,B.kind.buffer]);
+    }
   };
 }
 </script>
@@ -413,7 +464,7 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,computeIFS:computeIFS,computeBuddha:computeBuddha};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha};')();
 
 /* ---------- definizioni ---------- */
 const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
@@ -534,14 +585,14 @@ const PARAMDEF={
  ci:{label:'Im c / Im p',min:-2,max:2,step:0.0001},
  qr:{label:'Re q',min:-1.5,max:1.5,step:0.0001},
  qi:{label:'Im q',min:-1.5,max:1.5,step:0.0001},
- ar:{label:'Re a',min:0.1,max:2,step:0.01},
- ai:{label:'Im a',min:-1,max:1,step:0.01},
+ ar:{label:'Rilassamento Re a',min:0.1,max:2,step:0.01},
+ ai:{label:'Rilassamento Im a',min:-1,max:1,step:0.01},
  n:{label:'Grado n',min:3,max:8,step:1},
  v:{label:'Variante',options:['Burning Ship','Celtic','Perpendicolare','Nave perpendicolare','Heart']},
  jul:{label:'Modo',options:['Mandelbrot (c = pixel)','Julia (c fisso)']},
  poly:{label:'Funzione',options:POLYS.map(p=>p.name)},
- a0:{label:'Re a',min:-2,max:2,step:0.01},
- a1:{label:'Im a',min:-2,max:2,step:0.01},
+ a0:{label:'Parametro Re a',min:-2,max:2,step:0.01},
+ a1:{label:'Parametro Im a',min:-2,max:2,step:0.01},
 
  ifs:{label:'Figura',options:IFSS.map(p=>p.name)}
 };
@@ -640,12 +691,13 @@ function buildLUT(){
 }
 
 /* ---------- buffer e colorazione ---------- */
-function newBuf(W,H){const n=W*H;return {W,H,mu:new Float32Array(n),de:new Float32Array(n),tp:new Float32Array(n),tx:new Float32Array(n),kind:new Uint8Array(n),done:new Uint8Array(H),h:new Float32Array(n),t:new Float32Array(n),b:new Float32Array(n),fl:new Uint8Array(n),img:null,cv:null,cdf:null,max:0,s:1};}
+function newBuf(W,H){const n=W*H;return {W,H,mu:new Float32Array(n),de:new Float32Array(n),tp:new Float32Array(n),tx:new Float32Array(n),kind:new Uint8Array(n),done:new Uint8Array(n),h:new Float32Array(n),t:new Float32Array(n),b:new Float32Array(n),fl:new Uint8Array(n),img:null,cv:null,cdf:null,max:0,s:1};}
 function buildCDF(B){
  const NB=2048, hgm=new Float64Array(NB); let lo=1e30,hi=-1e30,cnt=0;
- for(let j=0;j<B.H;j++){if(!B.done[j])continue;for(let i=0;i<B.W;i++){const p=j*B.W+i;if(B.kind[p]===0){const v=Math.log(1+B.mu[p]);if(v<lo)lo=v;if(v>hi)hi=v;}}}
+ const n=B.W*B.H;
+ for(let p=0;p<n;p++){if(!B.done[p]||B.kind[p]!==0)continue;const v=Math.log(1+B.mu[p]);if(v<lo)lo=v;if(v>hi)hi=v;}
  if(!(hi>lo)){B.cdf=null;return;}
- for(let j=0;j<B.H;j++){if(!B.done[j])continue;for(let i=0;i<B.W;i++){const p=j*B.W+i;if(B.kind[p]===0){const v=Math.log(1+B.mu[p]);hgm[Math.min(NB-1,Math.floor((v-lo)/(hi-lo)*NB))]++;cnt++;}}}
+ for(let p=0;p<n;p++){if(!B.done[p]||B.kind[p]!==0)continue;const v=Math.log(1+B.mu[p]);hgm[Math.min(NB-1,Math.floor((v-lo)/(hi-lo)*NB))]++;cnt++;}
  const cdf=new Float32Array(NB+1);let acc=0;for(let i=0;i<NB;i++){acc+=hgm[i];cdf[i+1]=acc/cnt;}
  B.cdf={cdf,lo,hi,NB};
 }
@@ -661,9 +713,9 @@ function colorize(B){
  let lmax=1; if(isIFS){lmax=Math.log1p(B.max||1);}
  const cdf=B.cdf;
  for(let j=0;j<H;j++){
-  if(!B.done[j])continue;
   for(let i=0;i<W;i++){
-   const p=j*W+i,k=kind[p];
+   const p=j*W+i; if(!B.done[p])continue;
+   const k=kind[p];
    fl[p]=0;
    if(isIFS){
     const c=mu[p]; if(c<=0){fl[p]=1;h[p]=0;continue;}
@@ -715,10 +767,10 @@ function colorize(B){
  const D=B.img.data;
  for(let j=0;j<H;j++){
   const row=j*W;
-  if(!B.done[j]){for(let i=0;i<W;i++)D[(row+i)*4+3]=0;continue;}
-  const ju=(j>0&&B.done[j-1])?-W:0, jd=(j<H-1&&B.done[j+1])?W:0;
+  const ju=j>0?-W:0, jd=j<H-1?W:0;
   for(let i=0;i<W;i++){
    const p=row+i,q=p*4;
+   if(!B.done[p]){D[q+3]=0;continue;}
    if(fl[p]){
     if(fl[p]===2){D[q]=dvc[0];D[q+1]=dvc[1];D[q+2]=dvc[2];D[q+3]=255;} // divergenza rosso
     else if(fl[p]===3){D[q]=sgc[0];D[q+1]=sgc[1];D[q+2]=sgc[2];D[q+3]=255;} // singolarità magenta
@@ -728,7 +780,7 @@ function colorize(B){
 
    let tt=t[p],r,g,bl;
    if(L>0||irid>0){
-    const pl=(i>0&&!fl[p-1])?p-1:p,pr=(i<W-1&&!fl[p+1])?p+1:p,pu=!fl[p+ju]?p+ju:p,pd=!fl[p+jd]?p+jd:p;
+    const pl=(i>0&&B.done[p-1]&&!fl[p-1])?p-1:p,pr=(i<W-1&&B.done[p+1]&&!fl[p+1])?p+1:p,pu=(ju&&B.done[p+ju]&&!fl[p+ju])?p+ju:p,pd=(jd&&B.done[p+jd]&&!fl[p+jd])?p+jd:p;
     const gx=(h[pr]-h[pl])/((pr-pl)||1),gy=(h[pd]-h[pu])/(((pd-pu)/W)||1);
     const gm=Math.hypot(gx,gy);let nx=0,ny=0,nz=1;
     if(gm>0){const mm=ra*Math.log(1+gm*bump/0.004);nx=-gx/gm*mm;ny=-gy/gm*mm;const nn=Math.hypot(nx,ny,1);nx/=nn;ny/=nn;nz=1/nn;}
@@ -756,7 +808,8 @@ function colorize(B){
 }
 
 /* ---------- worker ---------- */
-let workers=[],useWorkers=true,jobId=0,queue=[],busy=[],passes=null;
+const TILE_SIZE=64, MS_ENABLE=true, MS_MIN=4, MS_FAMS={mandel:1,julia:1,tricorn:1};
+let workers=[],useWorkers=true,jobId=0,queue=[],busy=[],passes=null, staleMs=0;
 function initWorkers(){
  try{
   const url=URL.createObjectURL(new Blob([SRC],{type:'text/javascript'}));
@@ -769,7 +822,7 @@ function pump(){
  if(useWorkers){
   for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'){const X=J.type==='ifs'?LIB.computeIFS(J):LIB.computeBuddha(J);R={id:J.id,type:'ifs',cnt:X.cnt,col:X.col};}else{const B=LIB.computeBand(J);R={id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'){const X=J.type==='ifs'?LIB.computeIFS(J):LIB.computeBuddha(J);R={id:J.id,type:'ifs',cnt:X.cnt,col:X.col};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
  }
 }
 
@@ -821,26 +874,55 @@ function baseJob(W,H){
  if(S.fam==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
  return J;
 }
+function makeTileJobs(B,pass,id){
+ const J0=baseJob(B.W,B.H);
+ const ts=pass===0?Math.max(16,Math.min(TILE_SIZE,Math.floor(B.W/4))):TILE_SIZE;
+ const ms=!!(MS_ENABLE && MS_FAMS[S.fam] && S.inmode==='flat');
+ const fillFlat=S.inmode==='flat';
+ const tiles=[];
+ const cx=B.W/2,cy=B.H/2;
+ for(let tj=0;tj<B.H;tj+=ts)for(let ti=0;ti<B.W;ti+=ts){
+  const tw=Math.min(ts,B.W-ti),th=Math.min(ts,B.H-tj);
+  const midx=ti+tw/2,midy=tj+th/2;
+  tiles.push({ti,tj,tw,th,dist:(midx-cx)*(midx-cx)+(midy-cy)*(midy-cy)});
+ }
+ tiles.sort((a,b)=>a.dist-b.dist);
+ const jobs=[];
+ const s=J0.s;
+ for(const t of tiles){
+  const x0=J0.x0+t.ti*s, y0=J0.y0-t.tj*s;
+  jobs.push({...J0,W:t.tw,H:t.th,x0,y0,r0:0,r1:t.th,id,pass,target:0,oi:t.ti,oj:t.tj,ms:ms&&t.tw>=MS_MIN&&t.th>=MS_MIN,fillFlat});
+ }
+ return jobs;
+}
 function render(){
  clearTimeout(renderPending);
- const id=++jobId;queue=[];
+ const id=++jobId;queue=[];staleMs=0;
  const {W,H}=dims();
  cv.width=W;cv.height=H;t0=performance.now();{const rr=cv.getBoundingClientRect();lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
  if(S.fam==='ifs'||S.fam==='buddha'){renderIFS(id,W,H);return;}
  const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
  const pre=newBuf(pw,ph),full=newBuf(W,H);cur={pre,full,id,W,H,left:0};
- const mk=(B,pass)=>{const J=baseJob(B.W,B.H);const nb=Math.max(1,(useWorkers?workers.length:1)*6);const bh=Math.max(2,Math.ceil(B.H/nb));const jobs=[];for(let r=0;r<B.H;r+=bh){jobs.push({...J,id,pass,r0:r,r1:Math.min(B.H,r+bh)});}return jobs;};
- const j1=mk(pre,0),j2=mk(full,1);cur.left0=j1.length;cur.left1=j2.length;cur.n1=j2.length;
+ const j1=makeTileJobs(pre,0,id),j2=makeTileJobs(full,1,id);
+ cur.left0=j1.length;cur.left1=j2.length;cur.n1=j2.length;
  queue=j1.concat(j2);pump();
  setStatus('Calcolo…');updateHud();
 }
 function onResult(wi,R){
  if(wi>=0)busy[wi]=false;
- if(R.id!==jobId){pump();return;}
+ if(R.id!==jobId){staleMs+=16;if(staleMs>800){fallbackWorkers();staleMs=0;}pump();return;}
  if(R.type==='ifs'){onIFS(R);pump();return;}
- const B=R.pass===0?cur.pre:cur.full,o=R.r0*B.W;
- B.mu.set(R.mu,o);B.de.set(R.de,o);B.tp.set(R.tp,o);B.tx.set(R.tx,o);B.kind.set(R.kind,o);
- for(let r=R.r0;r<R.r1;r++)B.done[r]=1;
+ const B=R.pass===0?cur.pre:cur.full;
+ const oi=R.oi|0,oj=R.oj|0,tw=R.W,th=R.H;
+ for(let jj=0;jj<th;jj++){
+  const src=jj*tw,dst=(oj+jj)*B.W+oi;
+  B.mu.set(R.mu.subarray(src,src+tw),dst);
+  B.de.set(R.de.subarray(src,src+tw),dst);
+  B.tp.set(R.tp.subarray(src,src+tw),dst);
+  B.tx.set(R.tx.subarray(src,src+tw),dst);
+  B.kind.set(R.kind.subarray(src,src+tw),dst);
+  for(let ii=0;ii<tw;ii++)B.done[dst+ii]=1;
+ }
  if(R.pass===0){if(--cur.left0===0){buildCDF(cur.pre);colorize(cur.pre);draw();}}
  else {
   cur.left1--;
@@ -849,6 +931,16 @@ function onResult(wi,R){
   else scheduleProgress();
  }
  pump();
+}
+function fallbackWorkers(){
+ if(!useWorkers)return;
+ workers.forEach(w=>{try{w.terminate();}catch(_){}});
+ workers=[];busy=[];
+ try{
+  const url=URL.createObjectURL(new Blob([SRC],{type:'text/javascript'}));
+  const n=Math.max(2,Math.min(16,(navigator.hardwareConcurrency||4)-1));
+  for(let i=0;i<n;i++){const w=new Worker(url);w.onmessage=e=>onResult(i,e.data);w.onerror=()=>{useWorkers=false;};workers.push(w);busy.push(false);}
+ }catch(e){useWorkers=false;}
 }
 let progT=0;
 function scheduleProgress(){if(progT)return;progT=setTimeout(()=>{progT=0;if(cur.full&&cur.left1>0){colorize(cur.full);draw();setStatus('Calcolo… '+Math.round(100*(1-cur.left1/cur.n1))+'%');}},Math.max(120,cur.W*cur.H/10000));}
@@ -881,7 +973,7 @@ function fitIFS(){
  FAM.ifs.view={...S.view};
 }
 function renderIFS(id,W,H){
- const full=newBuf(W,H);full.done.fill(1);full.kind.fill(1);cur={pre:null,full,id,W,H,left1:0,n1:1};
+ const full=newBuf(W,H);full.done.fill(1);full.kind.fill(1);cur={pre:null,full,id,W,H,left1:0,n1:1}; // done already 1 for all px
  const bd=S.fam==='buddha',{maps,cum}=bd?{}:ifsMaps(),s=S.view.span/H;
  const target=bd?Math.min(5e7,W*H*30):W*H*14,nw=useWorkers?workers.length:1,per=bd?4e5:Math.ceil(Math.min(1.5e6,target/(nw*6)));
  cur.ifsLeft=target;cur.ifsPer=per;cur.ifsBase={type:bd?'buddha':'ifs',id,W,H,maps,cum,maxIt:curIter(),n:per,x0:S.view.cx-W/2*s,y0:S.view.cy+H/2*s,s};cur.seed=1;cur.inflight=0;
@@ -1074,9 +1166,14 @@ function selRow(parent,label,opts,get,set){
 let paramRows=[];
 function buildParams(){
  const box=$('params');box.innerHTML='';paramRows=[];const P=S.P[S.fam];
+ const needsA = S.fam==='newton' && (P.poly===11 || P.poly===12);
  for(const k of FAM[S.fam].params){
+  if((k==='a0'||k==='a1') && !needsA) continue;
   const d=PARAMDEF[k];
-  if(d.options){selRow(box,d.label,d.options,()=>P[k],v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();}render();});continue;}
+  if(d.options){
+   const onPoly = k==='poly' ? (v=>{pushHist();P[k]=v;buildParams();render();}) : (v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();}render();});
+   selRow(box,d.label,d.options,()=>P[k],onPoly);continue;
+  }
   let label=d.label;
   const jl=S.fam==='julia'||S.fam==='ship'||S.fam==='magnet';if(jl&&k==='cr')label='Re c';if(jl&&k==='ci')label='Im c';
   if(S.fam==='phoenix'&&k==='cr')label='Re p';if(S.fam==='phoenix'&&k==='ci')label='Im p';
@@ -1152,7 +1249,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.3.5',APP_VERSION_SHORT='1.3.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.4',APP_VERSION_SHORT='1.4',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};

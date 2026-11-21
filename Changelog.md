@@ -16,7 +16,24 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
-## 1.3.5 — 21 novembre 2026
+## [1.4.0] — 2026-11-21
+
+### Novità
+- Motore di calcolo a tile quadrati (64×64) ordinati dal centro verso l’esterno, con campo `target` e numero di generazione per cancellazione immediata della coda.
+- Suddivisione Mariani-Silver sui tile (solo famiglie mandel/julia/tricorn, e solo con `inmode === 'flat'`): perimetro prima, riempimento dell’interno se tutto interno, altrimenti ricorsione fino a 4×4.
+- Costante `MS_ENABLE` per disabilitare Mariani-Silver e confrontare il risultato.
+- Parametri Newton: etichette distinte «Rilassamento Re/Im a» vs «Parametro Re/Im a»; i controlli `a0`/`a1` compaiono solo per `eᶻ − a` e `sin z − a·z`.
+
+### Correzioni
+- Visibilità e naming dei parametri di Newton resi coerenti con l’uso effettivo della funzione.
+- Scarto affidabile dei risultati obsoleti e ricreazione del pool worker in caso di troppo lavoro stale.
+
+### Limiti noti
+- Mariani-Silver non è ancora attivo su Burning Ship, Phoenix, Magnet, Nova, Newton (solo le famiglie classiche a iterazione z²/zᵈ).
+- Il riempimento flat dell’interno non si applica quando `inmode` è `tp` o `tx` (trappole).
+- Su dispositivi molto deboli la ricorsione MS su tile grandi può essere più lenta del calcolo diretto; usare `MS_ENABLE=false` per confronto.
+
+## 1.3.5 — 2026-11-21
 
 ### Novità
 - Stato JSON e link `?s=`: nuovo blocco opzionale `newton` con `fn`, `a`, `divergenceRadius`, `convergenceTolerance`, `minDerivativeThreshold`, `divergenceColor`, `singularityColor`. Campo assente → default del codice; valori fuori range → clamp; valori non validi → ignorati.
