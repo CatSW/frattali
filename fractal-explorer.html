@@ -41,6 +41,7 @@ a.tbtn{display:inline-block;text-decoration:none}
 .vp>canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .vov{position:absolute;inset:0;pointer-events:none}
 .l2 .vp.act .vov{box-shadow:inset 0 0 0 3px var(--vc),inset 0 0 0 4px rgba(0,0,0,.55)}
+.vfr{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .vtop{position:absolute;left:8px;top:8px;display:none;align-items:center;gap:6px}
 .l2 .vtop{display:flex}
 .badge{pointer-events:auto;cursor:pointer;font:600 12px/1 var(--sans);padding:5px 9px;border-radius:999px;background:var(--vc);color:var(--vt);box-shadow:0 0 0 1px rgba(0,0,0,.55),0 0 0 2px rgba(255,255,255,.55);opacity:.7}
@@ -94,10 +95,10 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.6</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.5 · 21 novembre 2026</p>
-<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste: 2» confronti due punti di vista sullo stesso frattale: la vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
+<p class="updated">Versione 1.6 · 21 novembre 2026</p>
+<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste: 2» confronti due punti di vista sullo stesso frattale: la vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
  <div>
@@ -110,6 +111,7 @@ a{color:inherit}
    <button class="tbtn" id="back" type="button" title="Indietro" aria-label="Indietro" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/></svg><span>Indietro</span></button>
    <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><rect x="8" y="8" width="6" height="6" rx="0.5"/></svg><span>Zoom area</span></button>
    <span class="seg" role="group" aria-label="Numero di viste"><span class="seglab">Viste</span><button class="tbtn on" id="lay1" type="button" aria-pressed="true" title="Una vista">1</button><button class="tbtn" id="lay2" type="button" aria-pressed="false" title="Due viste (affiancate o impilate)">2</button></span>
+   <button class="tbtn on" id="frames" type="button" aria-pressed="true" hidden title="Mostra o nascondi, su ogni vista, le cornici delle altre viste">Cornici</button>
    <button class="tbtn" id="tojulia">Julia da qui</button>
    <button class="tbtn" id="pick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
@@ -996,6 +998,136 @@ function panView(view,W,H,a,b){
  return {...view,cx:view.cx+p[0]-q[0],cy:view.cy+p[1]-q[1]};
 }
 
+/* ---------- cornici proiettate (1.6) ---------- */
+/* FRAMES-PURE-BEGIN */
+// Sutherland–Hodgman su [0,W]x[0,H]. Vertici {x,y,e}: e=true se il lato uscente è (parte di) un lato originale, false se giace sul bordo di taglio.
+function clipPolyRect(pts,W,H){
+ let poly=pts.map(p=>({x:p[0],y:p[1],e:true}));
+ const planes=[
+  [p=>p.x>=0,(a,b)=>({x:0,y:a.y+(0-a.x)/(b.x-a.x)*(b.y-a.y)})],
+  [p=>p.x<=W,(a,b)=>({x:W,y:a.y+(W-a.x)/(b.x-a.x)*(b.y-a.y)})],
+  [p=>p.y>=0,(a,b)=>({y:0,x:a.x+(0-a.y)/(b.y-a.y)*(b.x-a.x)})],
+  [p=>p.y<=H,(a,b)=>({y:H,x:a.x+(H-a.y)/(b.y-a.y)*(b.x-a.x)})]
+ ];
+ for(const pl of planes){
+  const inside=pl[0],inter=pl[1],out=[],n=poly.length;
+  if(!n)break;
+  for(let i=0;i<n;i++){
+   const S=poly[i],E=poly[(i+1)%n],sIn=inside(S),eIn=inside(E);
+   if(sIn&&eIn)out.push({x:E.x,y:E.y,e:E.e});
+   else if(sIn&&!eIn){const I=inter(S,E);out.push({x:I.x,y:I.y,e:false});}
+   else if(!sIn&&eIn){const I=inter(S,E);out.push({x:I.x,y:I.y,e:S.e});out.push({x:E.x,y:E.y,e:E.e});}
+  }
+  poly=out;
+ }
+ return poly;
+}
+function polyArea(q){let a=0;for(let i=0,n=q.length;i<n;i++){const A=q[i],B=q[(i+1)%n];a+=A.x*B.y-B.x*A.y;}return a/2;}
+// Cornice della vista N nella vista M. Dimensioni in px CSS (Wm,Hm,Wn,Hn). Lavora su offset rispetto al centro per non perdere precisione a zoom profondo.
+// Ritorna {kind:'inside'|'partial'|'outside'|'covers'|'none', pts, poly, cen}
+function frameGeom(mv,Wm,Hm,nv,Wn,Hn){
+ const M0={cx:0,cy:0,span:mv.span,rot:mv.rot||0},N0={cx:0,cy:0,span:nv.span,rot:nv.rot||0},oN=[nv.cx-mv.cx,nv.cy-mv.cy],e=0.5;
+ const pts=[[0,0],[Wn,0],[Wn,Hn],[0,Hn]].map(p=>{const d=screenToWorld(N0,Wn,Hn,p[0],p[1]);return worldToScreen(M0,Wm,Hm,d[0]+oN[0],d[1]+oN[1]);});
+ const cen=worldToScreen(M0,Wm,Hm,oN[0],oN[1]);
+ if(!pts.every(p=>isFinite(p[0])&&isFinite(p[1]))||!isFinite(cen[0])||!isFinite(cen[1]))return {kind:'none',pts,cen};
+ const mIn=[[0,0],[Wm,0],[Wm,Hm],[0,Hm]].map(p=>{const d=screenToWorld(M0,Wm,Hm,p[0],p[1]);return worldToScreen(N0,Wn,Hn,d[0]-oN[0],d[1]-oN[1]);});
+ if(mIn.every(p=>p[0]>=-e&&p[0]<=Wn+e&&p[1]>=-e&&p[1]<=Hn+e))return {kind:'covers',pts,cen};
+ if(pts.every(p=>p[0]>=0&&p[0]<=Wm&&p[1]>=0&&p[1]<=Hm))return {kind:'inside',pts,cen};
+ const poly=clipPolyRect(pts,Wm,Hm);
+ if(poly.length<3||Math.abs(polyArea(poly))<1e-6)return {kind:'outside',pts,cen};
+ return {kind:'partial',pts,poly,cen};
+}
+/* FRAMES-PURE-END */
+let FRAMES_ON=true,frRaf=0;
+function scheduleFrames(){
+ if(frRaf)return;
+ if(typeof requestAnimationFrame!=='function'){drawAllFrames();return;}
+ frRaf=requestAnimationFrame(()=>{frRaf=0;drawAllFrames();});
+}
+function drawAllFrames(){VPS.forEach(drawFramesOn);}
+function frStroke(ctx,col,dash){
+ ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(dash||[]);
+ ctx.strokeStyle='rgba(0,0,0,.8)';ctx.lineWidth=5.5;ctx.stroke();      // contorno scuro (sfondi chiari)
+ ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=3.5;ctx.stroke(); // contorno chiaro (sfondi scuri)
+ ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();                       // colore della vista
+ ctx.setLineDash([]);
+}
+// freccia con la punta in (x,y), direzione unitaria (ux,uy)
+function frArrow(ctx,x,y,ux,uy,sz,col){
+ const bx=x-ux*sz,by=y-uy*sz,nx=-uy*sz*0.62,ny=ux*sz*0.62;
+ ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(bx+nx,by+ny);ctx.lineTo(bx-nx,by-ny);ctx.closePath();
+ ctx.lineJoin='round';ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineWidth=4.5;ctx.stroke();
+ ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=2.5;ctx.stroke();
+ ctx.fillStyle=col;ctx.fill();
+}
+function frBadge(ctx,x,y,txt,col,tcol,W,H){
+ ctx.font='600 11px '+getComputedStyle(document.body).fontFamily;
+ const w=Math.ceil(ctx.measureText(txt).width)+10,h=16;
+ x=Math.max(3,Math.min(W-w-3,x));y=Math.max(3,Math.min(H-h-3,y));
+ ctx.beginPath();
+ if(ctx.roundRect)ctx.roundRect(x,y,w,h,8);else ctx.rect(x,y,w,h);
+ ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.7)';ctx.stroke();
+ ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.7)';ctx.stroke();
+ ctx.fillStyle=col;ctx.fill();
+ ctx.fillStyle=tcol;ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(txt,x+w/2,y+h/2+0.5);
+}
+function drawFramesOn(M){
+ const cv=M.fr,ctx=M.frx;if(!cv||!ctx)return;
+ try{
+  const r=M.cv.getBoundingClientRect(),W=r.width,H=r.height,dpr=Math.min(window.devicePixelRatio||1,3);
+  const bw=Math.max(1,Math.round(W*dpr)),bh=Math.max(1,Math.round(H*dpr));
+  if(cv.width!==bw||cv.height!==bh){cv.width=bw;cv.height=bh;}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  if(!FRAMES_ON||VPS.length<2||W<8||H<8)return;
+  for(const N of VPS){
+   if(N===M)continue;
+   const rn=N.cv.getBoundingClientRect();if(rn.width<8||rn.height<8)continue;
+   const col=VCOL[N.id%VCOL.length],g=frameGeom(M.view,W,H,N.view,rn.width,rn.height),txt='V'+(N.id+1);
+   if(g.kind==='none')continue;
+   if(g.kind==='covers'){
+    ctx.beginPath();ctx.rect(7,7,W-14,H-14);frStroke(ctx,col.c,[8,6]);
+    frBadge(ctx,10,42,txt,col.c,col.t,W,H);
+   }else if(g.kind==='outside'){
+    const cx=W/2,cy=H/2,dx=g.cen[0]-cx,dy=g.cen[1]-cy,L=Math.hypot(dx,dy);if(!(L>1e-9))continue;
+    const m=20,tx=dx>0?(W-m-cx)/dx:dx<0?(m-cx)/dx:Infinity,ty=dy>0?(H-m-cy)/dy:dy<0?(m-cy)/dy:Infinity,t=Math.min(tx,ty),ux=dx/L,uy=dy/L;
+    const px=cx+dx*t,py=cy+dy*t;
+    frArrow(ctx,px,py,ux,uy,12,col.c);
+    frBadge(ctx,px-ux*30-10,py-uy*30-8,txt,col.c,col.t,W,H);
+   }else{
+    let pts=g.pts,poly=g.poly,closed=g.kind==='inside';
+    if(closed){ // cornice minuscola: ingrandita attorno al centro fino a ~10 px, per restare visibile
+     let x0=1e300,x1=-1e300,y0=1e300,y1=-1e300;pts.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);});
+     const sz=Math.max(x1-x0,y1-y0);
+     if(sz<10){const k=sz>1e-9?10/sz:0,cx=(x0+x1)/2,cy=(y0+y1)/2;pts=sz>1e-9?pts.map(p=>[cx+(p[0]-cx)*k,cy+(p[1]-cy)*k]):[[cx-5,cy-5],[cx+5,cy-5],[cx+5,cy+5],[cx-5,cy+5]];}
+     poly=pts.map(p=>({x:p[0],y:p[1],e:true}));
+    }
+    const n=poly.length;let all=true;for(const v of poly)if(!v.e){all=false;break;}
+    ctx.beginPath();
+    if(all){ctx.moveTo(poly[0].x,poly[0].y);for(let i=1;i<n;i++)ctx.lineTo(poly[i].x,poly[i].y);ctx.closePath();}
+    else{ // solo i lati visibili: polilinee aperte
+     let s0=0;for(let i=0;i<n;i++)if(!poly[(i+n-1)%n].e){s0=i;break;}
+     let run=false;
+     for(let k=0;k<n;k++){const i=(s0+k)%n,A=poly[i],B=poly[(i+1)%n];
+      if(A.e){if(!run){ctx.moveTo(A.x,A.y);run=true;}ctx.lineTo(B.x,B.y);}else run=false;}
+    }
+    frStroke(ctx,col.c);
+    if(!all){ // freccia al centro di ogni lato di taglio abbastanza lungo (max 4)
+     let na=0;
+     for(let i=0;i<n&&na<4;i++){const A=poly[i],B=poly[(i+1)%n];if(A.e)continue;
+      const len=Math.hypot(B.x-A.x,B.y-A.y);if(len<28)continue;
+      const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,q=1e-6*Math.max(W,H)+1e-6;let ux=0,uy=0;
+      if(Math.abs(A.x)<q&&Math.abs(B.x)<q)ux=-1;else if(Math.abs(A.x-W)<q&&Math.abs(B.x-W)<q)ux=1;
+      else if(Math.abs(A.y)<q&&Math.abs(B.y)<q)uy=-1;else if(Math.abs(A.y-H)<q&&Math.abs(B.y-H)<q)uy=1;else continue;
+      frArrow(ctx,mx-ux*3,my-uy*3,ux,uy,10,col.c);na++;}
+    }
+    let a=poly[0];for(const v of poly)if(v.y<a.y-1e-9||(Math.abs(v.y-a.y)<=1e-9&&v.x<a.x))a=v;
+    frBadge(ctx,a.x+5,a.y+5,txt,col.c,col.t,W,H);
+   }
+  }
+ }catch(e){/* nessun errore verso l'utente se il browser non supporta qualcosa */}
+}
+if(typeof window!=='undefined')window.addEventListener('resize',()=>scheduleFrames());
+
 /* ---------- Viewport ---------- */
 // 4 colori fissi (Okabe-Ito, testo nero: contrasto >= 6:1 sul badge; bordo visibile su sfondo nero del canvas), assegnati per id
 const VCOL=[{c:'#E69F00',t:'#000'},{c:'#56B4E9',t:'#000'},{c:'#009E73',t:'#000'},{c:'#CC79A7',t:'#000'}];
@@ -1012,18 +1144,27 @@ class Viewport{
   this.jobId=0;this.t0=0;this.lastRS='';this.st='';this.dead=false;
   this.ptrs=new Map();this.gest=null;this.lastTap=0;this.tapStart=null;this.longT=0;this.panBtn=false;this.sel=null;this.wheelT=0;this.progT=0;this.rsT=0;this.ro=null;
   const col=VCOL[id%VCOL.length];el.style.setProperty('--vc',col.c);el.style.setProperty('--vt',col.t);
-  this.buildOverlay();this.bind();this.observe();
+  this.buildOverlay();this.buildFrames();this.bind();this.observe();
  }
  buildOverlay(){
   const top=document.createElement('div');top.className='vtop';
   const bd=document.createElement('span');bd.className='badge';bd.textContent='Vista '+(this.id+1);bd.addEventListener('click',()=>setActive(this));
   const bt=document.createElement('span');bt.className='vbtns';
-  [['home','⌂','Vista iniziale'],['in','+','Zoom avanti'],['out','−','Zoom indietro']].forEach(a=>{
+  [['home','⌂','Vista iniziale']].forEach(a=>{
    const b=document.createElement('button');b.type='button';b.textContent=a[1];b.title=a[2]+' (vista '+(this.id+1)+')';b.setAttribute('aria-label',b.title);
-   b.addEventListener('click',()=>{setActive(this);if(a[0]==='home')resetView(this);else zoomStep(a[0]==='in'?2:0.5,this);});
+   b.addEventListener('click',()=>{setActive(this);resetView(this);});
    bt.appendChild(b);
   });
   top.appendChild(bd);top.appendChild(bt);this.el.querySelector('.vov').appendChild(top);
+ }
+ buildFrames(){
+  this.fr=null;this.frx=null;this.fro=null;
+  try{
+   const c=document.createElement('canvas');c.className='vfr';c.setAttribute('aria-hidden','true');
+   const ctx=c.getContext('2d');if(!ctx)return;
+   const ov=this.el.querySelector('.vov');ov.insertBefore(c,ov.firstChild);this.fr=c;this.frx=ctx;
+   if(typeof ResizeObserver!=='undefined'){this.fro=new ResizeObserver(()=>scheduleFrames());this.fro.observe(this.el);}
+  }catch(e){this.fr=null;this.frx=null;}
  }
  bind(){
   const cv=this.cv;
@@ -1045,6 +1186,7 @@ class Viewport{
   this.dead=true;this.cancel();
   clearTimeout(this.longT);clearTimeout(this.wheelT);clearTimeout(this.progT);clearTimeout(this.rsT);
   if(this.ro){try{this.ro.disconnect();}catch(_){}}
+  if(this.fro){try{this.fro.disconnect();}catch(_){}}
   this.el.remove();
  }
  setSt(m){this.st=m;refreshStatus();}
@@ -1116,6 +1258,7 @@ class Viewport{
   const v=this.view,z=FAM[S.fam].view.span/v.span;
   this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
   this.hud.r.textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
+  scheduleFrames(); // le cornici seguono ogni cambio di vista (pan/zoom/render) senza toccare l'immagine
  }
  /* IFS / Buddhabrot */
  renderIFS(W,H){
@@ -1274,6 +1417,8 @@ function setLayout(n){
  setActive(VPS.indexOf(AV)>=0?AV:VPS[0]);
  $('stage').classList.toggle('l2',LAYOUT===2);$('vgrid').classList.toggle('l2',LAYOUT===2);
  [1,2].forEach(k=>{const b=$('lay'+k);if(b){b.classList.toggle('on',LAYOUT===k);b.setAttribute('aria-pressed',LAYOUT===k?'true':'false');}});
+ {const fb=$('frames');if(fb)fb.hidden=LAYOUT<2;}
+ scheduleFrames();
  refreshStatus();
 }
 function fvSave(){VPS.forEach(vp=>{vp.fv[S.fam]={...vp.view};});}
@@ -1401,7 +1546,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.5',APP_VERSION_SHORT='1.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.6',APP_VERSION_SHORT='1.6',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -1599,6 +1744,7 @@ $('back').addEventListener('click',()=>{
 });
 function zoomStep(f,vp){vp=vp||AV;pushHist();vp.view={...vp.view,span:vp.view.span/f};render([vp]);}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
+$('frames').addEventListener('click',()=>{FRAMES_ON=!FRAMES_ON;const b=$('frames');b.classList.toggle('on',FRAMES_ON);b.setAttribute('aria-pressed',FRAMES_ON?'true':'false');scheduleFrames();});
 $('tojulia').addEventListener('click',()=>{const c=screenToWorld(AV.view,AV.cv.width,AV.cv.height,AV.cv.width/2,AV.cv.height/2);juliaFrom(c[0],c[1]);});
 $('pick').addEventListener('click',()=>{S.pick=!S.pick;$('pick').classList.toggle('on',S.pick);if(S.pick&&zoomMode)setZoomMode(false);setStatus(S.pick?'Tocca un punto del Mandelbrot: diventa il c del Julia':'');});
 $('anim').addEventListener('click',()=>{S.anim=!S.anim;$('anim').classList.toggle('on',S.anim);if(S.anim)animLoop();});
