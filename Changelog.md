@@ -16,6 +16,27 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## [1.2.0] — 2026-11-21
+
+### Novità
+- Le palette sono ora interpolate in OKLCH invece che in sRGB: niente più cali di luminanza nelle transizioni tra colori complementari. Interpolazione dell'arco di tinta più breve; i colori acromatici (C < 1e-4) ereditano la tinta dal vicino cromatico più prossimo; gamut clipping morbido (si riduce il chroma finché il colore rientra in sRGB). LUT sempre a 1024 campioni, con `pos` delle palette (es. «Classica») e chiusura ciclica invariati. Le palette cambiano leggermente aspetto.
+- Funzioni pure per le coordinate: `screenToWorld`, `worldToScreen`, `fitRect` (più `panView`), con vista `{cx, cy, span, rot}` e `rot` già gestito. Usate da gesti (pan, pizzico, rotellina, doppio tocco), scelta di *c* e «Julia da qui»; comportamento invariato.
+- Pulsante «Zoom area» (toggle) e, su desktop, Maiusc+trascinamento: un rettangolo di selezione indica l'area; al rilascio la vista si centra sul rettangolo e lo contiene per intero rispettando le proporzioni del canvas. Rettangoli con un lato sotto ~8 px sono trattati come clic e annullati; Esc annulla la selezione; su touch, con il toggle attivo, la selezione si fa con un dito. L'operazione è annullabile con «Indietro».
+- Il toggle «Zoom area» e «Tocca per scegliere c» sono mutuamente esclusivi.
+- Con «Zoom area» attivo il trascinamento seleziona invece di spostare la vista.
+- Sulla vista restano solo i pulsanti a schermo intero, con nuova icona; lo zoom con `+` / `−` resta disponibile da tastiera (e con pizzico, rotellina, doppio tocco).
+
+### Correzioni
+- Gradienti delle palette senza cali di luminanza tra colori complementari (limite noto della 1.1.0).
+
+### Limiti noti
+- Profondità di zoom limitata dalla precisione a 64 bit (circa 10¹³); «Zoom area» non scende oltre questa soglia e lo segnala.
+- Distance Estimator numerico (non analitico) per tutte le famiglie oltre Mandelbrot e Julia.
+- Ricalcolo completo dell'immagine a ogni variazione anche quando i worker lavorano su frame già scartati.
+- Campo `rot` nella vista è salvato (sempre 0) ma ignorato dal motore: le funzioni di coordinate lo gestiscono, il rendering no.
+- Lunghezza del link `?s=` limitata dal browser (stati molto grandi possono risultare troppo lunghi).
+- Con «Zoom area» attivo non è possibile spostare la vista né pizzicare con le dita sul canvas: va disattivato.
+
 ## [1.1.0] — 2026-11-21
 
 ### Novità

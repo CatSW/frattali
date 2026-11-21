@@ -37,7 +37,10 @@ a.tbtn{display:inline-block;text-decoration:none}
 .hud{position:absolute;left:8px;right:8px;bottom:8px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;font:11px/1.3 var(--mono);color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}
 .hud span{background:rgba(0,0,0,.35);padding:3px 7px;border-radius:8px}
 .fab{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
-.fab button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font:20px/1 var(--sans);cursor:pointer}
+.fab button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font:20px/1 var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.fab button svg{display:block}
+#selrect{position:absolute;display:none;pointer-events:none;border:1.5px dashed #fff;background:rgba(255,255,255,.14);box-shadow:0 0 0 1px rgba(0,0,0,.65);z-index:2}
+#cv.zsel{cursor:crosshair}
 .bar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
 .tbtn{font:14px/1 var(--sans);border:0;background:color-mix(in srgb,var(--ground),var(--ink) 8%);color:var(--ink);border-radius:999px;padding:10px 14px;cursor:pointer}
 .tbtn.on{background:var(--ink);color:var(--ground)}
@@ -74,22 +77,24 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.1</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.2</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.1.0 · 20 novembre 2026</p>
-<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
+<p class="updated">Versione 1.2.0 · 21 novembre 2026</p>
+<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo usa «Zoom area» (su desktop anche Maiusc + trascina). Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
  <div>
   <div class="stage" id="stage">
    <canvas id="cv"></canvas>
-   <div class="fab"><button id="zin" aria-label="Ingrandisci">+</button><button id="zout" aria-label="Riduci">−</button><button id="fs" aria-label="Schermo intero">⤢</button></div>
+   <div id="selrect"></div>
+   <div class="fab"><button id="fs" type="button" aria-label="Schermo intero" title="Schermo intero"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div>
    <div class="hud"><span id="hudl"></span><span id="hudr"></span></div>
   </div>
   <div class="bar">
    <button class="tbtn" id="sharestate" type="button">Condividi stato</button>
    <button class="tbtn" id="reset">Vista iniziale</button>
    <button class="tbtn" id="back">Indietro</button>
+   <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire (desktop: Maiusc+trascina)">Zoom area</button>
    <button class="tbtn" id="tojulia">Julia da qui</button>
    <button class="tbtn" id="pick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
@@ -489,15 +494,55 @@ const hist=[];
 /* ---------- palette ---------- */
 function hex(h){return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];}
 const LUTN=1024;let LUT=new Float32Array(LUTN*3);
+/* ---------- OKLCH (funzioni pure) ---------- */
+function srgbToOklch(r,g,b){
+ const lin=v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4);
+ const R=lin(r),G=lin(g),B=lin(b);
+ const l=Math.cbrt(0.4122214708*R+0.5363325363*G+0.0514459929*B),
+       m=Math.cbrt(0.2119034982*R+0.6806995451*G+0.1073969566*B),
+       q=Math.cbrt(0.0883024619*R+0.2817188376*G+0.6299787005*B);
+ const L=0.2104542553*l+0.7936177850*m-0.0040720468*q,
+       A=1.9779984951*l-2.4285922050*m+0.4505937099*q,
+       Bk=0.0259040371*l+0.7827717662*m-0.8086757660*q;
+ let H=Math.atan2(Bk,A)*180/Math.PI;if(H<0)H+=360;
+ return [L,Math.hypot(A,Bk),H];
+}
+function oklchToLinear(L,C,H){
+ const h=H*Math.PI/180,A=C*Math.cos(h),Bk=C*Math.sin(h);
+ const l=L+0.3963377774*A+0.2158037573*Bk,m=L-0.1055613458*A-0.0638541728*Bk,q=L-0.0894841775*A-1.2914855480*Bk;
+ const l3=l*l*l,m3=m*m*m,q3=q*q*q;
+ return [4.0767416621*l3-3.3077115913*m3+0.2309699292*q3,
+        -1.2684380046*l3+2.6097574011*m3-0.3413193965*q3,
+        -0.0041960863*l3-0.7034186147*m3+1.7076147010*q3];
+}
+function oklchToSrgb(L,C,H){
+ L=Math.min(1,Math.max(0,L));C=Math.max(0,C);
+ const inG=a=>a[0]>=-1e-5&&a[0]<=1+1e-5&&a[1]>=-1e-5&&a[1]<=1+1e-5&&a[2]>=-1e-5&&a[2]<=1+1e-5;
+ let a=oklchToLinear(L,C,H);
+ if(!inG(a)){ // gamut clipping morbido: riduce il chroma, con L e H fissi
+  let lo=0,hi=C;for(let i=0;i<24;i++){const mid=(lo+hi)/2;if(inG(oklchToLinear(L,mid,H)))lo=mid;else hi=mid;}
+  a=oklchToLinear(L,lo,H);
+ }
+ const enc=v=>{v=Math.min(1,Math.max(0,v));return v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055;};
+ return [enc(a[0]),enc(a[1]),enc(a[2])];
+}
 function buildLUT(){
- const P=PALS[S.pal], cols=P.c.map(hex), n=cols.length, pos=P.pos||cols.map((_,i)=>i/n);
+ const P=PALS[S.pal], n=P.c.length, pos=P.pos||P.c.map((_,i)=>i/n);
+ const K=P.c.map(h=>srgbToOklch.apply(null,hex(h))),ch=K.map(k=>k[1]>=1e-4);
+ K.forEach((k,i)=>{ // i colori acromatici ereditano la tinta dal vicino cromatico più prossimo (ciclico)
+  if(ch[i])return;let hh=0;
+  for(let d=1;d<=n;d++){const j=(i+d)%n,q=(i-d+n)%n;if(ch[j]){hh=K[j][2];break;}if(ch[q]){hh=K[q][2];break;}}
+  k[2]=hh;
+ });
  for(let i=0;i<LUTN;i++){
   const t=i/LUTN; let a=n-1;
   for(let k=0;k<n;k++){if(pos[k]<=t)a=k;}
   const b=(a+1)%n, pa=pos[a], pb=b===0?1:pos[b];
   let f=(t-pa)/((pb-pa)||1); if(t<pa)f=0;
   f=0.5-0.5*Math.cos(Math.PI*Math.min(1,Math.max(0,f)));
-  for(let c=0;c<3;c++)LUT[i*3+c]=cols[a][c]*(1-f)+cols[b][c]*f;
+  const A=K[a],B=K[b],dh=((B[2]-A[2]+540)%360)-180; // arco di tinta più breve
+  const rgb=oklchToSrgb(A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f,A[2]+dh*f);
+  LUT[i*3]=rgb[0];LUT[i*3+1]=rgb[1];LUT[i*3+2]=rgb[2];
  }
  const st=[];for(let i=0;i<=16;i++){const k=Math.floor(i/16*(LUTN-1))*3;st.push(`rgb(${LUT[k]*255|0},${LUT[k+1]*255|0},${LUT[k+2]*255|0})`);}
  $('palprev').style.background=`linear-gradient(90deg,${st.join(',')})`;
@@ -733,10 +778,31 @@ function onIFS(R){
  else if(!progT){progT=setTimeout(()=>{progT=0;colorize(B);draw();},Math.max(150,B.W*B.H/8000));}
 }
 
+/* ---------- coordinate (funzioni pure, nessun accesso a globali) ---------- */
+// view = {cx,cy,span,rot}: span = altezza del canvas in unità del piano; rot (rad) ruota la vista in senso antiorario (0 = nessuna rotazione).
+function screenToWorld(view,W,H,x,y){
+ const s=view.span/(H||1),r=view.rot||0,c=Math.cos(r),sn=Math.sin(r),dx=(x-W/2)*s,dy=-(y-H/2)*s;
+ return [view.cx+dx*c-dy*sn,view.cy+dx*sn+dy*c];
+}
+function worldToScreen(view,W,H,X,Y){
+ const s=view.span/(H||1),r=view.rot||0,c=Math.cos(r),sn=Math.sin(r),ux=X-view.cx,uy=Y-view.cy;
+ return [W/2+(ux*c+uy*sn)/s,H/2-(-ux*sn+uy*c)/s];
+}
+// Nuova vista centrata sul centro del rettangolo schermo (x0,y0)-(x1,y1), con il rettangolo INTERO dentro il canvas (fit sul rapporto W:H).
+function fitRect(view,W,H,x0,y0,x1,y1){
+ const c=screenToWorld(view,W,H,(x0+x1)/2,(y0+y1)/2),w=Math.abs(x1-x0),h=Math.abs(y1-y0);
+ return {cx:c[0],cy:c[1],span:view.span*Math.max(w/(W||1),h/(H||1)),rot:view.rot||0};
+}
+// Pan: il punto del piano sotto lo schermo-punto a finisce sotto b. Lavora su offset (centro a 0) per non perdere precisione a zoom profondo.
+function panView(view,W,H,a,b){
+ const z={cx:0,cy:0,span:view.span,rot:view.rot},p=screenToWorld(z,W,H,a[0],a[1]),q=screenToWorld(z,W,H,b[0],b[1]);
+ return {...view,cx:view.cx+p[0]-q[0],cy:view.cy+p[1]-q[1]};
+}
+
 /* ---------- gesti ---------- */
 const ptrs=new Map();let gest=null,lastTap=0,tapStart=null;
 function toPx(e){const r=cv.getBoundingClientRect();return [(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height];}
-function pxToC(px,py,v=S.view){const s=v.span/cv.height;return [v.cx+(px-cv.width/2)*s,v.cy-(py-cv.height/2)*s];}
+function pxToC(px,py,v=S.view){return screenToWorld(v,cv.width,cv.height,px,py);}
 function startGesture(){
  if(gest)return;pushHist();
  jobId++;queue=[];
@@ -744,19 +810,20 @@ function startGesture(){
  gest={snap:sn,v0:{...S.view}};
 }
 function drawGesture(){
- if(!gest)return;const v0=gest.v0,v=S.view,W=cv.width,H=cv.height,k=v0.span/v.span,s1=v.span/H;
- const ox=W/2+(v0.cx-v.cx)/s1-W/2*k,oy=H/2-(v0.cy-v.cy)/s1-H/2*k;
+ if(!gest)return;const v0=gest.v0,v=S.view,W=cv.width,H=cv.height,k=v0.span/v.span,p=worldToScreen(v,W,H,v0.cx,v0.cy);
+ const ox=p[0]-W*k/2,oy=p[1]-H*k/2;
  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.drawImage(gest.snap,ox,oy,W*k,H*k);updateHud();
 }
 function endGesture(){if(!gest)return;gest=null;S.views[S.fam]=S.view;render();}
-function zoomAt(px,py,f){const [zx,zy]=pxToC(px,py);const ns=S.view.span/f,s=ns/cv.height;S.view={cx:zx-(px-cv.width/2)*s,cy:zy+(py-cv.height/2)*s,span:ns};}
-cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,toPx(e));if(ptrs.size===1)tapStart={p:toPx(e),t:performance.now(),moved:false};else tapStart&&(tapStart.moved=true);});
+function zoomAt(px,py,f){const [zx,zy]=pxToC(px,py),ns=S.view.span/f,o=screenToWorld({cx:0,cy:0,span:ns,rot:S.view.rot},cv.width,cv.height,px,py);S.view={cx:zx-o[0],cy:zy-o[1],span:ns};}
+cv.addEventListener('pointerdown',e=>{if(sel)return;if(ptrs.size===0&&(zoomMode||(e.shiftKey&&e.pointerType==='mouse'&&e.button===0))){startSel(e);return;}cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,toPx(e));if(ptrs.size===1)tapStart={p:toPx(e),t:performance.now(),moved:false};else tapStart&&(tapStart.moved=true);});
 cv.addEventListener('pointermove',e=>{
+ if(sel){if(e.pointerId===sel.id)moveSel(e);return;}
  if(!ptrs.has(e.pointerId))return;const old=ptrs.get(e.pointerId),now=toPx(e);
  if(ptrs.size===1){
   if(tapStart&&!tapStart.moved&&Math.hypot(now[0]-tapStart.p[0],now[1]-tapStart.p[1])<cv.width*0.012){return;}
   if(tapStart)tapStart.moved=true;startGesture();
-  const s=S.view.span/cv.height;S.view={...S.view,cx:S.view.cx-(now[0]-old[0])*s,cy:S.view.cy+(now[1]-old[1])*s};
+  S.view=panView(S.view,cv.width,cv.height,old,now);
   ptrs.set(e.pointerId,now);requestAnimationFrame(drawGesture);
  } else if(ptrs.size===2){
   startGesture();
@@ -764,12 +831,13 @@ cv.addEventListener('pointermove',e=>{
   const ma=[(a[0]+b[0])/2,(a[1]+b[1])/2],da=Math.hypot(a[0]-b[0],a[1]-b[1]);
   ptrs.set(e.pointerId,now);
   const a2=ptrs.get(ids[0]),b2=ptrs.get(ids[1]),mb=[(a2[0]+b2[0])/2,(a2[1]+b2[1])/2],db=Math.hypot(a2[0]-b2[0],a2[1]-b2[1]);
-  const s=S.view.span/cv.height;S.view={...S.view,cx:S.view.cx-(mb[0]-ma[0])*s,cy:S.view.cy+(mb[1]-ma[1])*s};
+  S.view=panView(S.view,cv.width,cv.height,ma,mb);
   if(da>5&&db>5)zoomAt(mb[0],mb[1],db/da);
   requestAnimationFrame(drawGesture);
  }
 });
 function ptrEnd(e){
+ if(sel){if(e.pointerId===sel.id){if(e.type==='pointerup')moveSel(e);endSel(e.type==='pointerup');}return;}
  if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);
  if(ptrs.size===0){
   if(gest){endGesture();}
@@ -782,8 +850,47 @@ function ptrEnd(e){
  }
 }
 cv.addEventListener('pointerup',ptrEnd);cv.addEventListener('pointercancel',ptrEnd);
+/* ---------- zoom rettangolare ---------- */
+let zoomMode=false,sel=null;const selEl=$('selrect');
+function setZoomMode(on){
+ zoomMode=!!on;const b=$('zoomarea');b.classList.toggle('on',zoomMode);b.setAttribute('aria-pressed',zoomMode?'true':'false');cv.classList.toggle('zsel',zoomMode);
+ if(zoomMode){S.pick=false;$('pick').classList.remove('on');setStatus('Zoom area: trascina un rettangolo sulla vista (Esc annulla)');}
+ else{if(sel)endSel(false);setStatus('');}
+}
+function selPt(e){const p=toPx(e);return [Math.min(cv.width,Math.max(0,p[0])),Math.min(cv.height,Math.max(0,p[1]))];}
+function startSel(e){
+ const p=selPt(e);sel={id:e.pointerId,a:p,b:p};
+ try{cv.setPointerCapture(e.pointerId);}catch(_){}
+ e.preventDefault();
+}
+function moveSel(e){
+ sel.b=selPt(e);
+ const r=cv.getBoundingClientRect(),kx=r.width/cv.width,ky=r.height/cv.height;
+ const st=selEl.style;st.display='block';
+ st.left=Math.min(sel.a[0],sel.b[0])*kx+'px';st.top=Math.min(sel.a[1],sel.b[1])*ky+'px';
+ st.width=Math.abs(sel.b[0]-sel.a[0])*kx+'px';st.height=Math.abs(sel.b[1]-sel.a[1])*ky+'px';
+}
+function endSel(commit){
+ if(!sel)return;const s=sel;sel=null;selEl.style.display='none';
+ try{cv.releasePointerCapture(s.id);}catch(_){}
+ if(!commit)return;
+ const r=cv.getBoundingClientRect(),wc=Math.abs(s.b[0]-s.a[0])*r.width/cv.width,hc=Math.abs(s.b[1]-s.a[1])*r.height/cv.height;
+ if(wc<8||hc<8){if(wc>=3||hc>=3)setStatus('Selezione troppo piccola: annullata');return;}
+ applyZoomRect(s.a[0],s.a[1],s.b[0],s.b[1]);
+}
+function applyZoomRect(x0,y0,x1,y1){
+ const v=fitRect(S.view,cv.width,cv.height,x0,y0,x1,y1);
+ if(!isFinite(v.cx)||!isFinite(v.cy)||!(v.span>0))return;
+ const m=Math.max(1,Math.abs(v.cx),Math.abs(v.cy)),minSpan=cv.height*4e-16*m*8*1.001; // stessa soglia di precWarn()
+ const lim=v.span<minSpan;if(lim)v.span=minSpan;
+ pushHist();
+ S.view={cx:v.cx,cy:v.cy,span:v.span};S.views[S.fam]=S.view; // IFS incluso: la vista resta quella scelta, fitIFS non viene richiamata
+ render();
+ if(lim)showMsg('Zoom limitato dalla precisione a 64 bit');
+}
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&sel){endSel(false);e.preventDefault();}});
 let wheelT=0;
-cv.addEventListener('wheel',e=>{e.preventDefault();startGesture();const [px,py]=toPx(e);zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(drawGesture);clearTimeout(wheelT);wheelT=setTimeout(endGesture,250);},{passive:false});
+cv.addEventListener('wheel',e=>{e.preventDefault();if(sel)return;startGesture();const [px,py]=toPx(e);zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(drawGesture);clearTimeout(wheelT);wheelT=setTimeout(endGesture,250);},{passive:false});
 
 /* ---------- UI ---------- */
 function setStatus(t){$('status').textContent=t;}
@@ -896,7 +1003,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.1.0',APP_VERSION_SHORT='1.1',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.2.0',APP_VERSION_SHORT='1.2',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 function getState(){
  const fam=S.fam,P={...S.P[fam]},v={cx:String(S.view.cx),cy:String(S.view.cy),span:+S.view.span,rot:0};
@@ -1025,10 +1132,10 @@ $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
 $('reset').addEventListener('click',()=>{pushHist();if(S.fam==='ifs')fitIFS();else{S.view={...FAM[S.fam].view};S.views[S.fam]=S.view;}render();});
 $('back').addEventListener('click',()=>{const h=hist.pop();if(!h)return;if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;}S.P[h.fam]=h.P;S.view=h.view;S.views[h.fam]=h.view;buildParams();render();});
-$('zin').addEventListener('click',()=>{pushHist();S.view={...S.view,span:S.view.span/2};S.views[S.fam]=S.view;render();});
-$('zout').addEventListener('click',()=>{pushHist();S.view={...S.view,span:S.view.span*2};S.views[S.fam]=S.view;render();});
-$('tojulia').addEventListener('click',()=>juliaFrom(S.view.cx,S.view.cy));
-$('pick').addEventListener('click',()=>{S.pick=!S.pick;$('pick').classList.toggle('on',S.pick);setStatus(S.pick?'Tocca un punto del Mandelbrot: diventa il c del Julia':'');});
+function zoomStep(f){pushHist();S.view={...S.view,span:S.view.span/f};S.views[S.fam]=S.view;render();}
+$('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
+$('tojulia').addEventListener('click',()=>{const c=screenToWorld(S.view,cv.width,cv.height,cv.width/2,cv.height/2);juliaFrom(c[0],c[1]);});
+$('pick').addEventListener('click',()=>{S.pick=!S.pick;$('pick').classList.toggle('on',S.pick);if(S.pick&&zoomMode)setZoomMode(false);setStatus(S.pick?'Tocca un punto del Mandelbrot: diventa il c del Julia':'');});
 $('anim').addEventListener('click',()=>{S.anim=!S.anim;$('anim').classList.toggle('on',S.anim);if(S.anim)animLoop();});
 function animLoop(){if(!S.anim)return;S.off=(S.off+0.0025)%1;colRows[1]&&colRows[1]._show();recolor();requestAnimationFrame(animLoop);}
 $('save').addEventListener('click',()=>{
@@ -1043,7 +1150,7 @@ $('fs').addEventListener('click',toggleFS);
 function togglePanel(){const f=$('app').classList.toggle('full');$('ptog').textContent=f?'Mostra pannello':'Nascondi pannello';}
 $('ptog').addEventListener('click',togglePanel);
 window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();
- if(k==='+'||k==='=')$('zin').click();else if(k==='-')$('zout').click();else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();});
+ if(k==='+'||k==='=')zoomStep(2);else if(k==='-')zoomStep(0.5);else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();});
 
 /* ---------- avvio ---------- */
 initWorkers();
