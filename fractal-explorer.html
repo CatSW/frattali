@@ -98,9 +98,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.6.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.7.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.6.5 · 22 novembre 2026</p>
+<p class="updated">Versione 1.7.0 · 22 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -207,7 +207,7 @@ function computeBand(J){
         var zx,zy,c1,c2,dx,dy;
         if(fam===1||fam===4||((fam===2||fam===8)&&J.jul)){zx=px;zy=py;c1=cr;c2=ci;dx=1;dy=0;} else {zx=0;zy=0;c1=px;c2=py;dx=0;dy=0;}
         if(fam===2&&!J.jul){c2=-py;}
-        var pzx=0,pzy=0;
+        var pzx=0,pzy=0,pdx=0,pdy=0;
         var mtp=1e30,mtx=1e30,it=0,esc=false,szx=zx,szy=zy,per=8,pc=0,r2=zx*zx+zy*zy;
         for(it=0;it<maxIt;it++){
           var nx,ny;
@@ -235,15 +235,37 @@ function computeBand(J){
             nx=xx+c1; ny=yy+c2;
           } else if(fam===8){
             var tr=zx*zx-zy*zy+c1-1, ti=2*zx*zy+c2, mbr=2*zx+c1-2, mbi=2*zy+c2, mdn=mbr*mbr+mbi*mbi;
-            if(mdn<1e-30){nx=1e4;ny=0;} else {var qx=(tr*mbr+ti*mbi)/mdn, qy=(ti*mbr-tr*mbi)/mdn; nx=qx*qx-qy*qy; ny=2*qx*qy;}
+            if(mdn<1e-30){nx=1e4;ny=0;} else {
+              var qx=(tr*mbr+ti*mbi)/mdn, qy=(ti*mbr-tr*mbi)/mdn;
+              // derivata analitica di w = (z²+c-1)/(2z+c-2), poi z ← w²
+              var dnr,dni,ddr,ddi;
+              if(J.jul){ // Julia: ∂/∂z₀, dc=0
+                dnr=2*(zx*dx-zy*dy); dni=2*(zx*dy+zy*dx);
+                ddr=2*dx; ddi=2*dy;
+              } else { // Mandelbrot: ∂/∂c
+                dnr=2*(zx*dx-zy*dy)+1; dni=2*(zx*dy+zy*dx);
+                ddr=2*dx+1; ddi=2*dy;
+              }
+              var nr2=dnr*mbr-dni*mbi - (tr*ddr-ti*ddi);
+              var ni2=dnr*mbi+dni*mbr - (tr*ddi+ti*ddr);
+              var d2r=mbr*mbr-mbi*mbi, d2i=2*mbr*mbi, invn=1/(mdn*mdn);
+              var dwr=(nr2*d2r+ni2*d2i)*invn, dwi=(ni2*d2r-nr2*d2i)*invn;
+              var ndx=2*(qx*dwr-qy*dwi), ndy=2*(qx*dwi+qy*dwr);
+              if(isFinite(ndx+ndy)){dx=ndx;dy=ndy;}
+              nx=qx*qx-qy*qy; ny=2*qx*qy;
+            }
           } else if(fam===3){
             var bx=zx, by=-zy, ex=1, ey=0;
             for(var q2=0;q2<d;q2++){var t2=ex*bx-ey*by; ey=ex*by+ey*bx; ex=t2;}
             nx=ex+c1; ny=ey+c2;
           } else {
+            // Phoenix: z ← z² + p + q·z_prev ; dz ← 2z·dz + q·dz_prev
+            var ndx=2*(zx*dx-zy*dy)+(J.qr*pdx-J.qi*pdy);
+            var ndy=2*(zx*dy+zy*dx)+(J.qr*pdy+J.qi*pdx);
             nx=zx*zx-zy*zy+c1+J.qr*pzx-J.qi*pzy;
             ny=2*zx*zy+c2+J.qr*pzy+J.qi*pzx;
-            pzx=zx;pzy=zy;
+            pzx=zx;pzy=zy;pdx=dx;pdy=dy;
+            dx=ndx;dy=ndy;
           }
           zx=nx;zy=ny;
           r2=zx*zx+zy*zy;
@@ -263,7 +285,7 @@ function computeBand(J){
           var m=it+1-Math.log(lz/lnR)/Math.log(dd);
           if(m<0)m=0;
           mu[k]=m; kind[k]=0;
-          if(fam<=1){var dm=Math.sqrt(dx*dx+dy*dy); de[k]=dm>0?(2*Math.sqrt(r2)*lz/dm)/s:1e9;} else de[k]=-1;
+          if(fam<=1||fam===4||fam===8){var dm=Math.sqrt(dx*dx+dy*dy); de[k]=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9;} else de[k]=-1;
         } else {mu[k]=0;de[k]=0;kind[k]=1;}
       }
     }
@@ -577,13 +599,13 @@ const FAM={
    {name:'Copia del Mandelbrot in Nova',p:{n:3,ar:1,ai:0},view:{cx:-0.74,cy:0,span:0.35},style:'scarabeo'},
    {name:'Nova n = 4',p:{n:4,ar:1,ai:0},view:{cx:-0.3,cy:0,span:2.6},style:'bronzo'},
    {name:'Nova rilassato (a = 0,8)',p:{n:3,ar:0.8,ai:0},view:{cx:-0.4,cy:0,span:2.6},style:'smeraldo'}]},
- phoenix:{name:'Phoenix',code:4,de:false,view:{cx:0,cy:0,span:3},iter:300,params:['cr','ci','qr','qi'],
+ phoenix:{name:'Phoenix',code:4,de:true,view:{cx:0,cy:0,span:3},iter:300,params:['cr','ci','qr','qi'],
   txt:'Proposto da Ushiki (1988): z → z² + p + q·z_prec, cioè ogni passo ricorda anche il punto precedente. È di tipo Julia: p e q sono fissi e varia il punto di partenza.',
   presets:[
    {name:'Fenice classica (p = 0,56667, q = −0,5)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0},style:'fuoco'},
    {name:'q complesso (q = −0,5 + 0,1i)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0.1},style:'pavone'},
    {name:'Filamenti (p = 0,269, q = 0,01i)',p:{cr:0.269,ci:0,qr:0,qi:0.01},style:'scarabeo'}]},
- magnet:{name:'Magnet I',code:8,de:false,view:MAGV,iter:300,params:['jul','cr','ci'],
+ magnet:{name:'Magnet I',code:8,de:true,view:MAGV,iter:300,params:['jul','cr','ci'],
   txt:'Dalla fisica statistica: z → ((z² + c − 1)/(2z + c − 2))², partendo da z = 0. Le orbite o scappano all\'infinito o convergono al punto fisso 1. Il confine ha una struttura a petali molto diversa dal Mandelbrot. Con l\'interruttore Julia c resta fisso.',
   presets:[
    {name:'Vista intera',view:MAGV,p:{jul:0},style:'oro'},
@@ -1620,7 +1642,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.6.5',APP_VERSION_SHORT='1.6.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.7.0',APP_VERSION_SHORT='1.7.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};

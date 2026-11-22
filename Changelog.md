@@ -16,6 +16,22 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.7.0 — 2026-11-22 
+
+### Novità
+- Distance Estimator analitico esteso a Phoenix (fam 4) e Magnet I (fam 8).
+- Phoenix: derivata rispetto a z₀ con stato (pdx, pdy) accanto a (pzx, pzy); formula dzₙ₊₁ = 2 zₙ dzₙ + q dzₙ₋₁, dz₀ = 1, dz₋₁ = 0.
+- Magnet I: w = (z² + c − 1)/(2z + c − 2), z ← w²; dw/dz e ∂w/∂c esplicitati; Julia (jul=1) e Mandelbrot (jul=0) con catena 2 w · dw.
+- de: true impostato nelle voci FAM di Phoenix e Magnet I; normalizzazione DE e uso in Neon allineati a Mandelbrot/Julia (incluso /s e fattore 2).
+- Guardie isFinite e soglia |den| per evitare NaN nei buffer de/mu.
+
+### Correzioni
+- Nessuna regressione sulle famiglie già supportate (Mandelbrot, Julia, Ship, Tricorn, Newton, Nova, IFS, Buddhabrot).
+
+### Limiti noti
+- DE analitico non presente su Nova (come richiesto).
+- Oltre ~10¹³ di zoom la precisione a 64 bit resta il limite strutturale (messaggio esistente).
+
 ## 1.6.5 — 2026-11-22 
 
 ### Novità
