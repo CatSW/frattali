@@ -16,6 +16,31 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.8.0 — 2026-11-22 
+
+### Novità
+- Uso da telefono: su schermo stretto (< 700 px) le viste si dispongono in colonna, fino a 3; il pulsante «4» diventa «3». In landscape basso (altezza < 500 px) al massimo 2 viste affiancate e il pulsante «4» si nasconde.
+- Stato con troppe viste (avvio, `?s=`, «Applica» JSON, rotazione/ridimensionamento): si chiudono le ultime e l'avviso resta in `#status` (e nell'intestazione per qualche secondo). «Indietro» ripristina le viste chiuse da ridimensionamento.
+- Input per evento (`pointerType`), senza modalità globale:
+  - un dito: sposta la vista oltre ~10 px; durante il gesto trasla la bitmap già calcolata, il ricalcolo parte al rilascio;
+  - due dita: pizzico e pan come prima;
+  - tocco breve (< 250 ms): marker sull'overlay della vista, con coordinate e, a calcolo concluso, esito del punto (fuga ≈ N it. oppure non fugge) nell'HUD centrale; un secondo tocco altrove lo sposta, un tocco sul marker lo toglie; il marker è ancorato al piano e segue pan e zoom;
+  - doppio tocco: zoom ×2 come prima (il primo tocco non lascia modifiche al marker);
+  - pressione prolungata (~450 ms): menu con «Julia da qui» (solo su Mandelbrot, nel punto premuto) e «Rimuovi marker» (se presente).
+- «Tocca per scegliere c» e «Zoom area» hanno la precedenza sul tocco; mouse e penna invariati.
+- Bersagli tattili ≥ 40 px su mobile; `touch-action: none` anche su overlay e cornici; altezze con `100dvh` (fallback `100vh`).
+- Testo di aiuto sui gesti touch visibile solo con puntatore touch.
+
+### Correzioni
+- Su touch il pan con un dito non partiva se non dopo la pressione prolungata: ora parte dalla soglia di movimento.
+
+### Limiti noti
+- Il marker è uno per vista e si azzera al cambio di famiglia; i suoi dati (esito del punto) compaiono solo per Mandelbrot, Julia, Burning Ship, Tricorno, Phoenix, Magnet I, Esponenziale e Seno, e solo a vista ferma e calcolo concluso. Marker e cursore non usano ancora `evalPoint` né `caps` (previsti dalla 1.9.0).
+- Il marker non è nello stato JSON/URL né nella cronologia.
+- Con 3 viste su telefono la vista è larga e bassa: i gesti sulle viste non fanno scorrere la pagina, che si scorre dai bordi o dalla barra sotto.
+- La ✕ e il badge delle viste sono più grandi su mobile e coprono più area dell'immagine.
+- Il testo di aiuto in alto cita ancora «1, 2 o 4» viste anche su schermo stretto, dove sono 1, 2 o 3.
+
 ## 1.7.5 — 2026-11-22 
 
 ### Novità

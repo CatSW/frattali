@@ -33,7 +33,7 @@ a.tbtn{display:inline-block;text-decoration:none}
 .stage{position:relative;background:#000;border-radius:18px;overflow:hidden;aspect-ratio:1/1;touch-action:none;user-select:none;-webkit-user-select:none}
 @media (min-width:900px){.stage{aspect-ratio:auto;height:max(480px,calc(100vh - 215px))}.app.full .stage{height:max(480px,calc(100vh - 175px))}.kicker,.updated{display:none}h1{margin:8px 0 2px}.lede{margin:2px 0 10px;font-size:15px}}
 @media (max-width:899px) and (orientation:portrait){.stage.l2{aspect-ratio:1/1.7}.stage.l3,.stage.l4{aspect-ratio:1/1.3}}
-.stage:fullscreen{height:100vh!important;border-radius:0;aspect-ratio:auto}.stage:-webkit-full-screen{height:100vh!important;border-radius:0;aspect-ratio:auto}
+.stage:fullscreen{height:100vh!important;height:100dvh!important;border-radius:0;aspect-ratio:auto}.stage:-webkit-full-screen{height:100vh!important;height:100dvh!important;border-radius:0;aspect-ratio:auto}
 .vgrid{position:absolute;inset:0;display:grid;gap:3px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);background:#000}
 .vgrid.l2{grid-template-rows:repeat(2,minmax(0,1fr))}
 @media (orientation:landscape){.vgrid.l2{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}}
@@ -92,16 +92,45 @@ details.more[open] summary::after{transform:rotate(-135deg)}
 details.more ul{margin:10px 0 0;padding-left:19px}
 li{margin:0 0 6px}
 a{color:inherit}
+/* 1.8.0 — touch e schermi piccoli */
+.vov,.vfr,.vtop{touch-action:none}
+.tchint{display:none}
+@media (pointer:coarse){.tchint{display:inline}}
+.vp>canvas{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.vmk{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px #000,inset 0 0 0 1.5px #000;pointer-events:none;display:none}
+.vmk::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #000}
+.ctxm{position:fixed;z-index:50;display:none;flex-direction:column;min-width:168px;padding:4px;background:var(--card);color:var(--ink);border-radius:14px;box-shadow:0 6px 22px rgba(0,0,0,.4),0 0 0 1px var(--rule);touch-action:manipulation}
+.ctxm button{font:15px/1.2 var(--sans);min-height:44px;text-align:left;border:0;background:none;color:inherit;padding:0 14px;border-radius:10px;cursor:pointer}
+.ctxm button:active{background:color-mix(in srgb,var(--ground),var(--ink) 12%)}
+@media (max-width:699px) and (min-height:500px){
+ .vgrid.l2,.vgrid.l3{grid-template-columns:minmax(0,1fr)}
+ .vgrid.l2{grid-template-rows:repeat(2,minmax(0,1fr))}
+ .vgrid.l3{grid-template-rows:repeat(3,minmax(0,1fr))}
+ .vgrid.l3 .vp.wide{grid-column:auto}
+ .stage.l3{aspect-ratio:auto;height:calc(100vh - 140px);height:calc(100dvh - 140px);min-height:480px}
+}
+@media (orientation:landscape) and (max-height:499px){
+ .stage,.app.full .stage{aspect-ratio:auto;height:calc(100vh - 24px);height:calc(100dvh - 24px);min-height:240px}
+}
+@media (max-width:699px),(orientation:landscape) and (max-height:499px){
+ .tbtn{min-height:40px;min-width:40px}
+ a.tbtn{display:inline-flex;align-items:center}
+ .vbtns button{width:40px;height:40px}
+ .badge{min-height:40px;display:inline-flex;align-items:center;padding:0 14px}
+ select,.ctl input[type=number]{min-height:40px}
+ .chk{min-height:40px}
+ .hud{flex-wrap:wrap;gap:4px}
+}
 </style>
 </head>
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.7.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.8.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.7.5 · 22 novembre 2026</p>
-<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
+<p class="updated">Versione 1.8.0 · 22 novembre 2026</p>
+<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
  <div>
@@ -1039,10 +1068,13 @@ function fallbackWorkers(){
  }catch(e){useWorkers=false;}
  queue=lost.concat(queue);
 }
+let viewNote=''; // avviso persistente sul limite di viste (schermo stretto), azzerato da un cambio di layout
 function refreshStatus(){
- if(LAYOUT===2)setStatus(VPS.map(v=>'Vista '+(v.id+1)+': '+(v.st||'—')).join(' | '));
- else if(LAYOUT>2)setStatus(VPS.map(v=>'V'+(v.id+1)+': '+(v.st?v.st.split(' · ')[0]:'—')+(v.qAdapt?'*':'')).join(' | ')+(VPS.some(v=>v.qAdapt)?'  (* risoluzione adattata a '+LAYOUT+' viste)':'')); // con 3–4 viste: solo l'esito di ciascuna
- else setStatus(VPS[0]?VPS[0].st:'');
+ let t;
+ if(LAYOUT===2)t=VPS.map(v=>'Vista '+(v.id+1)+': '+(v.st||'—')).join(' | ');
+ else if(LAYOUT>2)t=VPS.map(v=>'V'+(v.id+1)+': '+(v.st?v.st.split(' · ')[0]:'—')+(v.qAdapt?'*':'')).join(' | ')+(VPS.some(v=>v.qAdapt)?'  (* risoluzione adattata a '+LAYOUT+' viste)':''); // con 3–4 viste: solo l'esito di ciascuna
+ else t=VPS[0]?VPS[0].st:'';
+ setStatus(t+(viewNote?' · '+viewNote:''));
 }
 function recolor(){VPS.forEach(v=>v.recolor());}
 /* Nomi globali storici: delegano alla vista attiva (draw/updateHud/recolor a tutte le viste) */
@@ -1246,7 +1278,7 @@ class Viewport{
   this.fv={};                                             // ultima vista per famiglia
   this.cur={pre:null,full:null};                          // buffer {mu,de,tp,tx,kind,img}, cache pre/full/CDF
   this.jobId=0;this.t0=0;this.lastRS='';this.st='';this.dead=false;
-  this.ptrs=new Map();this.gest=null;this.lastTap=0;this.tapStart=null;this.longT=0;this.panBtn=false;this.sel=null;this.wheelT=0;this.progT=0;this.rsT=0;this.ro=null;
+  this.ptrs=new Map();this.gest=null;this.lastTap=0;this.tapStart=null;this.longT=0;this.panBtn=false;this.sel=null;this.wheelT=0;this.progT=0;this.rsT=0;this.ro=null;this.marker=null;this.mkEl=null;this.tapPrev=null;
   const col=VCOL[id%VCOL.length];el.style.setProperty('--vc',col.c);el.style.setProperty('--vt',col.t);
   this.buildOverlay();this.buildFrames();this.bind();this.observe();
  }
@@ -1261,7 +1293,8 @@ class Viewport{
    else{b.className='vclose';b.addEventListener('click',()=>closeView(this));this.closeBtn=b;}
    bt.appendChild(b);
   });
-  top.appendChild(bd);top.appendChild(bt);this.el.querySelector('.vov').appendChild(top);
+  top.appendChild(bd);top.appendChild(bt);const ov=this.el.querySelector('.vov');ov.appendChild(top);
+  const mk=document.createElement('div');mk.className='vmk';mk.setAttribute('aria-hidden','true');ov.appendChild(mk);this.mkEl=mk;
  }
  buildFrames(){
   this.fr=null;this.frx=null;this.fro=null;
@@ -1278,7 +1311,7 @@ class Viewport{
   cv.addEventListener('pointerdown',e=>this.onDown(e));
   cv.addEventListener('pointermove',e=>this.onMove(e));
   cv.addEventListener('pointerup',e=>this.onEnd(e));cv.addEventListener('pointercancel',e=>this.onEnd(e));
-  cv.addEventListener('pointerleave',()=>{if(this.hud.m)this.hud.m.textContent='';});
+  cv.addEventListener('pointerleave',()=>{if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():'';});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(this.sel)return;setActive(this);this.startGesture();const [px,py]=this.toPx(e);this.zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(()=>this.drawGesture());clearTimeout(this.wheelT);this.wheelT=setTimeout(()=>this.endGesture(),250);},{passive:false});
  }
  observe(){
@@ -1356,6 +1389,7 @@ class Viewport{
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   if(cur.pre&&cur.pre.cv&&(cur.left1>0||!cur.full.cv))ctx.drawImage(cur.pre.cv,0,0,cv.width,cv.height);
   if(cur.full&&cur.full.cv)ctx.drawImage(cur.full.cv,0,0);
+  if(this.marker)this.markerHud();
  }
  recolor(){
   const cur=this.cur;
@@ -1368,6 +1402,7 @@ class Viewport{
   const v=this.view,z=FAM[S.fam].view.span/v.span;
   this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
   this.hud.r.textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
+  this.placeMarker();
   scheduleFrames(); // le cornici seguono ogni cambio di vista (pan/zoom/render) senza toccare l'immagine
  }
  /* IFS / Buddhabrot */
@@ -1403,6 +1438,64 @@ class Viewport{
   this.ctx.fillStyle='#000';this.ctx.fillRect(0,0,W,H);this.ctx.drawImage(g.snap,ox,oy,W*k,H*k);this.updateHud();
  }
  endGesture(){if(!this.gest)return;this.gest=null;render([this]);}
+ /* touch: marker, tap, pressione prolungata */
+ placeMarker(){
+  const m=this.marker,el=this.mkEl;if(!el)return;
+  if(!m){el.style.display='none';return;}
+  const cv=this.cv,r=cv.getBoundingClientRect();if(!(r.width>0&&cv.width>0))return;
+  const p=worldToScreen(this.view,cv.width,cv.height,m.x,m.y),x=p[0]*r.width/cv.width,y=p[1]*r.height/cv.height;
+  const out=!isFinite(x)||!isFinite(y)||x<-13||y<-13||x>r.width+13||y>r.height+13;
+  el.style.display=out?'none':'block';if(!out){el.style.left=x+'px';el.style.top=y+'px';}
+ }
+ // dati già calcolati sul punto (solo famiglie a tempo di fuga e solo a calcolo concluso e vista ferma)
+ markerInfo(){
+  try{
+   const cur=this.cur,B=cur&&cur.full;
+   if(this.gest||!B||!B.kind||cur.left1!==0||!MK_FAMS[S.fam])return '';
+   const cv=this.cv,p=worldToScreen(this.view,cv.width,cv.height,this.marker.x,this.marker.y),i=Math.floor(p[0]),j=Math.floor(p[1]);
+   if(!(i>=0&&j>=0&&i<B.W&&j<B.H))return '';
+   const q=j*B.W+i;if(!B.done[q])return '';
+   const k=B.kind[q];
+   if(k===0)return 'fuga ≈ '+B.mu[q].toFixed(1).replace('.',',')+' it.';
+   if(k===1)return 'non fugge in '+curIter(this.view)+' it.';
+  }catch(e){}
+  return '';
+ }
+ markerText(){
+  const m=this.marker;if(!m)return '';
+  let t='Marker '+fmt(m.x,6)+(m.y<0?' − ':' + ')+fmt(Math.abs(m.y),6)+'i';
+  const d=this.markerInfo();if(d)t+=' · '+d;
+  return t;
+ }
+ markerHud(){if(this.hud.m)this.hud.m.textContent=this.markerText();}
+ setMarkerAt(px,py){const c=this.pxToC(px,py);this.marker={x:c[0],y:c[1]};this.placeMarker();this.markerHud();}
+ clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';}
+ // tocco breve (solo touch): «Tocca per scegliere c» ha la precedenza; doppio tocco = zoom ×2 come prima
+ onTap(p){
+  const cv=this.cv,k=cv.getBoundingClientRect().width/(cv.width||1),now=performance.now();
+  if(S.pick&&S.fam==='mandel'){const c=this.pxToC(p[0],p[1]);juliaFrom(c[0],c[1]);return;}
+  const tp=this.tapPrev;
+  if(tp&&now-tp.t<350&&Math.hypot(p[0]-tp.p[0],p[1]-tp.p[1])*k<32){
+   this.tapPrev=null;this.marker=tp.before;this.placeMarker();
+   if(this.marker)this.markerHud();else if(this.hud.m)this.hud.m.textContent='';
+   pushHist();this.zoomAt(p[0],p[1],2);render([this]);return;
+  }
+  const before=this.marker?{x:this.marker.x,y:this.marker.y}:null;
+  this.tapPrev={t:now,p:p.slice(),before};
+  let hit=false;
+  if(this.marker){const s=worldToScreen(this.view,cv.width,cv.height,this.marker.x,this.marker.y);hit=Math.hypot(s[0]-p[0],s[1]-p[1])*k<24;}
+  if(hit){this.marker=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';}
+  else this.setMarkerAt(p[0],p[1]);
+ }
+ touchLong(cx,cy){
+  this.longT=0;const ts=this.tapStart;
+  if(!ts||!ts.touch||ts.moved||this.gest||this.sel||this.ptrs.size!==1)return;
+  const items=[];
+  if(S.fam==='mandel'){const c=this.pxToC(ts.p[0],ts.p[1]);items.push(['Julia da qui',()=>juliaFrom(c[0],c[1])]);}
+  if(this.marker)items.push(['Rimuovi marker',()=>this.clearMarker()]);
+  if(!items.length)return;
+  ts.menu=true;showCtx(cx,cy,items);
+ }
  zoomAt(px,py,f){const [zx,zy]=this.pxToC(px,py),ns=this.view.span/f,o=screenToWorld({cx:0,cy:0,span:ns,rot:this.view.rot},this.cv.width,this.cv.height,px,py);this.view={cx:zx-o[0],cy:zy-o[1],span:ns,rot:this.view.rot||0};}
  onDown(e){
   if(this.sel)return;
@@ -1412,8 +1505,9 @@ class Viewport{
   try{this.cv.setPointerCapture(e.pointerId);}catch(_){}
   this.ptrs.set(e.pointerId,this.toPx(e));
   if(this.ptrs.size===1){
-   this.tapStart={p:this.toPx(e),t:performance.now(),moved:false,right:isRight,mouse:e.pointerType==='mouse'&&e.button===0};
+   this.tapStart={p:this.toPx(e),t:performance.now(),moved:false,right:isRight,mouse:e.pointerType==='mouse'&&e.button===0,touch:e.pointerType==='touch'};
    if(isRight){this.panBtn=true;this.startGesture();}
+   else if(this.tapStart.touch){if(!zoomMode){const cx=e.clientX,cy=e.clientY;this.longT=setTimeout(()=>this.touchLong(cx,cy),450);}} // touch: la pressione prolungata apre il menu, il pan parte dalla soglia di movimento
    else if(!zoomMode){
     this.longT=setTimeout(()=>{if(this.tapStart&&!this.tapStart.moved){this.panBtn=true;this.startGesture();this.tapStart.moved=true;}},450);
    }
@@ -1428,6 +1522,12 @@ class Viewport{
   if(!this.ptrs.has(e.pointerId))return;
   const old=this.ptrs.get(e.pointerId),now=this.toPx(e),ts=this.tapStart;
   if(this.ptrs.size===1){
+   if(ts&&ts.touch){ // 1 dito: pan oltre ~10 px CSS; la bitmap si sposta senza ricalcolo, il ricalcolo parte al rilascio
+    if(ts.menu)return;
+    if(!ts.moved){const r=this.cv.getBoundingClientRect();if(Math.hypot(now[0]-ts.p[0],now[1]-ts.p[1])<10*this.cv.width/(r.width||1))return;ts.moved=true;if(this.longT){clearTimeout(this.longT);this.longT=0;}}
+    this.startGesture();this.view=panView(this.view,this.cv.width,this.cv.height,old,now);this.ptrs.set(e.pointerId,now);requestAnimationFrame(()=>this.drawGesture());
+    return;
+   }
    if(ts&&!ts.moved&&Math.hypot(now[0]-ts.p[0],now[1]-ts.p[1])<this.cv.width*0.012){return;}
    // mouse, tasto sinistro, trascinamento senza pressione lunga: finestra di zoom dal punto premuto, senza premere «Zoom area»
    if(ts&&ts.mouse&&!ts.moved&&!this.panBtn&&!ts.right&&!this.gest){
@@ -1458,6 +1558,7 @@ class Viewport{
   if(this.ptrs.size===0){
    const wasPan=this.panBtn;this.panBtn=false;const ts=this.tapStart;
    if(this.gest){this.endGesture();}
+   else if(ts&&ts.touch){if(!ts.moved&&!ts.menu&&e.type==='pointerup'&&performance.now()-ts.t<(S.pick&&S.fam==='mandel'?450:250))this.onTap(ts.p);}
    else if(ts&&!ts.moved&&!wasPan&&performance.now()-ts.t<450){
     const [px,py]=ts.p;
     if(S.pick&&S.fam==='mandel'){const [x,y]=this.pxToC(px,py);juliaFrom(x,y);}
@@ -1503,6 +1604,18 @@ class Viewport{
 }
 /* ---------- viste: creazione, layout 1→2→4, chiusura, reflow, vista attiva ---------- */
 const MAX_VIEWS=4,REFLOW_MS=200;
+const MK_FAMS={mandel:1,julia:1,ship:1,tricorn:1,phoenix:1,magnet:1,exp:1,sin:1};
+// ambiente: schermo stretto (<700 px: viste in colonna, max 3) o telefono in orizzontale (altezza <500 px: max 2 affiancate)
+function envNarrow(){try{return typeof matchMedia==='function'?matchMedia('(max-width:699px)').matches:innerWidth<700;}catch(e){return innerWidth<700;}}
+function envShort(){try{return typeof matchMedia==='function'?matchMedia('(orientation:landscape) and (max-height:499px)').matches:(innerWidth>innerHeight&&innerHeight<500);}catch(e){return false;}}
+function maxViewsNow(){return Math.min(MAX_VIEWS,envShort()?2:(envNarrow()?3:MAX_VIEWS));}
+// il pulsante «4» diventa «3» su schermo stretto e si nasconde con max 2 viste (resta nel DOM con lo stesso id)
+function syncLayCaps(){
+ const b=$('lay4');if(!b)return;
+ const cap=maxViewsNow();
+ b.hidden=cap<=2;b.textContent=String(cap<=2?4:cap);b.title=cap===3?'Tre viste (in colonna)':'Quattro viste (griglia 2×2)';
+ const on=cap>2&&VPS.length===cap;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');
+}
 function setActive(vp){
  if(!vp||VPS.indexOf(vp)<0)return;
  AV=vp;VPS.forEach(v=>v.el.classList.toggle('act',v===vp));
@@ -1520,7 +1633,7 @@ function makeVp(id,view){
 function copyFv(fv){const o={};for(const k in fv)o[k]={...fv[k]};return o;}
 // nuova vista = duplicato della vista attiva; prende il primo id libero (colore e badge dipendono solo dall'id)
 function addView(){
- if(VPS.length>=MAX_VIEWS)return null;
+ if(VPS.length>=maxViewsNow())return null;
  const id=freeId();if(id<0)return null;
  const src=AV||VPS[0],vp=makeVp(id,src.view);vp.fv=copyFv(src.fv);return vp;
 }
@@ -1534,7 +1647,8 @@ function syncLayoutUI(){
  const n=LAYOUT=VPS.length;
  ['stage','vgrid'].forEach(k=>{const e=$(k);if(!e)return;[2,3,4].forEach(m=>e.classList.toggle('l'+m,n===m));e.classList.toggle('multi',n>=2);});
  VPS.forEach((v,i)=>{v.el.style.order=i;v.el.classList.toggle('wide',n===3&&i===2);}); // con 3 viste l'ultima occupa tutta la riga inferiore
- [1,2,4].forEach(k=>{const b=$('lay'+k);if(b){b.classList.toggle('on',n===k);b.setAttribute('aria-pressed',n===k?'true':'false');}});
+ [1,2].forEach(k=>{const b=$('lay'+k);if(b){b.classList.toggle('on',n===k);b.setAttribute('aria-pressed',n===k?'true':'false');}});
+ syncLayCaps();
  {const fb=$('frames');if(fb)fb.hidden=n<2;}
  VPS.forEach(v=>{if(v.closeBtn){v.closeBtn.disabled=n<2;v.closeBtn.setAttribute('aria-disabled',n<2?'true':'false');}});
  scheduleFrames();
@@ -1561,6 +1675,7 @@ function closeView(vp){
  const i=VPS.indexOf(vp),next=(AV===vp)?(VPS[i+1]||VPS[i-1]):AV;
  removeView(vp);
  setActive(next);
+ viewNote='';
  syncLayoutUI();
  scheduleReflow(60);
 }
@@ -1594,6 +1709,44 @@ function reflow(){
  scheduleFrames();
 }
 window.addEventListener('resize',()=>scheduleReflow());
+// ambiente (resize/orientationchange, debounce 120 ms < REFLOW_MS): aggiorna i limiti e, se serve, chiude le ultime viste; il reflow ricalcola solo i canvas che cambiano misura
+function reduceViews(n){
+ if(VPS.length<=n)return false;
+ pushHist();
+ const closed=[];
+ while(VPS.length>n){const v=VPS[VPS.length-1];closed.push(v.id+1);removeView(v);}
+ if(VPS.indexOf(AV)<0)setActive(VPS[VPS.length-1]);
+ viewNote='schermo stretto: max '+n+' viste, '+(closed.length>1?'chiuse le viste ':'chiusa la vista ')+closed.reverse().join(', ');
+ showMsg(viewNote);syncLayoutUI();scheduleReflow(60);
+ return true;
+}
+let envT=0;
+function layoutEnv(){envT=0;syncLayCaps();reduceViews(maxViewsNow());}
+function scheduleEnv(){clearTimeout(envT);envT=setTimeout(layoutEnv,120);}
+window.addEventListener('resize',scheduleEnv);
+window.addEventListener('orientationchange',()=>{scheduleEnv();scheduleReflow();});
+
+/* menu contestuale minimo (pressione prolungata su touch) */
+let ctxEl=null,ctxOpenT=0;
+function closeCtx(){if(ctxEl)ctxEl.style.display='none';}
+function showCtx(cx,cy,items){
+ try{
+  if(!ctxEl){
+   ctxEl=document.createElement('div');ctxEl.className='ctxm';ctxEl.setAttribute('role','menu');document.body.appendChild(ctxEl);
+   document.addEventListener('pointerdown',e=>{if(ctxEl.style.display!=='none'&&!ctxEl.contains(e.target))closeCtx();},true);
+   window.addEventListener('keydown',e=>{if(e.key==='Escape')closeCtx();});
+   ['resize','orientationchange','scroll'].forEach(ev=>window.addEventListener(ev,closeCtx,{passive:true}));
+  }
+  ctxEl.innerHTML='';
+  items.forEach(it=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=it[0];
+   b.addEventListener('click',()=>{if(performance.now()-ctxOpenT<350)return;closeCtx();it[1]();});ctxEl.appendChild(b);});
+  ctxEl.style.visibility='hidden';ctxEl.style.display='flex';
+  const w=ctxEl.offsetWidth,h=ctxEl.offsetHeight,vw=document.documentElement.clientWidth,vh=document.documentElement.clientHeight;
+  let x=cx-w/2,y=cy-h-28;if(y<8)y=cy+28; // sopra il dito, o sotto se manca spazio
+  x=Math.max(8,Math.min(vw-w-8,x));y=Math.max(8,Math.min(vh-h-8,y));
+  ctxEl.style.left=x+'px';ctxEl.style.top=y+'px';ctxEl.style.visibility='';ctxOpenT=performance.now();
+ }catch(e){/* nessun errore verso l'utente se il browser non supporta qualcosa */}
+}
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>scheduleReflow()));
 function fvSave(){VPS.forEach(vp=>{vp.fv[S.fam]={...vp.view};});}
 
@@ -1658,6 +1811,7 @@ function buildParams(){
 }
 function scheduleRender(ms){clearTimeout(renderPending);renderPending=setTimeout(render,ms);}
 function setFam(f,keepView){
+ VPS.forEach(v=>v.clearMarker());
  if(!keepView)fvSave(); // ogni vista ricorda la propria vista per famiglia
  S.fam=f;$('fam').value=f;
  if(!keepView){VPS.forEach(vp=>{vp.view={...(vp.fv[f]||FAM[f].view),rot:0};});S.nw={};}
@@ -1720,7 +1874,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.7.5',APP_VERSION_SHORT='1.7.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.8.0',APP_VERSION_SHORT='1.8.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -1804,6 +1958,7 @@ function applyState(obj){
  }
  specs.forEach(sp=>{if(sp.id<0){for(let i=0;i<MAX_VIEWS;i++)if(!used.has(i)){sp.id=i;used.add(i);break;}}});
  specs.sort((p,q)=>p.id-q.id);
+ let cut=[];{const lim=maxViewsNow();if(specs.length>lim){cut=specs.splice(lim).map(x=>x.id+1);used.clear();specs.forEach(x=>used.add(x.id));}} // schermo stretto/landscape: si chiudono le ultime viste
  let actId=obj.active!=null?Number(obj.active):NaN;
  if(!(Number.isInteger(actId)&&used.has(actId)))actId=(AV&&used.has(AV.id))?AV.id:specs[0].id;
  const Psrc=obj.P&&typeof obj.P==='object'?obj.P:{};
@@ -1848,8 +2003,10 @@ function applyState(obj){
  syncColorUI(); buildLUT();
  if(mode==='equal'){VPS.forEach(v=>{if(v.cur.pre)buildCDF(v.cur.pre);if(v.cur.full)buildCDF(v.cur.full);});}
  render();
- const m='Stato applicato';$('headmsg').textContent=m;setStatus(m);
- clearTimeout(applyState._tm);applyState._tm=setTimeout(()=>{$('headmsg').textContent='';},3500);
+ const m='Stato applicato';$('headmsg').textContent=m;
+ viewNote=cut.length?'schermo stretto: max '+specs.length+' viste, '+(cut.length>1?'chiuse le viste ':'chiusa la vista ')+cut.join(', '):'';
+ setStatus(m+(viewNote?' · '+viewNote:''));
+ clearTimeout(applyState._tm);applyState._tm=setTimeout(()=>{$('headmsg').textContent='';},cut.length?6000:3500);
  return true;
 }
 function toB64url(str){
@@ -1915,7 +2072,9 @@ $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
 function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
 $('reset').addEventListener('click',()=>resetView(AV));
 function layoutClick(n){
+ n=Math.min(n,maxViewsNow());
  if(n===LAYOUT)return;
+ viewNote='';
  pushHist();
  const before=VPS.slice();
  setLayout(n);
@@ -1926,6 +2085,7 @@ function layoutClick(n){
 $('lay1').addEventListener('click',()=>layoutClick(1));$('lay2').addEventListener('click',()=>layoutClick(2));$('lay4').addEventListener('click',()=>layoutClick(4));
 $('back').addEventListener('click',()=>{
  const h=hist.pop();if(!h)return;
+ viewNote='';
  fvSave();
  const sameP=h.fam===S.fam&&JSON.stringify(h.P)===JSON.stringify(S.P[h.fam])&&JSON.stringify(h.nw||{})===JSON.stringify(S.nw||{});
  if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;}
