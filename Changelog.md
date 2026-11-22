@@ -16,7 +16,30 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
-## 1.6 — 21 novembre 2026
+## 1.6.5 — 2026-11-22 
+
+### Novità
+- Layout a 1, 2 o 4 viste (griglia 2×2): il pulsante «4» si affianca a «1» e «2». Una nuova vista duplica la vista attiva.
+- Pulsante «✕» su ogni vista per chiuderla. È disabilitato quando resta una sola vista. Se si chiude la vista attiva, l'attivazione passa alla successiva (o alla precedente se era l'ultima).
+- Reflow: dopo una chiusura le viste rimaste occupano lo spazio disponibile. Con 3 viste, 2 stanno nella riga superiore e 1 a tutta larghezza in quella inferiore.
+- Colore, badge e cornici restano legati all'id della vista (V1–V4) e non cambiano con aggiunte, chiusure o reflow.
+- Stato JSON e link `?s=`: ogni vista porta il proprio `id` e c'è il campo `active`. Supportate da 1 a 4 viste; gli stati 1.5–1.6 (senza `id`) si aprono come prima.
+- «Indietro» ripristina anche aggiunte e chiusure di viste.
+- Con 3–4 viste il tetto di pixel della qualità scelta è diviso per il numero di viste (il totale non supera quello di una vista singola). Il messaggio di stato segnala «risoluzione adattata».
+
+### Correzioni
+- Reflow con un unico debounce (200 ms) per tutte le viste: si ricalcolano solo quelle il cui canvas ha cambiato dimensione e si ridisegnano le cornici. Aggiungere o chiudere una vista non ricalcola più tutte le altre.
+- Fullscreen e ridimensionamento finestra ora attivano il reflow anche senza `ResizeObserver`.
+- L'aggiornamento progressivo dell'immagine rallenta in proporzione al costo misurato e al numero di viste in calcolo, così l'interfaccia resta reattiva.
+
+### Limiti noti
+- Con 3 viste nessun pulsante di layout risulta attivo (i pulsanti sono 1, 2, 4).
+- Riducendo il layout (4→2, 4→1) restano la vista attiva e, per il resto, le prime per id.
+- Chiudendo la vista 1 scompaiono dal DOM gli id `vp0`, `cv`, `selrect`, `hudl/m/r`; tornano se la vista 1 viene riaggiunta.
+- La regola di pixel agisce solo con schermi grandi o ad alta densità (≥2×) o in fullscreen; a 1400×900 e dpr 1 la risoluzione è invariata.
+- Con 3–4 viste lo stato mostra solo l'esito di ciascuna vista.
+
+## 1.6 — 2026-11-21
 
 ### Novità
 - Cornici proiettate: in ogni vista M si vede il campo visivo delle altre viste N, disegnato su un overlay separato dal canvas (nessun ricalcolo dell'immagine). Il rettangolo matematico di N è proiettato in M con `worldToScreen`; con rotazione diversa da zero diventa un quadrilatero.
@@ -37,7 +60,7 @@ Le date sono nel formato `AAAA-MM-GG`.
 - Le cornici non sono incluse nel PNG esportato.
 - L'interfaccia non ha ancora controlli di rotazione: il caso rot≠0 è gestito dal codice ed è verificato sulle funzioni di calcolo, non dall'interfaccia.
 
-## 1.5 — 21 novembre 2026
+## 1.5 — 2026-11-21
 
 ### Novità
 - Astrazione Viewport: ogni vista ha canvas, overlay, vista propria {cx, cy, span, rot}, buffer e cache (pre/full/CDF), generazione dei job e HUD. Lo stato frattale/colore resta unico e condiviso.

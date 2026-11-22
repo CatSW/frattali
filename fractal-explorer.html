@@ -32,23 +32,26 @@ a.tbtn{display:inline-block;text-decoration:none}
 .app.full .panel{display:none}
 .stage{position:relative;background:#000;border-radius:18px;overflow:hidden;aspect-ratio:1/1;touch-action:none;user-select:none;-webkit-user-select:none}
 @media (min-width:900px){.stage{aspect-ratio:auto;height:max(480px,calc(100vh - 215px))}.app.full .stage{height:max(480px,calc(100vh - 175px))}.kicker,.updated{display:none}h1{margin:8px 0 2px}.lede{margin:2px 0 10px;font-size:15px}}
-@media (max-width:899px) and (orientation:portrait){.stage.l2{aspect-ratio:1/1.7}}
+@media (max-width:899px) and (orientation:portrait){.stage.l2{aspect-ratio:1/1.7}.stage.l3,.stage.l4{aspect-ratio:1/1.3}}
 .stage:fullscreen{height:100vh!important;border-radius:0;aspect-ratio:auto}.stage:-webkit-full-screen{height:100vh!important;border-radius:0;aspect-ratio:auto}
 .vgrid{position:absolute;inset:0;display:grid;gap:3px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);background:#000}
 .vgrid.l2{grid-template-rows:repeat(2,minmax(0,1fr))}
 @media (orientation:landscape){.vgrid.l2{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}}
+.vgrid.l3,.vgrid.l4{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.vgrid.l3 .vp.wide{grid-column:1/-1}
 .vp{position:relative;min-width:0;min-height:0;overflow:hidden;background:#000}
 .vp>canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .vov{position:absolute;inset:0;pointer-events:none}
-.l2 .vp.act .vov{box-shadow:inset 0 0 0 3px var(--vc),inset 0 0 0 4px rgba(0,0,0,.55)}
+.multi .vp.act .vov{box-shadow:inset 0 0 0 3px var(--vc),inset 0 0 0 4px rgba(0,0,0,.55)}
 .vfr{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .vtop{position:absolute;left:8px;top:8px;display:none;align-items:center;gap:6px}
-.l2 .vtop{display:flex}
+.multi .vtop{display:flex}
 .badge{pointer-events:auto;cursor:pointer;font:600 12px/1 var(--sans);padding:5px 9px;border-radius:999px;background:var(--vc);color:var(--vt);box-shadow:0 0 0 1px rgba(0,0,0,.55),0 0 0 2px rgba(255,255,255,.55);opacity:.7}
 .vp.act .badge{opacity:1}
 .vbtns{display:flex;gap:4px}
+.vbtns button:disabled{opacity:.35;cursor:default}
 .vbtns button{pointer-events:auto;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font:15px/1 var(--sans);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
-.l2 .hud{flex-wrap:wrap;gap:4px}
+.multi .hud{flex-wrap:wrap;gap:4px}
 .seg{display:inline-flex;align-items:center;gap:6px}
 .seglab{font:14px/1 var(--sans);color:var(--muted)}
 
@@ -95,10 +98,10 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.6</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.6.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.6 · 21 novembre 2026</p>
-<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste: 2» confronti due punti di vista sullo stesso frattale: la vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
+<p class="updated">Versione 1.6.5 · 22 novembre 2026</p>
+<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
  <div>
@@ -110,7 +113,7 @@ a{color:inherit}
    <button class="tbtn" id="reset" type="button" title="Vista iniziale" aria-label="Vista iniziale" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg><span>Vista iniziale</span></button>
    <button class="tbtn" id="back" type="button" title="Indietro" aria-label="Indietro" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/></svg><span>Indietro</span></button>
    <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><rect x="8" y="8" width="6" height="6" rx="0.5"/></svg><span>Zoom area</span></button>
-   <span class="seg" role="group" aria-label="Numero di viste"><span class="seglab">Viste</span><button class="tbtn on" id="lay1" type="button" aria-pressed="true" title="Una vista">1</button><button class="tbtn" id="lay2" type="button" aria-pressed="false" title="Due viste (affiancate o impilate)">2</button></span>
+   <span class="seg" role="group" aria-label="Numero di viste"><span class="seglab">Viste</span><button class="tbtn on" id="lay1" type="button" aria-pressed="true" title="Una vista">1</button><button class="tbtn" id="lay2" type="button" aria-pressed="false" title="Due viste (affiancate o impilate)">2</button><button class="tbtn" id="lay4" type="button" aria-pressed="false" title="Quattro viste (griglia 2×2)">4</button></span>
    <button class="tbtn on" id="frames" type="button" aria-pressed="true" hidden title="Mostra o nascondi, su ogni vista, le cornici delle altre viste">Cornici</button>
    <button class="tbtn" id="tojulia">Julia da qui</button>
    <button class="tbtn" id="pick">Tocca per scegliere c</button>
@@ -938,6 +941,7 @@ function fallbackWorkers(){
 }
 function refreshStatus(){
  if(LAYOUT===2)setStatus(VPS.map(v=>'Vista '+(v.id+1)+': '+(v.st||'—')).join(' | '));
+ else if(LAYOUT>2)setStatus(VPS.map(v=>'V'+(v.id+1)+': '+(v.st?v.st.split(' · ')[0]:'—')+(v.qAdapt?'*':'')).join(' | ')+(VPS.some(v=>v.qAdapt)?'  (* risoluzione adattata a '+LAYOUT+' viste)':'')); // con 3–4 viste: solo l'esito di ciascuna
  else setStatus(VPS[0]?VPS[0].st:'');
 }
 function recolor(){VPS.forEach(v=>v.recolor());}
@@ -1150,9 +1154,11 @@ class Viewport{
   const top=document.createElement('div');top.className='vtop';
   const bd=document.createElement('span');bd.className='badge';bd.textContent='Vista '+(this.id+1);bd.addEventListener('click',()=>setActive(this));
   const bt=document.createElement('span');bt.className='vbtns';
-  [['home','⌂','Vista iniziale']].forEach(a=>{
-   const b=document.createElement('button');b.type='button';b.textContent=a[1];b.title=a[2]+' (vista '+(this.id+1)+')';b.setAttribute('aria-label',b.title);
-   b.addEventListener('click',()=>{setActive(this);resetView(this);});
+  this.closeBtn=null;
+  [['home','⌂','Vista iniziale (vista '+(this.id+1)+')'],['close','✕','Chiudi vista '+(this.id+1)]].forEach(a=>{
+   const b=document.createElement('button');b.type='button';b.textContent=a[1];b.title=a[2];b.setAttribute('aria-label',b.title);
+   if(a[0]==='home')b.addEventListener('click',()=>{setActive(this);resetView(this);});
+   else{b.className='vclose';b.addEventListener('click',()=>closeView(this));this.closeBtn=b;}
    bt.appendChild(b);
   });
   top.appendChild(bd);top.appendChild(bt);this.el.querySelector('.vov').appendChild(top);
@@ -1178,7 +1184,7 @@ class Viewport{
  observe(){
   if(typeof ResizeObserver==='undefined')return; // senza ResizeObserver il ridimensionamento non ricalcola da solo
   try{
-   this.ro=new ResizeObserver(()=>{clearTimeout(this.rsT);this.rsT=setTimeout(()=>{if(this.dead)return;const r=this.cv.getBoundingClientRect();if(Math.round(r.width)+'x'+Math.round(r.height)===this.lastRS)return;if(S.fam==='ifs')fitIFS(this);render([this]);},250);});
+   this.ro=new ResizeObserver(()=>scheduleReflow()); // un solo debounce globale: vedi reflow()
    this.ro.observe(this.cv);
   }catch(e){this.ro=null;}
  }
@@ -1197,7 +1203,10 @@ class Viewport{
   const q={veloce:[0.5,0.9e6],normale:[1,3e6],alta:[1.5,5e6],ultra:[2.2,8e6]}[S.qual],sm=innerWidth<900?0.45:1;
   const f=q[0];q[1]*=sm;
   let W=Math.max(64,Math.round(r.width*dpr*f)),H=Math.max(64,Math.round(r.height*dpr*f));
-  const k=Math.sqrt(q[1]/(W*H)); if(k<1){W=Math.round(W*k);H=Math.round(H*k);}
+  // regola 1.6.5: con 3–4 viste il tetto di pixel della qualità scelta è diviso per il numero di viste (il totale non supera quello di una vista singola); con 1–2 viste invariato
+  const sh=VPS.length>=3?VPS.length:1,k0=Math.sqrt(q[1]/(W*H)),k=Math.sqrt(q[1]/sh/(W*H));
+  this.qAdapt=sh>1&&k<1&&k<k0;
+  if(k<1){W=Math.round(W*k);H=Math.round(H*k);}
   return {W,H};
  }
  begin(){
@@ -1231,13 +1240,14 @@ class Viewport{
   else {
    cur.left1--;
    if(!cur.full.cdf&&cur.pre.cdf)cur.full.cdf=cur.pre.cdf;
-   if(cur.left1===0){buildCDF(cur.full);colorize(cur.full);this.draw();const ms=performance.now()-this.t0;this.setSt('Pronto in '+(ms/1000).toFixed(2).replace('.',',')+' s · '+cur.W+'×'+cur.H+' px · '+curIter(this.view)+' iterazioni'+this.precWarn());}
+   if(cur.left1===0){buildCDF(cur.full);colorize(cur.full);this.draw();const ms=performance.now()-this.t0;this.setSt('Pronto in '+(ms/1000).toFixed(2).replace('.',',')+' s · '+cur.W+'×'+cur.H+' px · '+curIter(this.view)+' iterazioni'+(this.qAdapt?' · risoluzione adattata a '+VPS.length+' viste':'')+this.precWarn());}
    else this.scheduleProgress();
   }
  }
  scheduleProgress(){
   if(this.progT)return;const cur=this.cur;
-  this.progT=setTimeout(()=>{this.progT=0;const c=this.cur;if(!this.dead&&c.full&&c.left1>0){colorize(c.full);this.draw();this.setSt('Calcolo… '+Math.round(100*(1-c.left1/c.n1))+'%');}},Math.max(120,cur.W*cur.H/10000));
+  const busy=Math.max(1,VPS.filter(v=>v.cur&&v.cur.left1>0).length);
+  this.progT=setTimeout(()=>{this.progT=0;const c=this.cur;if(!this.dead&&c.full&&c.left1>0){const t=performance.now();colorize(c.full);this.draw();this.cdt=performance.now()-t;this.setSt('Calcolo… '+Math.round(100*(1-c.left1/c.n1))+'%');}},Math.max(120,cur.W*cur.H/10000,3*(this.cdt||0)*busy));
  }
  precWarn(){const s=this.view.span/this.cv.height,m=Math.max(1,Math.abs(this.view.cx),Math.abs(this.view.cy));return s<4e-16*m*8?' · limite di precisione raggiunto':'';}
  draw(){
@@ -1391,36 +1401,100 @@ class Viewport{
   if(lim)showMsg('Zoom limitato dalla precisione a 64 bit');
  }
 }
-/* ---------- viste: creazione, layout 1↔2, vista attiva ---------- */
+/* ---------- viste: creazione, layout 1→2→4, chiusura, reflow, vista attiva ---------- */
+const MAX_VIEWS=4,REFLOW_MS=200;
 function setActive(vp){
  if(!vp||VPS.indexOf(vp)<0)return;
  AV=vp;VPS.forEach(v=>v.el.classList.toggle('act',v===vp));
 }
+function freeId(){for(let i=0;i<MAX_VIEWS;i++)if(!vpById(i))return i;return -1;}
+// id 0 conserva gli ID DOM storici (cv, selrect, hudl/m/r); le altre viste usano il suffisso dell'id. VPS resta ordinato per id.
 function makeVp(id,view){
- const el=document.createElement('div');el.className='vp';el.id='vp'+id;el.setAttribute('data-vid',id);
- el.innerHTML='<canvas id="cv'+id+'"></canvas><div class="vov"><div class="selr" id="selrect'+id+'"></div><div class="hud"><span id="hudl'+id+'"></span><span id="hudm'+id+'"></span><span id="hudr'+id+'"></span></div></div>';
+ const sf=id===0?'':id,el=document.createElement('div');el.className='vp';el.id='vp'+id;el.setAttribute('data-vid',id);
+ el.innerHTML='<canvas id="cv'+sf+'"></canvas><div class="vov"><div class="selr" id="selrect'+sf+'"></div><div class="hud"><span id="hudl'+sf+'"></span><span id="hudm'+sf+'"></span><span id="hudr'+sf+'"></span></div></div>';
  $('vgrid').appendChild(el);
- const vp=new Viewport(id,el,view);VPS.push(vp);
+ const vp=new Viewport(id,el,view);VPS.push(vp);VPS.sort((p,q)=>p.id-q.id);
  if(zoomMode)vp.cv.classList.add('zsel');
  return vp;
 }
 function copyFv(fv){const o={};for(const k in fv)o[k]={...fv[k]};return o;}
-// struttura soltanto: nessun render e nessuna cronologia (le gestiscono i chiamanti)
-function setLayout(n){
- n=n===2?2:1;
- if(n===2&&VPS.length<2){const src=AV||VPS[0],vp=makeVp(1,src.view);vp.fv=copyFv(src.fv);}
- else if(n===1&&VPS.length>1){
-  if(AV&&AV!==VPS[0]){VPS[0].view={...AV.view,rot:0};VPS[0].fv=copyFv(AV.fv);} // resta la vista che era attiva
-  while(VPS.length>1)VPS.pop().destroy();
- }
- LAYOUT=VPS.length;
- setActive(VPS.indexOf(AV)>=0?AV:VPS[0]);
- $('stage').classList.toggle('l2',LAYOUT===2);$('vgrid').classList.toggle('l2',LAYOUT===2);
- [1,2].forEach(k=>{const b=$('lay'+k);if(b){b.classList.toggle('on',LAYOUT===k);b.setAttribute('aria-pressed',LAYOUT===k?'true':'false');}});
- {const fb=$('frames');if(fb)fb.hidden=LAYOUT<2;}
+// nuova vista = duplicato della vista attiva; prende il primo id libero (colore e badge dipendono solo dall'id)
+function addView(){
+ if(VPS.length>=MAX_VIEWS)return null;
+ const id=freeId();if(id<0)return null;
+ const src=AV||VPS[0],vp=makeVp(id,src.view);vp.fv=copyFv(src.fv);return vp;
+}
+function removeView(vp){
+ const i=VPS.indexOf(vp);if(i<0)return;
+ if(vp.sel){try{vp.endSel(false);}catch(_){}}
+ VPS.splice(i,1);vp.destroy();
+}
+// griglia, pulsanti di layout, ✕, cornici e stato; nessun render e nessuna cronologia
+function syncLayoutUI(){
+ const n=LAYOUT=VPS.length;
+ ['stage','vgrid'].forEach(k=>{const e=$(k);if(!e)return;[2,3,4].forEach(m=>e.classList.toggle('l'+m,n===m));e.classList.toggle('multi',n>=2);});
+ VPS.forEach((v,i)=>{v.el.style.order=i;v.el.classList.toggle('wide',n===3&&i===2);}); // con 3 viste l'ultima occupa tutta la riga inferiore
+ [1,2,4].forEach(k=>{const b=$('lay'+k);if(b){b.classList.toggle('on',n===k);b.setAttribute('aria-pressed',n===k?'true':'false');}});
+ {const fb=$('frames');if(fb)fb.hidden=n<2;}
+ VPS.forEach(v=>{if(v.closeBtn){v.closeBtn.disabled=n<2;v.closeBtn.setAttribute('aria-disabled',n<2?'true':'false');}});
  scheduleFrames();
  refreshStatus();
 }
+// struttura soltanto (1..4 viste): nessun render e nessuna cronologia (le gestiscono i chiamanti).
+// Aggiungere duplica la vista attiva; ridurre tiene la vista attiva e, per il resto, le prime per id.
+function setLayout(n){
+ n=Math.max(1,Math.min(MAX_VIEWS,Math.round(+n)||1));
+ while(VPS.length<n&&addView());
+ if(VPS.length>n){
+  const keep=new Set(),a=(AV&&VPS.indexOf(AV)>=0)?AV:VPS[0];keep.add(a);
+  for(const v of VPS){if(keep.size>=n)break;keep.add(v);}
+  VPS.slice().forEach(v=>{if(!keep.has(v))removeView(v);});
+ }
+ setActive(VPS.indexOf(AV)>=0?AV:VPS[0]);
+ syncLayoutUI();
+}
+// chiude una vista (con almeno 2 viste); se era l'attiva, l'attivazione passa alla successiva (o alla precedente)
+function closeView(vp){
+ vp=vp||AV;
+ if(!vp||VPS.length<2||VPS.indexOf(vp)<0)return;
+ pushHist();
+ const i=VPS.indexOf(vp),next=(AV===vp)?(VPS[i+1]||VPS[i-1]):AV;
+ removeView(vp);
+ setActive(next);
+ syncLayoutUI();
+ scheduleReflow(60);
+}
+// porta l'insieme delle viste a specs=[{id,cx,cy,span}] (ids unici 0..3) e imposta la vista attiva; nessun render, nessuna cronologia
+function setViews(specs,actId){
+ const ids=new Set(specs.map(s=>s.id)),added=[],changed=[],src=(AV&&VPS.indexOf(AV)>=0)?AV:VPS[0];
+ specs.forEach(s=>{
+  let v=vpById(s.id);
+  if(!v){v=makeVp(s.id,s);if(src)v.fv=copyFv(src.fv);added.push(v);}
+  else if(v.view.cx!==s.cx||v.view.cy!==s.cy||v.view.span!==s.span)changed.push(v);
+  v.view={cx:s.cx,cy:s.cy,span:s.span,rot:0};
+ });
+ VPS.slice().forEach(v=>{if(!ids.has(v.id))removeView(v);});
+ setActive(vpById(actId)||((AV&&VPS.indexOf(AV)>=0)?AV:VPS[0]));
+ syncLayoutUI();
+ return {added,changed};
+}
+/* reflow: un solo debounce globale. Ricalcola solo le viste il cui canvas ha davvero cambiato dimensione (rispetto all'ultimo calcolo) e ridisegna le cornici. */
+let reflowT=0;
+function scheduleReflow(ms){clearTimeout(reflowT);reflowT=setTimeout(reflow,ms==null?REFLOW_MS:ms);}
+function reflow(){
+ reflowT=0;
+ const list=[];
+ VPS.forEach(v=>{
+  if(v.dead)return;
+  const r=v.cv.getBoundingClientRect();if(Math.round(r.width)+'x'+Math.round(r.height)===v.lastRS)return;
+  if(S.fam==='ifs')fitIFS(v);
+  list.push(v);
+ });
+ if(list.length)render(list);
+ scheduleFrames();
+}
+window.addEventListener('resize',()=>scheduleReflow());
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>scheduleReflow()));
 function fvSave(){VPS.forEach(vp=>{vp.fv[S.fam]={...vp.view};});}
 
 /* ---------- zoom rettangolare (modalità) ---------- */
@@ -1435,7 +1509,7 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&VPS.some(v=>v.sel)){e
 function setStatus(t){$('status').textContent=t;}
 function fmt(v,d=6){return (+v).toFixed(d).replace('.',',');}
 // snapshot globale: famiglia, parametri, soglie Newton e {views[], layout} (+ vista attiva)
-function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>({cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0})),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
+function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>({id:v.id,cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0})),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
 function ctlRow(parent,o){
  const row=document.createElement('label');row.className='ctl';
  row.innerHTML='<span class="cl"></span><input type="range"><input type="number" step="any">';
@@ -1546,7 +1620,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.6',APP_VERSION_SHORT='1.6',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.6.5',APP_VERSION_SHORT='1.6.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -1597,8 +1671,8 @@ function nwExport(){
  return Object.keys(b).length?b:undefined;
 }
 function getState(){
- const fam=S.fam,P={...S.P[fam]},vs=VPS.map(vp=>({cx:String(vp.view.cx),cy:String(vp.view.cy),span:+vp.view.span,rot:0}));
- const st={v:1,fam,layout:String(LAYOUT),views:vs,P,iterBase:S.iterBase[fam],auto:!!S.auto,qual:S.qual,
+ const fam=S.fam,P={...S.P[fam]},vs=VPS.map(vp=>({id:vp.id,cx:String(vp.view.cx),cy:String(vp.view.cy),span:+vp.view.span,rot:0}));
+ const st={v:1,fam,layout:String(VPS.length),active:AV?AV.id:0,views:vs,P,iterBase:S.iterBase[fam],auto:!!S.auto,qual:S.qual,
   pal:S.pal,mode:S.mode,inmode:S.inmode,incol:S.incol,dens:+S.dens,off:+S.off,glow:+S.glow,
   light:+S.light,az:+S.az,el:+S.el,relief:+S.relief,shin:+S.shin,irid:+S.irid};
  if(S.pal==='custom')st.custom=PALS.custom.c.slice();
@@ -1612,15 +1686,26 @@ function applyState(obj){
  const fam=obj.fam; if(!fam||!FAM[fam]){const m='Famiglia sconosciuta: '+(fam||'?');$('headmsg').textContent=m;setStatus(m);return false;}
  // valida e prepara
  const vsrc=Array.isArray(obj.views)?obj.views:[];
- let nl=+obj.layout;if(nl!==1&&nl!==2)nl=vsrc.length>=2?2:1; // layout 4 e oltre: non ancora supportati
- const nviews=[];
+ let nl=Math.round(+obj.layout);if(!(nl>=1&&nl<=MAX_VIEWS))nl=Math.max(1,Math.min(MAX_VIEWS,vsrc.length)); // 1..4 viste
+ const specs=[],used=new Set();
  for(let k=0;k<nl;k++){
   const vs=vsrc[k]&&typeof vsrc[k]==='object'?vsrc[k]:null;
-  if(!vs){nviews.push(k>0?{...nviews[0]}:{cx:0,cy:0,span:3,rot:0});continue;}
-  let cx=parseFloat(vs.cx),cy=parseFloat(vs.cy),span=+vs.span;
-  if(!isFinite(cx))cx=0;if(!isFinite(cy))cy=0;if(!(span>0))span=FAM[fam].view.span;
-  nviews.push({cx,cy,span,rot:0});
+  let sp;
+  if(!vs)sp=k>0?{cx:specs[0].cx,cy:specs[0].cy,span:specs[0].span}:{cx:0,cy:0,span:3};
+  else{
+   let cx=parseFloat(vs.cx),cy=parseFloat(vs.cy),span=+vs.span;
+   if(!isFinite(cx))cx=0;if(!isFinite(cy))cy=0;if(!(span>0))span=FAM[fam].view.span;
+   sp={cx,cy,span};
+  }
+  const idn=vs&&vs.id!=null?Number(vs.id):NaN; // id assente o non valido (stati 1.5–1.6): assegnati in ordine
+  sp.id=(Number.isInteger(idn)&&idn>=0&&idn<MAX_VIEWS&&!used.has(idn))?idn:-1;
+  if(sp.id>=0)used.add(sp.id);
+  specs.push(sp);
  }
+ specs.forEach(sp=>{if(sp.id<0){for(let i=0;i<MAX_VIEWS;i++)if(!used.has(i)){sp.id=i;used.add(i);break;}}});
+ specs.sort((p,q)=>p.id-q.id);
+ let actId=obj.active!=null?Number(obj.active):NaN;
+ if(!(Number.isInteger(actId)&&used.has(actId)))actId=(AV&&used.has(AV.id))?AV.id:specs[0].id;
  const Psrc=obj.P&&typeof obj.P==='object'?obj.P:{};
  const P={...S.P[fam]};
  for(const k of Object.keys(P)){if(k in Psrc){let v=Psrc[k];const d=PARAMDEF[k];
@@ -1652,10 +1737,9 @@ function applyState(obj){
  S.P[fam]=P; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
  S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
  S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid;
- setLayout(nl);
- VPS.forEach((vp,k)=>{vp.view={...nviews[k]};});
+ setViews(specs,actId);
  setFam(fam,true); // viste già impostate
- if(fam==='ifs')VPS.forEach((vp,k)=>{vp.view={...nviews[k]};}); // non lasciare che fitIFS sovrascriva le viste serializzate
+ if(fam==='ifs')setViews(specs,actId); // non lasciare che fitIFS sovrascriva le viste serializzate
  $('fam').value=fam; $('qual').value=qual; $('auto').checked=auto;
 
  $('style').value=''; $('preset').value='-1';
@@ -1730,17 +1814,28 @@ $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
 function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
 $('reset').addEventListener('click',()=>resetView(AV));
-function layoutClick(n){if(n===LAYOUT)return;pushHist();setLayout(n);render();}
-$('lay1').addEventListener('click',()=>layoutClick(1));$('lay2').addEventListener('click',()=>layoutClick(2));
+function layoutClick(n){
+ if(n===LAYOUT)return;
+ pushHist();
+ const before=VPS.slice();
+ setLayout(n);
+ const added=VPS.filter(v=>before.indexOf(v)<0);
+ if(added.length)render(added); // solo le viste nuove; le esistenti si ricalcolano nel reflow se il loro canvas cambia dimensione
+ scheduleReflow(60);
+}
+$('lay1').addEventListener('click',()=>layoutClick(1));$('lay2').addEventListener('click',()=>layoutClick(2));$('lay4').addEventListener('click',()=>layoutClick(4));
 $('back').addEventListener('click',()=>{
  const h=hist.pop();if(!h)return;
  fvSave();
+ const sameP=h.fam===S.fam&&JSON.stringify(h.P)===JSON.stringify(S.P[h.fam])&&JSON.stringify(h.nw||{})===JSON.stringify(S.nw||{});
  if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;}
  S.P[h.fam]=h.P;S.nw=h.nw?{...h.nw}:{};
- setLayout(h.layout===2?2:1);
- const hv=h.views||[];VPS.forEach((vp,k)=>{const v=hv[k]||hv[0];if(v)vp.view={cx:v.cx,cy:v.cy,span:v.span,rot:0};});
- setActive(vpById(h.act)||VPS[0]);
- buildParams();render();
+ const specs=(h.views||[]).filter(v=>v&&isFinite(+v.cx)&&isFinite(+v.cy)&&+v.span>0).map((v,k)=>({id:(v.id!=null&&isFinite(+v.id)?+v.id:k),cx:+v.cx,cy:+v.cy,span:+v.span}));
+ if(!specs.length)specs.push({id:AV?AV.id:0,cx:AV.view.cx,cy:AV.view.cy,span:AV.view.span});
+ const r=setViews(specs,h.act);
+ buildParams();
+ if(sameP){const list=r.added.concat(r.changed);if(list.length)render(list);scheduleReflow(60);} // stessa famiglia e parametri: solo viste nuove o con vista cambiata (+ reflow)
+ else render();
 });
 function zoomStep(f,vp){vp=vp||AV;pushHist();vp.view={...vp.view,span:vp.view.span/f};render([vp]);}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
@@ -1764,7 +1859,7 @@ window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.t
 
 /* ---------- avvio ---------- */
 initWorkers();
-(function(){const vp=new Viewport(0,$('vp0'),FAM.mandel.view);VPS.push(vp);setActive(vp);})();
+(function(){const vp=new Viewport(0,$('vp0'),FAM.mandel.view);VPS.push(vp);setActive(vp);syncLayoutUI();})();
 buildColorUI();
 setFam('mandel');
 syncColorUI();buildLUT();
