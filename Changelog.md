@@ -16,6 +16,26 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.8.5 — 2026-11-22 
+
+### Novità
+- Pulsante «i» (`aria-expanded`, `aria-controls`, area di tocco ≥ 40 px su mobile) che apre/chiude le didascalie: introduzione generale, descrizione della famiglia attiva e nota di «Luce e rilievo». Testi invariati, solo racchiusi. Chiuse all'avvio su mobile; su desktop resta aperta solo l'introduzione. `Esc` le chiude.
+- Helper riutilizzabile `makeInfo(id, html, opts)` (per legenda 1.9.5 e guida 1.13.5).
+- Griglia del piano di Gauss: pulsante «Griglia» e scorciatoia `G`, spenta all'avvio. Disegnata sull'overlay di ogni vista (nessun ricalcolo): assi Re/Im, origine con marcatore rosso, tacche e valori con passo 1-2-5, etichette senza sovrapposizioni, contorno doppio. Con `rot ≠ 0` gli assi ruotano e le etichette restano orizzontali. Se un asse è fuori vista, tacche ed etichette si appoggiano al bordo.
+- Stato JSON/URL: campo opzionale `grid: true` (omesso se falso). Assente = spenta.
+- Proprietà `axes` sulle famiglie (`'complex'`; `'none'` per IFS e Buddhabrot, dove il pulsante è nascosto e la griglia non si disegna).
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Il passo 1-2-5 dà tacche ogni 80–200 px (non sempre 80–120).
+- A zoom molto profondo le etichette lunghe si diradano per evitare sovrapposizioni.
+- Con `rot ≠ 0` e asse fuori vista le tacche appoggiate al bordo possono mancare.
+- La griglia non entra nella cronologia («Indietro» non la ripristina).
+- La scorciatoia `G` non è elencata nel testo dell'introduzione (testo non riscritto).
+
+
 ## 1.8.0 — 2026-11-22 
 
 ### Novità

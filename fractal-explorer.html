@@ -121,15 +121,24 @@ a{color:inherit}
  .chk{min-height:40px}
  .hud{flex-wrap:wrap;gap:4px}
 }
+/* 1.8.5 — pulsante «i» e didascalie a scomparsa */
+.ibtn{display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:28px;margin:2px 0;padding:0;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:50%;-webkit-tap-highlight-color:transparent}
+.ibtn .ii{width:22px;height:22px;border:1.5px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:italic 700 13px/1 var(--serif)}
+.ibtn[aria-expanded="true"]{color:var(--ink)}
+.ibtn[aria-expanded="true"] .ii{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.ibtn:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.card>.ibtn{justify-self:start}
+.ipan[hidden]{display:none!important}
+@media (max-width:699px),(orientation:landscape) and (max-height:499px),(pointer:coarse){.ibtn{min-width:40px;min-height:40px}}
 </style>
 </head>
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.8.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.8.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.8.0 · 22 novembre 2026</p>
+<p class="updated">Versione 1.8.5 · 22 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -144,6 +153,7 @@ a{color:inherit}
    <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><rect x="8" y="8" width="6" height="6" rx="0.5"/></svg><span>Zoom area</span></button>
    <span class="seg" role="group" aria-label="Numero di viste"><span class="seglab">Viste</span><button class="tbtn on" id="lay1" type="button" aria-pressed="true" title="Una vista">1</button><button class="tbtn" id="lay2" type="button" aria-pressed="false" title="Due viste (affiancate o impilate)">2</button><button class="tbtn" id="lay4" type="button" aria-pressed="false" title="Quattro viste (griglia 2×2)">4</button></span>
    <button class="tbtn on" id="frames" type="button" aria-pressed="true" hidden title="Mostra o nascondi, su ogni vista, le cornici delle altre viste">Cornici</button>
+   <button class="tbtn" id="grid" type="button" aria-pressed="false" aria-keyshortcuts="G" title="Mostra o nascondi gli assi e le tacche del piano di Gauss (G)">Griglia</button>
    <button class="tbtn" id="tojulia">Julia da qui</button>
    <button class="tbtn" id="pick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
@@ -622,7 +632,7 @@ const IFSS=[
  {name:'Triangolo di Sierpiński',m:[[0.5,0,0,0.5,0,0,1/3],[0.5,0,0,0.5,0.5,0,1/3],[0.5,0,0,0.5,0.25,0.4330127,1/3]]}
 ];
 const FAM={
- mandel:{name:'Mandelbrot e Multibrot',code:0,de:true,view:{cx:-0.6,cy:0,span:2.7},iter:300,params:['d'],
+ mandel:{name:'Mandelbrot e Multibrot',code:0,axes:'complex',de:true,view:{cx:-0.6,cy:0,span:2.7},iter:300,params:['d'],
   txt:'Per ogni punto c si itera z → z^d + c partendo da z = 0: il punto appartiene all\'insieme se l\'orbita resta limitata. Con d = 2 è il Mandelbrot classico; con d più alto (Multibrot) la simmetria diventa di ordine d − 1.',
   presets:[
    {name:'Vista intera',view:{cx:-0.6,cy:0,span:2.7},p:{d:2}},
@@ -633,7 +643,7 @@ const FAM={
    {name:'Mini-Mandelbrot sull\'asse',view:{cx:-1.7549,cy:0,span:0.05},p:{d:2},style:'smeraldo'},
    {name:'Multibrot d = 3',view:{cx:0,cy:0,span:2.9},p:{d:3}},
    {name:'Multibrot d = 5',view:{cx:0,cy:0,span:2.3},p:{d:5},style:'scarabeo'}]},
- julia:{name:'Julia',code:1,de:true,view:{cx:0,cy:0,span:3},iter:400,params:['d','cr','ci'],
+ julia:{name:'Julia',code:1,axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:400,params:['d','cr','ci'],
   txt:'Qui c è fisso e varia il punto di partenza z. Se c appartiene al Mandelbrot l\'insieme di Julia è connesso, altrimenti è polvere sparsa. Con c = i è una dendrite pura: connessa, senza interno, tutta rami.',
   presets:[
    {name:'Neuroni (c = −0,7269 + 0,1889i)',p:{d:2,cr:-0.7269,ci:0.1889},style:'pavone'},
@@ -645,7 +655,7 @@ const FAM={
    {name:'Fulmini (−0,4 + 0,6i)',p:{d:2,cr:-0.4,ci:0.6},style:'neon'},
    {name:'Germogli (0,285 + 0,01i)',p:{d:2,cr:0.285,ci:0.01},style:'smeraldo'},
    {name:'Cubica (d = 3, c = 0,4 + 0,5i)',p:{d:3,cr:0.4,ci:0.5},style:'scarabeo'}]},
- ship:{name:'Burning Ship e varianti',code:2,de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
+ ship:{name:'Burning Ship e varianti',code:2,axes:'complex',de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
   txt:'Come il Mandelbrot, ma con valori assoluti dentro il passo: Burning Ship (|x|, |y|)², Celtic |Re z²|, Heart (|x| + iy)², Perpendicolare (|x| − iy)², Nave perpendicolare. Le funzioni non sono analitiche e nascono forme spigolose. L\'interruttore Julia fissa c e fa variare il punto di partenza.',
   presets:[
    {name:'Burning Ship, vista intera',view:{cx:-0.5,cy:0.5,span:2.6},p:{v:0,jul:0}},
@@ -657,13 +667,13 @@ const FAM={
    {name:'Nave perpendicolare',view:PSHIP,p:{v:3,jul:0},style:'bronzo'},
    {name:'Burning Ship Julia',view:{cx:0,cy:0,span:3},p:{v:0,jul:1,cr:BJC[0],ci:BJC[1]},style:'neon'},
    {name:'Celtic Julia',view:{cx:0,cy:0,span:3},p:{v:1,jul:1,cr:CJC[0],ci:CJC[1]},style:'pavone'}]},
- tricorn:{name:'Tricorno e Multicorn',code:3,de:false,view:{cx:-0.65,cy:0,span:2.8},iter:300,params:['d'],
+ tricorn:{name:'Tricorno e Multicorn',code:3,axes:'complex',de:false,view:{cx:-0.65,cy:0,span:2.8},iter:300,params:['d'],
   txt:'Si itera il coniugato: z → z̄^d + c. Con d = 2 è il Tricorno, con tre punte; in generale le punte sono d + 1. I confini hanno tratti rettilinei che nel Mandelbrot non esistono.',
   presets:[
    {name:'Tricorno',view:{cx:-0.65,cy:0,span:2.8},p:{d:2}},
    {name:'Multicorn d = 3',view:{cx:0,cy:0,span:2.3},p:{d:3},style:'scarabeo'},
    {name:'Multicorn d = 5',view:{cx:0,cy:0,span:2.6},p:{d:5},style:'pavone'}]},
- newton:{name:'Newton',code:5,de:false,view:{cx:0,cy:0,span:3},iter:60,noauto:true,params:['poly','ar','ai','a0','a1'],
+ newton:{name:'Newton',code:5,axes:'complex',de:false,view:{cx:0,cy:0,span:3},iter:60,noauto:true,params:['poly','ar','ai','a0','a1'],
   txt:'Si applica il metodo di Newton z → z − a·f(z)/f\'(z) da ogni punto. Per i polinomi il colore indica la radice raggiunta; per le funzioni trascendenti (sin, cos, tan, sinh, cosh, eᶻ−a, sin z − a·z) le radici sono infinite e periodiche, i bacini formano strisce. Nero = timeout, rosso = divergenza, magenta = singolarità/NaN. I confini fra bacini sono frattali.',
   presets:[
    {name:'z³ − 1',p:{poly:0,ar:1,ai:0},view:{cx:0,cy:0,span:3},style:'pavone'},
@@ -681,49 +691,49 @@ const FAM={
    {name:'eᶻ − 1',p:{poly:11,ar:1,ai:0,a0:1,a1:0},view:{cx:0,cy:0,span:8},style:'pavone'},
    {name:'sin z − 0,5 z',p:{poly:12,ar:1,ai:0,a0:0.5,a1:0},view:{cx:0,cy:0,span:10},style:'scarabeo'}]},
 
- nova:{name:'Nova',code:6,de:false,view:{cx:-0.4,cy:0,span:2.6},iter:200,params:['n','ar','ai'],
+ nova:{name:'Nova',code:6,axes:'complex',de:false,view:{cx:-0.4,cy:0,span:2.6},iter:200,params:['n','ar','ai'],
   txt:'Un incrocio tra Newton e Mandelbrot: z → z − a·(zⁿ − 1)/(n·zⁿ⁻¹) + c, partendo da z = 1, con c che varia da pixel a pixel. Dove l\'orbita non si stabilizza compaiono copie del Mandelbrot circondate dai motivi di Newton.',
   presets:[
    {name:'Nova classico (n = 3)',p:{n:3,ar:1,ai:0},view:{cx:-0.4,cy:0,span:2.6},style:'pavone'},
    {name:'Copia del Mandelbrot in Nova',p:{n:3,ar:1,ai:0},view:{cx:-0.74,cy:0,span:0.35},style:'scarabeo'},
    {name:'Nova n = 4',p:{n:4,ar:1,ai:0},view:{cx:-0.3,cy:0,span:2.6},style:'bronzo'},
    {name:'Nova rilassato (a = 0,8)',p:{n:3,ar:0.8,ai:0},view:{cx:-0.4,cy:0,span:2.6},style:'smeraldo'}]},
- phoenix:{name:'Phoenix',code:4,de:true,view:{cx:0,cy:0,span:3},iter:300,params:['cr','ci','qr','qi'],
+ phoenix:{name:'Phoenix',code:4,axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:300,params:['cr','ci','qr','qi'],
   txt:'Proposto da Ushiki (1988): z → z² + p + q·z_prec, cioè ogni passo ricorda anche il punto precedente. È di tipo Julia: p e q sono fissi e varia il punto di partenza.',
   presets:[
    {name:'Fenice classica (p = 0,56667, q = −0,5)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0},style:'fuoco'},
    {name:'q complesso (q = −0,5 + 0,1i)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0.1},style:'pavone'},
    {name:'Filamenti (p = 0,269, q = 0,01i)',p:{cr:0.269,ci:0,qr:0,qi:0.01},style:'scarabeo'}]},
- magnet:{name:'Magnet I',code:8,de:true,view:MAGV,iter:300,params:['jul','cr','ci'],
+ magnet:{name:'Magnet I',code:8,axes:'complex',de:true,view:MAGV,iter:300,params:['jul','cr','ci'],
   txt:'Dalla fisica statistica: z → ((z² + c − 1)/(2z + c − 2))², partendo da z = 0. Le orbite o scappano all\'infinito o convergono al punto fisso 1. Il confine ha una struttura a petali molto diversa dal Mandelbrot. Con l\'interruttore Julia c resta fisso.',
   presets:[
    {name:'Vista intera',view:MAGV,p:{jul:0},style:'oro'},
    {name:'Julia Magnet',view:{cx:1,cy:0,span:5},p:{jul:1,cr:MJC[0],ci:MJC[1]},style:'scarabeo'}]},
- magnet2:{name:'Magnet II',code:9,de:false,view:{cx:0,cy:0,span:4},iter:300,params:['jul','cr','ci'],
+ magnet2:{name:'Magnet II',code:9,axes:'complex',de:false,view:{cx:0,cy:0,span:4},iter:300,params:['jul','cr','ci'],
   txt:'Variante di ordine superiore del Magnet I, sempre dalla fisica statistica dei magneti. La mappa razionale di grado 3 produce bacini e confini più elaborati rispetto al Magnet I. Modalità parametro (c dal piano, z₀ = 0) o Julia (c fisso). Il Distance Estimator analitico non è implementato (derivata troppo laboriosa e soggetta a errori); si usa il gradiente numerico del campo colore.',
   presets:[
    {name:'Vista intera',view:{cx:0,cy:0,span:4},p:{jul:0},style:'oro'},
    {name:'Dettaglio petali',view:{cx:1.2,cy:0,span:1.5},p:{jul:0},style:'scarabeo'},
    {name:'Julia Magnet II (c = 1)',view:{cx:0,cy:0,span:4},p:{jul:1,cr:1,ci:0},style:'pavone'}]},
- exp:{name:'Esponenziale',code:10,de:true,view:{cx:0,cy:0,span:4},iter:200,params:['jul','cr','ci'],
+ exp:{name:'Esponenziale',code:10,axes:'complex',de:true,view:{cx:0,cy:0,span:4},iter:200,params:['jul','cr','ci'],
   txt:'Si itera z → c · e^z. In modalità parametro si parte da z = 0 (valore asintotico) e c varia sul piano; in Julia c è fisso. La fuga avviene quando Re(z) > 50 (con protezione da overflow). Con c = 1/e si osserva la biforcazione parabolica; con c ≈ 0,3 appare un bouquet di Cantor. Il mu continuo è calcolato dall’overshoot sulla soglia di Re per evitare banding.',
   presets:[
    {name:'Biforcazione parabolica (c = 1/e)',p:{jul:0,cr:0.36787944117,ci:0},view:{cx:0.25,cy:0,span:2.8},style:'pavone'},
    {name:'Bouquet di Cantor (c = 0,3)',p:{jul:0,cr:0.3,ci:0},view:{cx:0,cy:0,span:3.2},style:'scarabeo'},
    {name:'Julia esponenziale (c = 0,3)',p:{jul:1,cr:0.3,ci:0},view:{cx:0,cy:0,span:6},style:'neon'}]},
- sin:{name:'Seno',code:11,de:true,view:{cx:0,cy:0,span:5},iter:200,params:['jul','cr','ci'],
+ sin:{name:'Seno',code:11,axes:'complex',de:true,view:{cx:0,cy:0,span:5},iter:200,params:['jul','cr','ci'],
   txt:'Si itera z → c · sin(z), con la formula di sin complesso. In modalità parametro si parte dal punto critico z = π/2 e c varia sul piano; in Julia c è fisso. La fuga avviene quando |Im z| > 50 (con protezione da overflow di sinh/cosh). I confini formano strisce e isole tipiche delle funzioni intere trascendenti. Il mu continuo usa l’overshoot su |Im| per evitare banding.',
   presets:[
    {name:'Seno parametro (c = 1)',p:{jul:0,cr:1,ci:0},view:{cx:0,cy:0,span:5},style:'smeraldo'},
    {name:'Seno (c = 1 + 0,1i)',p:{jul:0,cr:1,ci:0.1},view:{cx:0,cy:0,span:5},style:'pavone'},
    {name:'Julia seno (c = 1)',p:{jul:1,cr:1,ci:0},view:{cx:0,cy:0,span:8},style:'bronzo'}]},
- buddha:{name:'Buddhabrot (traiettorie)',code:-2,de:false,view:{cx:0,cy:-0.5,span:3.1},iter:1000,noauto:true,params:[],
+ buddha:{name:'Buddhabrot (traiettorie)',code:-2,axes:'none',de:false,view:{cx:0,cy:-0.5,span:3.1},iter:1000,noauto:true,params:[],
   txt:'Si campionano c a caso, si seguono le orbite z → z² + c e si tengono solo quelle che scappano: ogni punto toccato dall\'orbita accende un pixel. Ne esce una figura simile a un Buddha in meditazione. Più iterazioni e più campioni, più dettaglio: l\'immagine si affina man mano che arrivano punti. Il colore dipende dalla lunghezza delle orbite.',
   presets:[
    {name:'Vista intera',view:{cx:0,cy:-0.5,span:3.1},style:'nebulosa'},
    {name:'Testa e cuore (zoom)',view:{cx:0,cy:-0.3,span:1.3},style:'nebulosa'},
    {name:'Oro su verde',view:{cx:0,cy:-0.5,span:3.1},style:'oro'}]},
- ifs:{name:'IFS e chaos game (felce, draghi)',code:-1,de:false,view:{cx:0,cy:5,span:11},iter:0,params:['ifs'],
+ ifs:{name:'IFS e chaos game (felce, draghi)',code:-1,axes:'none',de:false,view:{cx:0,cy:5,span:11},iter:0,params:['ifs'],
   txt:'Un sistema di funzioni iterate: poche trasformazioni affini, scelte a caso migliaia di volte. I punti si addensano su un\'unica figura autosimile. La felce di Barnsley ne usa solo quattro; il colore segue la densità dei punti e le trasformazioni usate.',
   presets:IFSS.map((f,i)=>({name:f.name,p:{ifs:i},style:i===0?'smeraldo':'oro'}))}
 };
@@ -773,7 +783,7 @@ const STYLES={
 /* ---------- stato ---------- */
 const S={fam:'mandel',P:{},iterBase:{},auto:true,qual:'normale',
  pal:'pavone',mode:'smooth',inmode:'flat',incol:'#000000',dens:1,off:0,glow:1,
- light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false};
+ light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false,grid:false};
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0};S.iterBase[f]=FAM[f].iter;}
 
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
@@ -1207,6 +1217,119 @@ function frBadge(ctx,x,y,txt,col,tcol,W,H){
  ctx.fillStyle=col;ctx.fill();
  ctx.fillStyle=tcol;ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(txt,x+w/2,y+h/2+0.5);
 }
+/* ---------- griglia del piano di Gauss (1.8.5): solo overlay, nessun ricalcolo del frattale ---------- */
+const GRID_COL='#FF1744',GRID_FONT='600 11px ui-monospace,Menlo,Consolas,monospace',GRID_LAB={complex:['Re','Im'],xy:['x','y'],rx:['r','x']};
+function famAxes(f){const F=FAM[f];return (F&&F.axes)||'none';}
+function gridAvail(){return !!GRID_LAB[famAxes(S.fam)];}
+// passo 1-2-5: il più piccolo con almeno ~80 px tra due tacche (in pratica 80–200 px: con 1-2-5 un intervallo 80–120 non è sempre ottenibile)
+function gridStep(span,H){
+ const raw=80*span/(H||1);if(!(raw>0)||!isFinite(raw))return 0;
+ const p=Math.pow(10,Math.floor(Math.log10(raw)));
+ for(const m of [1,2,5,10])if(m*p>=raw*(1-1e-9))return m*p;
+ return 10*p;
+}
+function gridFmt(v,dec){let t=v.toFixed(Math.min(20,dec));if(/^-0(\.0+)?$/.test(t))t=t.slice(1);return t.replace('-','−').replace('.',',');}
+// intersezione della retta (o + t·d) col rettangolo [0,W]x[0,H]: [t0,t1] oppure null
+function gridClipT(ox,oy,dx,dy,W,H){
+ let t0=-Infinity,t1=Infinity;
+ for(const q of [[ox,dx,W],[oy,dy,H]]){
+  const o=q[0],d=q[1],L=q[2];
+  if(Math.abs(d)<1e-12){if(o<0||o>L)return null;}
+  else{let a=(0-o)/d,b=(L-o)/d;if(a>b){const t=a;a=b;b=t;}t0=Math.max(t0,a);t1=Math.min(t1,b);}
+ }
+ return t0<=t1?[t0,t1]:null;
+}
+function gridLine(ctx,x0,y0,x1,y1){
+ ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);
+ ctx.strokeStyle='rgba(0,0,0,.8)';ctx.lineWidth=4;ctx.stroke();      // contorno scuro (sfondi chiari)
+ ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=2;ctx.stroke(); // anima chiara (sfondi scuri)
+}
+function gridText(ctx,t,x,y,al,bl){
+ ctx.textAlign=al;ctx.textBaseline=bl;ctx.lineJoin='round';
+ ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=5;ctx.strokeText(t,x,y);
+ ctx.strokeStyle='rgba(0,0,0,.9)';ctx.lineWidth=3;ctx.strokeText(t,x,y);
+ ctx.fillStyle='#fff';ctx.fillText(t,x,y);
+}
+function drawGrid(M,ctx,W,H){
+ const view=M.view,lab=GRID_LAB[famAxes(S.fam)];
+ if(!lab||!(view.span>0))return;
+ const step=gridStep(view.span,H);if(!(step>0))return;
+ const dec=step>=1?0:Math.max(0,Math.ceil(-Math.log10(step)-1e-9));
+ const rot=view.rot||0,c=Math.cos(rot),sn=Math.sin(rot),O=worldToScreen(view,W,H,0,0);
+ if(!isFinite(O[0])||!isFinite(O[1]))return;
+ ctx.save();
+ try{
+  ctx.font=GRID_FONT;ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([]);
+  const cs=[[0,0],[W,0],[W,H],[0,H]].map(q=>screenToWorld(view,W,H,q[0],q[1])),xs=cs.map(q=>q[0]),ys=cs.map(q=>q[1]);
+  // d: direzione dell'asse sullo schermo; n: normale. Con rot≠0 gli assi ruotano, le etichette restano orizzontali.
+  const axs=[
+   {d:[c,sn],n:[sn,-c],name:lab[0],lo:Math.min(...xs),hi:Math.max(...xs),pos:v=>worldToScreen(view,W,H,v,0),horiz:true},
+   {d:[sn,-c],n:[c,sn],name:lab[1],lo:Math.min(...ys),hi:Math.max(...ys),pos:v=>worldToScreen(view,W,H,0,v),horiz:false}];
+  for(const a of axs){
+   // asse fuori dalla vista: tacche ed etichette si appoggiano al bordo (sh = spostamento lungo la normale)
+   a.seg=gridClipT(O[0],O[1],a.d[0],a.d[1],W,H);
+   a.sh=0;
+   if(!a.seg){ // asse fuori vista: la linea d'appoggio sta dentro un rettangolo interno (margine 8 px, 34 px in basso per l'HUD)
+    const cx=W/2,cy=(8+H-34)/2,hw=Math.max(0,W/2-8),hh=Math.max(0,(H-42)/2);
+    const dl=(O[0]-cx)*a.n[0]+(O[1]-cy)*a.n[1],hn=Math.abs(a.n[0])*hw+Math.abs(a.n[1])*hh;
+    a.sh=Math.max(-hn,Math.min(hn,dl))-dl;
+   }
+   a.tk=[];
+   const k0=Math.ceil(a.lo/step),k1=Math.floor(a.hi/step);
+   if(isFinite(k0)&&isFinite(k1)&&k1-k0<=400){
+    for(let k=k0;k<=k1;k++){
+     const q=a.pos(k*step),x=q[0]+a.n[0]*a.sh,y=q[1]+a.n[1]*a.sh;
+     if(x>=-1&&x<=W+1&&y>=-1&&y<=H+1)a.tk.push({k:k,x:x,y:y});
+    }
+   }
+  }
+  for(const a of axs)if(a.seg)gridLine(ctx,O[0]+a.d[0]*a.seg[0],O[1]+a.d[1]*a.seg[0],O[0]+a.d[0]*a.seg[1],O[1]+a.d[1]*a.seg[1]);
+  for(const a of axs)for(const t of a.tk)gridLine(ctx,t.x-a.n[0]*4,t.y-a.n[1]*4,t.x+a.n[0]*4,t.y+a.n[1]*4);
+  const ov=O[0]>=0&&O[0]<=W&&O[1]>=0&&O[1]<=H;
+  if(O[0]>=-8&&O[0]<=W+8&&O[1]>=-8&&O[1]<=H+8){ // origine: marcatore di colore distinto
+   ctx.beginPath();ctx.arc(O[0],O[1],6,0,Math.PI*2);
+   ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=5.5;ctx.stroke();
+   ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineWidth=3.5;ctx.stroke();
+   ctx.fillStyle=GRID_COL;ctx.fill();
+  }
+  // testi: nessuna sovrapposizione (le etichette in conflitto vengono saltate, quelle vicine all'origine hanno la precedenza)
+  const boxes=[];
+  try{ // il pulsante a schermo intero (.fab) copre l'angolo in alto a destra della vista che lo contiene: nessuna etichetta lì sotto
+   const fb=document.querySelector('.fab>button'),rc=M.cv.getBoundingClientRect();
+   if(fb&&fb.offsetWidth){const f=fb.getBoundingClientRect(),b={x0:f.left-rc.left-4,y0:f.top-rc.top-4,x1:f.right-rc.left+4,y1:f.bottom-rc.top+4};if(b.x1>0&&b.x0<W&&b.y1>0&&b.y0<H)boxes.push(b);}
+  }catch(e){}
+  const place=(t,x,y,al,bl)=>{
+   const w=ctx.measureText(t).width,h=12,x0=al==='center'?x-w/2:al==='right'?x-w:x,y0=bl==='middle'?y-h/2:bl==='bottom'?y-h:y;
+   const b={x0:x0-3,y0:y0-2,x1:x0+w+3,y1:y0+h+2};
+   if(b.x0<1||b.y0<1||b.x1>W-1||b.y1>H-1)return false;
+   for(const o of boxes)if(b.x0<o.x1&&b.x1>o.x0&&b.y0<o.y1&&b.y1>o.y0)return false;
+   boxes.push(b);gridText(ctx,t,x,y,al,bl);return true;
+  };
+  for(const a of axs){ // nome dell'asse (Re / Im) vicino all'estremo positivo
+   const ox=O[0]+a.n[0]*a.sh,oy=O[1]+a.n[1]*a.sh,sg=gridClipT(ox,oy,a.d[0],a.d[1],W,H);if(!sg)continue;
+   let px=-a.d[1],py=a.d[0];if(py>1e-9||(Math.abs(py)<=1e-9&&px<0)){px=-px;py=-py;}
+   const x=Math.max(16,Math.min(W-16,ox+a.d[0]*sg[1]-a.d[0]*16+px*11)),y=Math.max(9,Math.min(H-9,oy+a.d[1]*sg[1]-a.d[1]*16+py*11));
+   place(a.name,x,y,'center','middle');
+  }
+  if(ov)place('0',O[0]+8,O[1]+8,'left','top');
+  for(const a of axs){
+   const arr=a.tk.slice().sort((p,q)=>Math.abs(p.k)-Math.abs(q.k));
+   for(const t of arr){
+    if(t.k===0&&ov)continue;
+    const tx=gridFmt(t.k*step,dec);
+    if(a.horiz){if(t.y<H/2)place(tx,t.x,t.y+7,'center','top');else place(tx,t.x,t.y-7,'center','bottom');}
+    else{if(t.x>W/2)place(tx,t.x-8,t.y,'right','middle');else place(tx,t.x+8,t.y,'left','middle');}
+   }
+  }
+ }finally{ctx.restore();}
+}
+function syncGridUI(){
+ const b=$('grid');if(!b)return;
+ b.hidden=!gridAvail();b.classList.toggle('on',!!S.grid);b.setAttribute('aria-pressed',S.grid?'true':'false');
+ scheduleFrames();
+}
+function setGrid(on){S.grid=!!on;syncGridUI();}
+function toggleGrid(){if(!gridAvail())return;setGrid(!S.grid);}
 function drawFramesOn(M){
  const cv=M.fr,ctx=M.frx;if(!cv||!ctx)return;
  try{
@@ -1214,7 +1337,9 @@ function drawFramesOn(M){
   const bw=Math.max(1,Math.round(W*dpr)),bh=Math.max(1,Math.round(H*dpr));
   if(cv.width!==bw||cv.height!==bh){cv.width=bw;cv.height=bh;}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
-  if(!FRAMES_ON||VPS.length<2||W<8||H<8)return;
+  if(W<8||H<8)return;
+  if(S.grid&&gridAvail()){try{drawGrid(M,ctx,W,H);}catch(e){/* la griglia non deve bloccare le cornici */}}
+  if(!FRAMES_ON||VPS.length<2)return;
   for(const N of VPS){
    if(N===M)continue;
    const rn=N.cv.getBoundingClientRect();if(rn.width<8||rn.height<8)continue;
@@ -1760,6 +1885,49 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&VPS.some(v=>v.sel)){e
 
 /* ---------- UI ---------- */
 function setStatus(t){$('status').textContent=t;}
+/* ---------- Info (1.8.5): pulsante «i» + didascalia a scomparsa ---------- */
+// makeInfo(id, html, opts): helper riutilizzabile (legenda 1.9.5, guida 1.13.5).
+//  html      contenuto HTML della didascalia; undefined = si tiene quello già presente in opts.el
+//  opts.el   elemento esistente da riusare come didascalia (resta al suo posto, con id e testo; il pulsante gli viene messo davanti)
+//  opts.mount  senza opts.el: contenitore in cui creare pulsante + didascalia
+//  opts.open   stato iniziale (default chiusa); opts.label  nome accessibile del pulsante
+// Ritorna {btn,panel,isOpen,open,close,toggle,setHtml} oppure null se il browser non lo consente (la didascalia resta visibile).
+const INFOS=[];
+function makeInfo(id,html,o){
+ o=o||{};
+ try{
+  const pan=o.el||document.createElement('div');
+  if(!pan.id)pan.id='info-'+id+'-pan';
+  pan.classList.add('ipan');
+  if(html!=null)pan.innerHTML=html;
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='ibtn';btn.id='info-'+id;
+  const ii=document.createElement('span');ii.className='ii';ii.setAttribute('aria-hidden','true');ii.textContent='i';btn.appendChild(ii);
+  const lab=o.label||'Informazioni';btn.title=lab;btn.setAttribute('aria-label',lab);
+  btn.setAttribute('aria-controls',pan.id);
+  if(o.el&&o.el.parentNode)o.el.parentNode.insertBefore(btn,pan);
+  else if(o.mount){o.mount.appendChild(btn);o.mount.appendChild(pan);}
+  else return null;
+  const api={btn:btn,panel:pan,
+   isOpen(){return btn.getAttribute('aria-expanded')==='true';},
+   set(v){v=!!v;btn.setAttribute('aria-expanded',v?'true':'false');pan.hidden=!v;return api;},
+   open(){return api.set(true);},close(){return api.set(false);},toggle(){return api.set(!api.isOpen());},
+   setHtml(h){pan.innerHTML=h;return api;}};
+  btn.addEventListener('click',()=>api.toggle());
+  api.set(!!o.open);
+  INFOS.push(api);
+  return api;
+ }catch(e){return null;}
+}
+// Esc chiude le didascalie aperte. Gli altri gestori di Esc (zoom area, menu contestuale, pannello JSON) hanno la precedenza sul primo Esc.
+window.addEventListener('keydown',e=>{
+ if(e.key!=='Escape'||e.defaultPrevented||(e.target&&e.target.tagName==='SELECT'))return;
+ if(!INFOS.some(i=>i.isOpen()))return;
+ if(VPS.some(v=>v.sel))return;
+ if(ctxEl&&ctxEl.style.display!=='none')return;
+ const sp=$('sharepanel');if(sp&&sp.style.display!=='none')return;
+ INFOS.forEach(i=>i.close());
+},true);
 function fmt(v,d=6){return (+v).toFixed(d).replace('.',',');}
 // snapshot globale: famiglia, parametri, soglie Newton e {views[], layout} (+ vista attiva)
 function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>({id:v.id,cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0})),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
@@ -1806,6 +1974,7 @@ function buildParams(){
  $('tojulia').style.display=S.fam==='mandel'?'':'none';
  $('pick').style.display=S.fam==='mandel'?'':'none';
  $('famtxt').textContent=FAM[S.fam].txt;
+ syncGridUI();
  const ps=$('preset');ps.innerHTML='<option value="-1">— scegli un preset —</option>';
  FAM[S.fam].presets.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;ps.appendChild(o);});
 }
@@ -1874,7 +2043,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.8.0',APP_VERSION_SHORT='1.8.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.8.5',APP_VERSION_SHORT='1.8.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -1931,6 +2100,7 @@ function getState(){
   light:+S.light,az:+S.az,el:+S.el,relief:+S.relief,shin:+S.shin,irid:+S.irid};
  if(S.pal==='custom')st.custom=PALS.custom.c.slice();
  if(fam==='newton'){const nb=nwExport();if(nb)st.newton=nb;}
+ if(S.grid&&gridAvail())st.grid=true; // omesso se falso
  return st;
 }
 function clamp(v,lo,hi){v=+v;if(!isFinite(v))return lo;return Math.min(hi,Math.max(lo,v));}
@@ -1987,11 +2157,12 @@ function applyState(obj){
  const relief=clamp(obj.relief!=null?obj.relief:S.relief,0.5,30);
  const shin=clamp(obj.shin!=null?obj.shin:S.shin,2,200);
  const irid=clamp(obj.irid!=null?obj.irid:S.irid,0,0.6);
+ const grid=obj.grid===true&&!!GRID_LAB[famAxes(fam)]; // assente = spenta
  // applica
  pushHist();fvSave();
  S.P[fam]=P; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
  S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
- S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid;
+ S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid; S.grid=grid;
  setViews(specs,actId);
  setFam(fam,true); // viste già impostate
  if(fam==='ifs')setViews(specs,actId); // non lasciare che fitIFS sovrascriva le viste serializzate
@@ -2100,6 +2271,7 @@ $('back').addEventListener('click',()=>{
 function zoomStep(f,vp){vp=vp||AV;pushHist();vp.view={...vp.view,span:vp.view.span/f};render([vp]);}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
 $('frames').addEventListener('click',()=>{FRAMES_ON=!FRAMES_ON;const b=$('frames');b.classList.toggle('on',FRAMES_ON);b.setAttribute('aria-pressed',FRAMES_ON?'true':'false');scheduleFrames();});
+$('grid').addEventListener('click',toggleGrid);
 $('tojulia').addEventListener('click',()=>{const c=screenToWorld(AV.view,AV.cv.width,AV.cv.height,AV.cv.width/2,AV.cv.height/2);juliaFrom(c[0],c[1]);});
 $('pick').addEventListener('click',()=>{S.pick=!S.pick;$('pick').classList.toggle('on',S.pick);if(S.pick&&zoomMode)setZoomMode(false);setStatus(S.pick?'Tocca un punto del Mandelbrot: diventa il c del Julia':'');});
 $('anim').addEventListener('click',()=>{S.anim=!S.anim;$('anim').classList.toggle('on',S.anim);if(S.anim)animLoop();});
@@ -2115,9 +2287,16 @@ $('fs').addEventListener('click',toggleFS);
 function togglePanel(){const f=$('app').classList.toggle('full');$('ptog').textContent=f?'Mostra pannello':'Nascondi pannello';}
 $('ptog').addEventListener('click',togglePanel);
 window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();
- if(k==='+'||k==='=')zoomStep(2);else if(k==='-')zoomStep(0.5);else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();});
+ if(k==='+'||k==='=')zoomStep(2);else if(k==='-')zoomStep(0.5);else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();else if(k==='g')toggleGrid();});
 
 /* ---------- avvio ---------- */
+(function(){ // didascalie «i»: introduzione aperta solo su desktop; famiglia e luce chiuse
+ let mobile=false;try{mobile=window.matchMedia('(max-width:899px),(pointer:coarse)').matches;}catch(e){}
+ makeInfo('intro',undefined,{el:document.querySelector('.lede'),label:'Informazioni: come si usa',open:!mobile});
+ makeInfo('fam',undefined,{el:$('famtxt'),label:'Informazioni sulla famiglia'});
+ const nt=document.querySelector('.card .note');
+ if(nt)makeInfo('luce',undefined,{el:nt,label:'Informazioni su luce e rilievo'});
+})();
 initWorkers();
 (function(){const vp=new Viewport(0,$('vp0'),FAM.mandel.view);VPS.push(vp);setActive(vp);syncLayoutUI();})();
 buildColorUI();
