@@ -16,6 +16,24 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.7.5 — 2026-11-22 
+
+### Novità
+- Famiglia **Magnet II** (code 9): mappa razionale di grado 3, modalità parametro (z₀=0) e Julia. DE analitico non presente (de:false, gradiente numerico); testo e preset didattici.
+- Famiglia **Esponenziale** (code 10): z → c·e^z, modalità parametro (z₀=0) e Julia. Fuga su Re(z)>50 con protezione overflow. DE analitico abilitato. mu continuo da overshoot su Re per evitare banding. Preset biforcazione parabolica (c=1/e) e bouquet di Cantor (c=0,3).
+- Famiglia **Seno** (code 11): z → c·sin(z), modalità parametro (z₀=π/2) e Julia. Fuga su |Im z|>50 con protezione sinh/cosh. DE analitico abilitato. mu continuo da overshoot su |Im|. Preset c=1 e c=1+0,1i.
+- Aggiornata sezione «Famiglie aggiunte» e testi didattici coerenti.
+- Versione 1.7.5 (22 novembre 2026).
+
+### Correzioni
+- Nessuna regressione sulle famiglie preesistenti; il ramo computeBand esteso mantiene il comportamento precedente.
+
+### Limiti noti
+- Magnet II: nessun Distance Estimator analitico (derivata della composizione razionale² troppo propensa a errori di implementazione).
+- Esponenziale e Seno: DE usa la formula classica basata su |z|/|dz|; per mappe trascendenti è un’approssimazione utile per neon/rilievo ma non è la distanza euclidea esatta.
+- Nessun deep-zoom/perturbation; limite FP64 invariato con avviso esistente.
+- Preset di partenza scelti per leggibilità didattica; viste ottimali possono richiedere ritocco manuale.
+
 ## 1.7.0 — 2026-11-22 
 
 ### Novità

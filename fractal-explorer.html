@@ -98,9 +98,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.7.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.7.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.7.0 · 22 novembre 2026</p>
+<p class="updated">Versione 1.7.5 · 22 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -182,9 +182,10 @@ a{color:inherit}
 <details class="more"><summary><b>Interno ed equalizzato</b><span>Colorare anche i punti che non scappano mai.</span></summary><ul>
 <li>Trappola punto e croce colorano l'interno con la distanza minima dell'orbita da 0 o dagli assi.</li>
 <li>Equalizzato distribuisce i colori in base all'istogramma dell'immagine, così nessuna tinta domina.</li></ul></details>
-<details class="more"><summary><b>Famiglie aggiunte</b><span>Varianti con valore assoluto, Magnet e Buddhabrot.</span></summary><ul>
+<details class="more"><summary><b>Famiglie aggiunte</b><span>Varianti con valore assoluto, Magnet, esponenziale, seno e Buddhabrot.</span></summary><ul>
 <li>Burning Ship e varianti: nel passo z² si inseriscono valori assoluti. Celtic usa |Re z²|; Heart (|x|+iy)²; Perpendicolare (|x|−iy)²; Nave perpendicolare cambia il segno di y dentro il prodotto. L'interruttore Julia fissa c e fa variare z.</li>
-<li>Magnet I: z → ((z² + c − 1)/(2z + c − 2))². Le orbite o scappano o convergono a 1.</li>
+<li>Magnet I e II: mappe razionali dalla fisica statistica dei magneti. Magnet I: ((z²+c−1)/(2z+c−2))²; Magnet II di grado 3. Orbite che scappano o convergono; confini a petali. DE analitico solo su Magnet I.</li>
+<li>Esponenziale: z → c·e^z (fuga su Re z > 50). Biforcazione parabolica a c=1/e; bouquet di Cantor per c≈0,3. Seno: z → c·sin(z) (fuga su |Im z| > 50), partenza dal punto critico π/2 in modalità parametro.</li>
 <li>Buddhabrot: non colora il punto di partenza ma disegna le traiettorie dei punti che scappano, accumulandole. L'immagine si affina man mano che arrivano campioni; il colore segue la lunghezza delle orbite.</li></ul></details>
 <details class="more"><summary><b>Limiti</b><span>Precisione, tempi e cosa non fa.</span></summary><ul>
 <li>Il calcolo è in doppia precisione: oltre uno zoom di circa 10¹³ i dettagli si sgranano, e la pagina lo segnala.</li>
@@ -199,16 +200,18 @@ function computeBand(J){
   var fam=J.fam, maxIt=J.maxIt, s=J.s, x0=J.x0, y0=J.y0, d=J.d|0, cr=J.cr, ci=J.ci;
   var R2=1e6, lnR=Math.log(1000), lnd=Math.log(d>1?d:2);
   var k=0;
-  if(fam<=4||fam===8){
+  if(fam<=4||fam===8||fam===9||fam===10||fam===11){
     for(var j=r0;j<r1;j++){
       var py=y0-j*s;
       for(var i=0;i<W;i++,k++){
         var px=x0+i*s;
         var zx,zy,c1,c2,dx,dy;
-        if(fam===1||fam===4||((fam===2||fam===8)&&J.jul)){zx=px;zy=py;c1=cr;c2=ci;dx=1;dy=0;} else {zx=0;zy=0;c1=px;c2=py;dx=0;dy=0;}
+        var isJul=(fam===1||fam===4||((fam===2||fam===8||fam===9||fam===10||fam===11)&&J.jul));
+        if(isJul){zx=px;zy=py;c1=cr;c2=ci;dx=1;dy=0;} else {c1=px;c2=py;dx=0;dy=0; if(fam===11){zx=Math.PI/2;zy=0;} else {zx=0;zy=0;}}
         if(fam===2&&!J.jul){c2=-py;}
         var pzx=0,pzy=0,pdx=0,pdy=0;
         var mtp=1e30,mtx=1e30,it=0,esc=false,szx=zx,szy=zy,per=8,pc=0,r2=zx*zx+zy*zy;
+        var prevx=zx,prevy=zy;
         for(it=0;it<maxIt;it++){
           var nx,ny;
           if(fam<=1){
@@ -254,6 +257,49 @@ function computeBand(J){
               if(isFinite(ndx+ndy)){dx=ndx;dy=ndy;}
               nx=qx*qx-qy*qy; ny=2*qx*qy;
             }
+          } else if(fam===9){
+            // Magnet II: z ← [ (z³ + 3(c−1)z + (c−1)(c−2)) / (3z² + 3(c−2)z + (c−1)(c−2) + 1) ]²
+            // de:false → non aggiorniamo dx,dy
+            var cm1r=c1-1,cm1i=c2, cm2r=c1-2,cm2i=c2;
+            var p1r=cm1r*cm2r-cm1i*cm2i, p1i=cm1r*cm2i+cm1i*cm2r;
+            var z2r=zx*zx-zy*zy, z2i=2*zx*zy;
+            var z3r=z2r*zx-z2i*zy, z3i=z2r*zy+z2i*zx;
+            var t3r=3*(cm1r*zx-cm1i*zy), t3i=3*(cm1r*zy+cm1i*zx);
+            var nr=z3r+t3r+p1r, ni=z3i+t3i+p1i;
+            var tb_r=3*(cm2r*zx-cm2i*zy), tb_i=3*(cm2r*zy+cm2i*zx);
+            var dr=3*z2r+tb_r+p1r+1, di=3*z2i+tb_i+p1i;
+            var mdn=dr*dr+di*di;
+            if(mdn<1e-30){nx=1e4;ny=0;} else {
+              var inv=1/mdn, wr=(nr*dr+ni*di)*inv, wi=(ni*dr-nr*di)*inv;
+              nx=wr*wr-wi*wi; ny=2*wr*wi;
+            }
+          } else if(fam===10){
+            // Esponenziale: z ← c · exp(z) ; DE: Julia dz' = z_new·dz ; param dz' = exp(z) + z_new·dz
+            var ez=Math.exp(Math.max(-40,Math.min(40,zx)));
+            var ex=ez*Math.cos(zy), ey=ez*Math.sin(zy);
+            nx=c1*ex-c2*ey; ny=c1*ey+c2*ex;
+            if(J.jul){
+              var ndx=nx*dx-ny*dy, ndy=nx*dy+ny*dx;
+              if(isFinite(ndx+ndy)){dx=ndx;dy=ndy;}
+            } else {
+              var ndx=ex+(nx*dx-ny*dy), ndy=ey+(nx*dy+ny*dx);
+              if(isFinite(ndx+ndy)){dx=ndx;dy=ndy;}
+            }
+          } else if(fam===11){
+            // Seno: z ← c · sin(z) ; sin(x+iy)=sinx coshy + i cosx sinhy
+            // DE Julia: dz' = c·cos(z)·dz ; param: sin(z) + c·cos(z)·dz
+            var ay=Math.min(20,Math.abs(zy)), shy=Math.sinh(ay)*(zy>=0?1:-1), chy=Math.cosh(ay);
+            var sx=Math.sin(zx)*chy, sy=Math.cos(zx)*shy;
+            nx=c1*sx-c2*sy; ny=c1*sy+c2*sx;
+            var cx_=Math.cos(zx)*chy, cy_=-Math.sin(zx)*shy; // cos(z)
+            var ccr=c1*cx_-c2*cy_, cci=c1*cy_+c2*cx_; // c·cos
+            if(J.jul){
+              var ndx=ccr*dx-cci*dy, ndy=ccr*dy+cci*dx;
+              if(isFinite(ndx+ndy)){dx=ndx;dy=ndy;}
+            } else {
+              var ndx=sx+(ccr*dx-cci*dy), ndy=sy+(ccr*dy+cci*dx);
+              if(isFinite(ndx+ndy)){dx=ndx;dy=ndy;}
+            }
           } else if(fam===3){
             var bx=zx, by=-zy, ex=1, ey=0;
             for(var q2=0;q2<d;q2++){var t2=ex*bx-ey*by; ey=ex*by+ey*bx; ex=t2;}
@@ -267,12 +313,15 @@ function computeBand(J){
             pzx=zx;pzy=zy;pdx=dx;pdy=dy;
             dx=ndx;dy=ndy;
           }
+          prevx=zx;prevy=zy;
           zx=nx;zy=ny;
           r2=zx*zx+zy*zy;
           var az=Math.sqrt(r2); if(az<mtp)mtp=az;
           var m2=Math.min(Math.abs(zx),Math.abs(zy)); if(m2<mtx)mtx=m2;
-          if(r2>R2){esc=true;break;}
-          if(fam!==4){
+          if(fam===10){if(zx>50){esc=true;break;}}
+          else if(fam===11){if(Math.abs(zy)>50){esc=true;break;}}
+          else if(r2>R2){esc=true;break;}
+          if(fam!==4&&fam!==10&&fam!==11){
             var ddx=zx-szx, ddy=zy-szy;
             if(ddx*ddx+ddy*ddy<1e-24){break;}
             if(++pc===per){pc=0;per*=2;szx=zx;szy=zy;}
@@ -280,12 +329,23 @@ function computeBand(J){
         }
         tp[k]=mtp; tx[k]=mtx;
         if(esc){
-          var lz=0.5*Math.log(r2);
-          var dd=(fam===2||fam===3||fam===4||fam===8)?2:d;
-          var m=it+1-Math.log(lz/lnR)/Math.log(dd);
-          if(m<0)m=0;
+          var m, lz=0.5*Math.log(Math.max(r2,1e-30));
+          if(fam===10||fam===11){
+            // mu continuo da overshoot sulla soglia (evita banding; nessun log-log)
+            if(fam===10){
+              m=(zx>prevx)?(it+(50-prevx)/(zx-prevx)):it;
+            } else {
+              var aim=Math.abs(zy),paim=Math.abs(prevy);
+              m=(aim>paim)?(it+(50-paim)/(aim-paim)):it;
+            }
+            if(m<0)m=0; if(m>it+1)m=it+1;
+          } else {
+            var dd=(fam===2||fam===3||fam===4||fam===8)?2:d;
+            m=it+1-Math.log(lz/lnR)/Math.log(dd);
+            if(m<0)m=0;
+          }
           mu[k]=m; kind[k]=0;
-          if(fam<=1||fam===4||fam===8){var dm=Math.sqrt(dx*dx+dy*dy); de[k]=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9;} else de[k]=-1;
+          if(fam<=1||fam===4||fam===8||fam===10||fam===11){var dm=Math.sqrt(dx*dx+dy*dy); de[k]=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9;} else de[k]=-1;
         } else {mu[k]=0;de[k]=0;kind[k]=1;}
       }
     }
@@ -610,6 +670,24 @@ const FAM={
   presets:[
    {name:'Vista intera',view:MAGV,p:{jul:0},style:'oro'},
    {name:'Julia Magnet',view:{cx:1,cy:0,span:5},p:{jul:1,cr:MJC[0],ci:MJC[1]},style:'scarabeo'}]},
+ magnet2:{name:'Magnet II',code:9,de:false,view:{cx:0,cy:0,span:4},iter:300,params:['jul','cr','ci'],
+  txt:'Variante di ordine superiore del Magnet I, sempre dalla fisica statistica dei magneti. La mappa razionale di grado 3 produce bacini e confini più elaborati rispetto al Magnet I. Modalità parametro (c dal piano, z₀ = 0) o Julia (c fisso). Il Distance Estimator analitico non è implementato (derivata troppo laboriosa e soggetta a errori); si usa il gradiente numerico del campo colore.',
+  presets:[
+   {name:'Vista intera',view:{cx:0,cy:0,span:4},p:{jul:0},style:'oro'},
+   {name:'Dettaglio petali',view:{cx:1.2,cy:0,span:1.5},p:{jul:0},style:'scarabeo'},
+   {name:'Julia Magnet II (c = 1)',view:{cx:0,cy:0,span:4},p:{jul:1,cr:1,ci:0},style:'pavone'}]},
+ exp:{name:'Esponenziale',code:10,de:true,view:{cx:0,cy:0,span:4},iter:200,params:['jul','cr','ci'],
+  txt:'Si itera z → c · e^z. In modalità parametro si parte da z = 0 (valore asintotico) e c varia sul piano; in Julia c è fisso. La fuga avviene quando Re(z) > 50 (con protezione da overflow). Con c = 1/e si osserva la biforcazione parabolica; con c ≈ 0,3 appare un bouquet di Cantor. Il mu continuo è calcolato dall’overshoot sulla soglia di Re per evitare banding.',
+  presets:[
+   {name:'Biforcazione parabolica (c = 1/e)',p:{jul:0,cr:0.36787944117,ci:0},view:{cx:0.25,cy:0,span:2.8},style:'pavone'},
+   {name:'Bouquet di Cantor (c = 0,3)',p:{jul:0,cr:0.3,ci:0},view:{cx:0,cy:0,span:3.2},style:'scarabeo'},
+   {name:'Julia esponenziale (c = 0,3)',p:{jul:1,cr:0.3,ci:0},view:{cx:0,cy:0,span:6},style:'neon'}]},
+ sin:{name:'Seno',code:11,de:true,view:{cx:0,cy:0,span:5},iter:200,params:['jul','cr','ci'],
+  txt:'Si itera z → c · sin(z), con la formula di sin complesso. In modalità parametro si parte dal punto critico z = π/2 e c varia sul piano; in Julia c è fisso. La fuga avviene quando |Im z| > 50 (con protezione da overflow di sinh/cosh). I confini formano strisce e isole tipiche delle funzioni intere trascendenti. Il mu continuo usa l’overshoot su |Im| per evitare banding.',
+  presets:[
+   {name:'Seno parametro (c = 1)',p:{jul:0,cr:1,ci:0},view:{cx:0,cy:0,span:5},style:'smeraldo'},
+   {name:'Seno (c = 1 + 0,1i)',p:{jul:0,cr:1,ci:0.1},view:{cx:0,cy:0,span:5},style:'pavone'},
+   {name:'Julia seno (c = 1)',p:{jul:1,cr:1,ci:0},view:{cx:0,cy:0,span:8},style:'bronzo'}]},
  buddha:{name:'Buddhabrot (traiettorie)',code:-2,de:false,view:{cx:0,cy:-0.5,span:3.1},iter:1000,noauto:true,params:[],
   txt:'Si campionano c a caso, si seguono le orbite z → z² + c e si tengono solo quelle che scappano: ogni punto toccato dall\'orbita accende un pixel. Ne esce una figura simile a un Buddha in meditazione. Più iterazioni e più campioni, più dettaglio: l\'immagine si affina man mano che arrivano punti. Il colore dipende dalla lunghezza delle orbite.',
   presets:[
@@ -1642,7 +1720,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.7.0',APP_VERSION_SHORT='1.7.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.7.5',APP_VERSION_SHORT='1.7.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
