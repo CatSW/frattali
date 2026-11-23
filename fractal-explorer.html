@@ -130,15 +130,18 @@ a{color:inherit}
 .card>.ibtn{justify-self:start}
 .ipan[hidden]{display:none!important}
 @media (max-width:699px),(orientation:landscape) and (max-height:499px),(pointer:coarse){.ibtn{min-width:40px;min-height:40px}}
+/* 1.9.0 — cursore informativo su più righe */
+.hud{align-items:flex-end}
+.hud span:nth-child(2){white-space:pre-line;max-width:100%;overflow-wrap:anywhere}
 </style>
 </head>
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.8.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.9.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.8.5 · 22 novembre 2026</p>
+<p class="updated">Versione 1.9.0 · 22 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -153,9 +156,9 @@ a{color:inherit}
    <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><rect x="8" y="8" width="6" height="6" rx="0.5"/></svg><span>Zoom area</span></button>
    <span class="seg" role="group" aria-label="Numero di viste"><span class="seglab">Viste</span><button class="tbtn on" id="lay1" type="button" aria-pressed="true" title="Una vista">1</button><button class="tbtn" id="lay2" type="button" aria-pressed="false" title="Due viste (affiancate o impilate)">2</button><button class="tbtn" id="lay4" type="button" aria-pressed="false" title="Quattro viste (griglia 2×2)">4</button></span>
    <button class="tbtn on" id="frames" type="button" aria-pressed="true" hidden title="Mostra o nascondi, su ogni vista, le cornici delle altre viste">Cornici</button>
-   <button class="tbtn" id="grid" type="button" aria-pressed="false" aria-keyshortcuts="G" title="Mostra o nascondi gli assi e le tacche del piano di Gauss (G)">Griglia</button>
-   <button class="tbtn" id="tojulia">Julia da qui</button>
-   <button class="tbtn" id="pick">Tocca per scegliere c</button>
+   <button class="tbtn" id="grid" data-cap="grid" type="button" aria-pressed="false" aria-keyshortcuts="G" title="Mostra o nascondi gli assi e le tacche del piano di Gauss (G)">Griglia</button>
+   <button class="tbtn" id="tojulia" data-cap="juliaPick">Julia da qui</button>
+   <button class="tbtn" id="pick" data-cap="juliaPick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
    <button class="tbtn" id="save">Salva PNG</button>
    <button class="tbtn" id="ptog">Nascondi pannello</button>
@@ -193,9 +196,9 @@ a{color:inherit}
    <div class="sel"><span class="cl">Palette</span><select id="pal"></select></div>
    <div class="palprev" id="palprev"></div>
    <div class="custom" id="custom"></div>
-   <div class="sel"><span class="cl">Modo esterno</span><select id="mode">
+   <div class="sel" data-cap="escape"><span class="cl">Modo esterno</span><select id="mode">
      <option value="smooth">Sfumato continuo</option><option value="equal">Equalizzato</option><option value="neon">Neon (filamenti)</option><option value="stalk">Steli (germogli)</option></select></div>
-   <div class="sel"><span class="cl">Interno</span><select id="inmode">
+   <div class="sel" data-cap="escape"><span class="cl">Interno</span><select id="inmode">
      <option value="flat">Tinta unita</option><option value="tp">Trappola punto</option><option value="tx">Trappola croce</option></select></div>
    <div class="sel"><span class="cl">Tinta interna</span><input type="color" id="incol" value="#000000"></div>
    <div id="colctl" style="display:grid;gap:6px"></div>
@@ -238,7 +241,7 @@ function computeBand(J){
   var mu=new Float32Array(n), de=new Float32Array(n), tp=new Float32Array(n), tx=new Float32Array(n), kind=new Uint8Array(n);
   var fam=J.fam, maxIt=J.maxIt, s=J.s, x0=J.x0, y0=J.y0, d=J.d|0, cr=J.cr, ci=J.ci;
   var R2=1e6, lnR=Math.log(1000), lnd=Math.log(d>1?d:2);
-  var k=0;
+  var k=0, PR=J.pr, PT=J.pt; // 1.9.0: PR = uscita opzionale per punto (n,zx,zy,mu,de,root), PT = override [z0x,z0y,cx,cy]; assenti = comportamento invariato
   if(fam<=4||fam===8||fam===9||fam===10||fam===11){
     for(var j=r0;j<r1;j++){
       var py=y0-j*s;
@@ -248,6 +251,7 @@ function computeBand(J){
         var isJul=(fam===1||fam===4||((fam===2||fam===8||fam===9||fam===10||fam===11)&&J.jul));
         if(isJul){zx=px;zy=py;c1=cr;c2=ci;dx=1;dy=0;} else {c1=px;c2=py;dx=0;dy=0; if(fam===11){zx=Math.PI/2;zy=0;} else {zx=0;zy=0;}}
         if(fam===2&&!J.jul){c2=-py;}
+        if(PT){zx=PT[0];zy=PT[1];c1=PT[2];c2=PT[3];}
         var pzx=0,pzy=0,pdx=0,pdy=0;
         var mtp=1e30,mtx=1e30,it=0,esc=false,szx=zx,szy=zy,per=8,pc=0,r2=zx*zx+zy*zy;
         var prevx=zx,prevy=zy;
@@ -367,6 +371,7 @@ function computeBand(J){
           }
         }
         tp[k]=mtp; tx[k]=mtx;
+        if(PR){var o1=k*6;PR[o1]=esc?it+1:maxIt;PR[o1+1]=zx;PR[o1+2]=zy;PR[o1+3]=0;PR[o1+4]=0;PR[o1+5]=-1;}
         if(esc){
           var m, lz=0.5*Math.log(Math.max(r2,1e-30));
           if(fam===10||fam===11){
@@ -383,8 +388,8 @@ function computeBand(J){
             m=it+1-Math.log(lz/lnR)/Math.log(dd);
             if(m<0)m=0;
           }
-          mu[k]=m; kind[k]=0;
-          if(fam<=1||fam===4||fam===8||fam===10||fam===11){var dm=Math.sqrt(dx*dx+dy*dy); de[k]=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9;} else de[k]=-1;
+          mu[k]=m; kind[k]=0; if(PR)PR[k*6+3]=m;
+          if(fam<=1||fam===4||fam===8||fam===10||fam===11){var dm=Math.sqrt(dx*dx+dy*dy); var dv1=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9;de[k]=dv1;if(PR)PR[k*6+4]=dv1;} else {de[k]=-1;if(PR)PR[k*6+4]=-1;}
         } else {mu[k]=0;de[k]=0;kind[k]=1;}
       }
     }
@@ -397,6 +402,7 @@ function computeBand(J){
       for(var i2=0;i2<W;i2++,k++){
         var px2=x0+i2*s, zx2, zy2, cx=0, cy=0;
         if(nova){zx2=1;zy2=0;cx=px2;cy=py2;} else {zx2=px2;zy2=py2;}
+        if(PT){zx2=PT[0];zy2=PT[1];cx=PT[2];cy=PT[3];}
         var prev=1e30, it2=0, conv=false, mtp2=1e30, mtx2=1e30, lastd=0, exitk=1;
         for(it2=0;it2<maxIt;it2++){
           var nzx, nzy, dlt, den;
@@ -473,6 +479,7 @@ function computeBand(J){
           prev=dlt;
         }
         tp[k]=mtp2; tx[k]=mtx2; de[k]=-1;
+        if(PR){var o2=k*6;PR[o2]=(conv||exitk===DIVK)?it2+1:(exitk===SINGK?it2:maxIt);PR[o2+1]=zx2;PR[o2+2]=zy2;PR[o2+3]=0;PR[o2+4]=-1;PR[o2+5]=-1;}
         if(conv){
           var fr2=0;
           if(prev<1e29 && prev>tol && lastd>0){
@@ -480,7 +487,7 @@ function computeBand(J){
             if(lp!==lc) fr2=(lp-lt)/(lp-lc);
             if(fr2<0)fr2=0; if(fr2>1)fr2=1;
           }
-          mu[k]=it2+fr2;
+          mu[k]=it2+fr2; if(PR)PR[k*6+3]=it2+fr2;
           if(nova){kind[k]=0;}
           else if(trans>=0){
             // indice k periodico
@@ -491,11 +498,11 @@ function computeBand(J){
             else if(trans===4) kk=Math.round((zy2-Math.PI/2)/Math.PI);
             else if(trans===5){var arga=Math.atan2(a1,a0); kk=Math.round((zy2-arga)/(2*Math.PI));}
             else kk=Math.round(zx2/Math.PI); // mixed quantize
-            kind[k]=2+((kk%8)+8)%8;
+            kind[k]=2+((kk%8)+8)%8; if(PR)PR[k*6+5]=kk+0;
           } else {
             var best=-1,bd=1e30;
             for(var r=0;r<nr;r++){var ex2=zx2-rt[2*r], ey2=zy2-rt[2*r+1], e2=ex2*ex2+ey2*ey2; if(e2<bd){bd=e2;best=r;}}
-            kind[k]=(best>=0&&bd<rootTol)?2+best:1;
+            kind[k]=(best>=0&&bd<rootTol)?2+best:1; if(PR)PR[k*6+5]=(best>=0&&bd<rootTol)?best:-1;
           }
         } else {mu[k]=0;kind[k]=exitk;}
       }
@@ -503,6 +510,16 @@ function computeBand(J){
   }
 
   return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
+}
+// 1.9.0 - valutatore puntuale: stessa funzione computeBand su un solo punto (parita' per costruzione).
+// fam = codice numerico; P = parametri di job (vedi famJobParams); (z0x,z0y) = partenza, (cx,cy) = parametro c gia' risolti.
+// n = iterazioni eseguite (per i punti che non escono/convergono: maxIt); de in unita' del piano.
+function evalPoint(fam,P,z0x,z0y,cx,cy,maxIt){
+  var J={};for(var q in P)J[q]=P[q];
+  J.fam=fam;J.W=1;J.H=1;J.r0=0;J.r1=1;J.x0=0;J.y0=0;J.s=1;J.maxIt=maxIt|0;J.pt=[z0x,z0y,cx,cy];
+  var pr=new Float64Array(6);J.pr=pr;
+  var B=computeBand(J),zx=pr[1],zy=pr[2];
+  return {kind:B.kind[0],n:pr[0],mu:pr[3],zx:zx,zy:zy,mod:Math.sqrt(zx*zx+zy*zy),arg:Math.atan2(zy,zx),de:pr[4],root:pr[5]};
 }
 function computeMS(J){
   // Mariani-Silver: perimeter first; if all interior (kind===1) and fillFlat, fill block; else recurse to 4 or direct
@@ -604,7 +621,7 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha};')();
 
 /* ---------- definizioni ---------- */
 const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
@@ -631,8 +648,11 @@ const IFSS=[
  {name:'Curva C di Lévy',m:[[0.5,-0.5,0.5,0.5,0,0,0.5],[0.5,0.5,-0.5,0.5,0.5,0.5,0.5]]},
  {name:'Triangolo di Sierpiński',m:[[0.5,0,0,0.5,0,0,1/3],[0.5,0,0,0.5,0.5,0,1/3],[0.5,0,0,0.5,0.25,0.4330127,1/3]]}
 ];
+/* 1.9.0 - capacita' per famiglia. escape: concetto di fuga/divergenza; phase: modi di fase pertinenti; point: evalPoint supportato;
+   profile: profilo lungo un segmento (famiglie a bande con point); grid: asse della griglia ('complex'|'xy'|'rx'|'none'); newtonThresholds: soglie Newton; juliaPick: «Julia da qui» / «Tocca per scegliere c». */
+const CAP=o=>Object.assign({escape:true,phase:false,point:true,profile:true,grid:'complex',newtonThresholds:false,juliaPick:false},o);
 const FAM={
- mandel:{name:'Mandelbrot e Multibrot',code:0,axes:'complex',de:true,view:{cx:-0.6,cy:0,span:2.7},iter:300,params:['d'],
+ mandel:{name:'Mandelbrot e Multibrot',code:0,caps:CAP({phase:true,juliaPick:true}),axes:'complex',de:true,view:{cx:-0.6,cy:0,span:2.7},iter:300,params:['d'],
   txt:'Per ogni punto c si itera z → z^d + c partendo da z = 0: il punto appartiene all\'insieme se l\'orbita resta limitata. Con d = 2 è il Mandelbrot classico; con d più alto (Multibrot) la simmetria diventa di ordine d − 1.',
   presets:[
    {name:'Vista intera',view:{cx:-0.6,cy:0,span:2.7},p:{d:2}},
@@ -643,7 +663,7 @@ const FAM={
    {name:'Mini-Mandelbrot sull\'asse',view:{cx:-1.7549,cy:0,span:0.05},p:{d:2},style:'smeraldo'},
    {name:'Multibrot d = 3',view:{cx:0,cy:0,span:2.9},p:{d:3}},
    {name:'Multibrot d = 5',view:{cx:0,cy:0,span:2.3},p:{d:5},style:'scarabeo'}]},
- julia:{name:'Julia',code:1,axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:400,params:['d','cr','ci'],
+ julia:{name:'Julia',code:1,caps:CAP({phase:true}),axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:400,params:['d','cr','ci'],
   txt:'Qui c è fisso e varia il punto di partenza z. Se c appartiene al Mandelbrot l\'insieme di Julia è connesso, altrimenti è polvere sparsa. Con c = i è una dendrite pura: connessa, senza interno, tutta rami.',
   presets:[
    {name:'Neuroni (c = −0,7269 + 0,1889i)',p:{d:2,cr:-0.7269,ci:0.1889},style:'pavone'},
@@ -655,7 +675,7 @@ const FAM={
    {name:'Fulmini (−0,4 + 0,6i)',p:{d:2,cr:-0.4,ci:0.6},style:'neon'},
    {name:'Germogli (0,285 + 0,01i)',p:{d:2,cr:0.285,ci:0.01},style:'smeraldo'},
    {name:'Cubica (d = 3, c = 0,4 + 0,5i)',p:{d:3,cr:0.4,ci:0.5},style:'scarabeo'}]},
- ship:{name:'Burning Ship e varianti',code:2,axes:'complex',de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
+ ship:{name:'Burning Ship e varianti',code:2,caps:CAP({phase:true}),axes:'complex',de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
   txt:'Come il Mandelbrot, ma con valori assoluti dentro il passo: Burning Ship (|x|, |y|)², Celtic |Re z²|, Heart (|x| + iy)², Perpendicolare (|x| − iy)², Nave perpendicolare. Le funzioni non sono analitiche e nascono forme spigolose. L\'interruttore Julia fissa c e fa variare il punto di partenza.',
   presets:[
    {name:'Burning Ship, vista intera',view:{cx:-0.5,cy:0.5,span:2.6},p:{v:0,jul:0}},
@@ -667,13 +687,13 @@ const FAM={
    {name:'Nave perpendicolare',view:PSHIP,p:{v:3,jul:0},style:'bronzo'},
    {name:'Burning Ship Julia',view:{cx:0,cy:0,span:3},p:{v:0,jul:1,cr:BJC[0],ci:BJC[1]},style:'neon'},
    {name:'Celtic Julia',view:{cx:0,cy:0,span:3},p:{v:1,jul:1,cr:CJC[0],ci:CJC[1]},style:'pavone'}]},
- tricorn:{name:'Tricorno e Multicorn',code:3,axes:'complex',de:false,view:{cx:-0.65,cy:0,span:2.8},iter:300,params:['d'],
+ tricorn:{name:'Tricorno e Multicorn',code:3,caps:CAP({phase:true}),axes:'complex',de:false,view:{cx:-0.65,cy:0,span:2.8},iter:300,params:['d'],
   txt:'Si itera il coniugato: z → z̄^d + c. Con d = 2 è il Tricorno, con tre punte; in generale le punte sono d + 1. I confini hanno tratti rettilinei che nel Mandelbrot non esistono.',
   presets:[
    {name:'Tricorno',view:{cx:-0.65,cy:0,span:2.8},p:{d:2}},
    {name:'Multicorn d = 3',view:{cx:0,cy:0,span:2.3},p:{d:3},style:'scarabeo'},
    {name:'Multicorn d = 5',view:{cx:0,cy:0,span:2.6},p:{d:5},style:'pavone'}]},
- newton:{name:'Newton',code:5,axes:'complex',de:false,view:{cx:0,cy:0,span:3},iter:60,noauto:true,params:['poly','ar','ai','a0','a1'],
+ newton:{name:'Newton',code:5,caps:CAP({newtonThresholds:true}),axes:'complex',de:false,view:{cx:0,cy:0,span:3},iter:60,noauto:true,params:['poly','ar','ai','a0','a1'],
   txt:'Si applica il metodo di Newton z → z − a·f(z)/f\'(z) da ogni punto. Per i polinomi il colore indica la radice raggiunta; per le funzioni trascendenti (sin, cos, tan, sinh, cosh, eᶻ−a, sin z − a·z) le radici sono infinite e periodiche, i bacini formano strisce. Nero = timeout, rosso = divergenza, magenta = singolarità/NaN. I confini fra bacini sono frattali.',
   presets:[
    {name:'z³ − 1',p:{poly:0,ar:1,ai:0},view:{cx:0,cy:0,span:3},style:'pavone'},
@@ -691,49 +711,49 @@ const FAM={
    {name:'eᶻ − 1',p:{poly:11,ar:1,ai:0,a0:1,a1:0},view:{cx:0,cy:0,span:8},style:'pavone'},
    {name:'sin z − 0,5 z',p:{poly:12,ar:1,ai:0,a0:0.5,a1:0},view:{cx:0,cy:0,span:10},style:'scarabeo'}]},
 
- nova:{name:'Nova',code:6,axes:'complex',de:false,view:{cx:-0.4,cy:0,span:2.6},iter:200,params:['n','ar','ai'],
+ nova:{name:'Nova',code:6,caps:CAP({}),axes:'complex',de:false,view:{cx:-0.4,cy:0,span:2.6},iter:200,params:['n','ar','ai'],
   txt:'Un incrocio tra Newton e Mandelbrot: z → z − a·(zⁿ − 1)/(n·zⁿ⁻¹) + c, partendo da z = 1, con c che varia da pixel a pixel. Dove l\'orbita non si stabilizza compaiono copie del Mandelbrot circondate dai motivi di Newton.',
   presets:[
    {name:'Nova classico (n = 3)',p:{n:3,ar:1,ai:0},view:{cx:-0.4,cy:0,span:2.6},style:'pavone'},
    {name:'Copia del Mandelbrot in Nova',p:{n:3,ar:1,ai:0},view:{cx:-0.74,cy:0,span:0.35},style:'scarabeo'},
    {name:'Nova n = 4',p:{n:4,ar:1,ai:0},view:{cx:-0.3,cy:0,span:2.6},style:'bronzo'},
    {name:'Nova rilassato (a = 0,8)',p:{n:3,ar:0.8,ai:0},view:{cx:-0.4,cy:0,span:2.6},style:'smeraldo'}]},
- phoenix:{name:'Phoenix',code:4,axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:300,params:['cr','ci','qr','qi'],
+ phoenix:{name:'Phoenix',code:4,caps:CAP({phase:true}),axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:300,params:['cr','ci','qr','qi'],
   txt:'Proposto da Ushiki (1988): z → z² + p + q·z_prec, cioè ogni passo ricorda anche il punto precedente. È di tipo Julia: p e q sono fissi e varia il punto di partenza.',
   presets:[
    {name:'Fenice classica (p = 0,56667, q = −0,5)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0},style:'fuoco'},
    {name:'q complesso (q = −0,5 + 0,1i)',p:{cr:0.56667,ci:0,qr:-0.5,qi:0.1},style:'pavone'},
    {name:'Filamenti (p = 0,269, q = 0,01i)',p:{cr:0.269,ci:0,qr:0,qi:0.01},style:'scarabeo'}]},
- magnet:{name:'Magnet I',code:8,axes:'complex',de:true,view:MAGV,iter:300,params:['jul','cr','ci'],
+ magnet:{name:'Magnet I',code:8,caps:CAP({}),axes:'complex',de:true,view:MAGV,iter:300,params:['jul','cr','ci'],
   txt:'Dalla fisica statistica: z → ((z² + c − 1)/(2z + c − 2))², partendo da z = 0. Le orbite o scappano all\'infinito o convergono al punto fisso 1. Il confine ha una struttura a petali molto diversa dal Mandelbrot. Con l\'interruttore Julia c resta fisso.',
   presets:[
    {name:'Vista intera',view:MAGV,p:{jul:0},style:'oro'},
    {name:'Julia Magnet',view:{cx:1,cy:0,span:5},p:{jul:1,cr:MJC[0],ci:MJC[1]},style:'scarabeo'}]},
- magnet2:{name:'Magnet II',code:9,axes:'complex',de:false,view:{cx:0,cy:0,span:4},iter:300,params:['jul','cr','ci'],
+ magnet2:{name:'Magnet II',code:9,caps:CAP({}),axes:'complex',de:false,view:{cx:0,cy:0,span:4},iter:300,params:['jul','cr','ci'],
   txt:'Variante di ordine superiore del Magnet I, sempre dalla fisica statistica dei magneti. La mappa razionale di grado 3 produce bacini e confini più elaborati rispetto al Magnet I. Modalità parametro (c dal piano, z₀ = 0) o Julia (c fisso). Il Distance Estimator analitico non è implementato (derivata troppo laboriosa e soggetta a errori); si usa il gradiente numerico del campo colore.',
   presets:[
    {name:'Vista intera',view:{cx:0,cy:0,span:4},p:{jul:0},style:'oro'},
    {name:'Dettaglio petali',view:{cx:1.2,cy:0,span:1.5},p:{jul:0},style:'scarabeo'},
    {name:'Julia Magnet II (c = 1)',view:{cx:0,cy:0,span:4},p:{jul:1,cr:1,ci:0},style:'pavone'}]},
- exp:{name:'Esponenziale',code:10,axes:'complex',de:true,view:{cx:0,cy:0,span:4},iter:200,params:['jul','cr','ci'],
+ exp:{name:'Esponenziale',code:10,caps:CAP({}),axes:'complex',de:true,view:{cx:0,cy:0,span:4},iter:200,params:['jul','cr','ci'],
   txt:'Si itera z → c · e^z. In modalità parametro si parte da z = 0 (valore asintotico) e c varia sul piano; in Julia c è fisso. La fuga avviene quando Re(z) > 50 (con protezione da overflow). Con c = 1/e si osserva la biforcazione parabolica; con c ≈ 0,3 appare un bouquet di Cantor. Il mu continuo è calcolato dall’overshoot sulla soglia di Re per evitare banding.',
   presets:[
    {name:'Biforcazione parabolica (c = 1/e)',p:{jul:0,cr:0.36787944117,ci:0},view:{cx:0.25,cy:0,span:2.8},style:'pavone'},
    {name:'Bouquet di Cantor (c = 0,3)',p:{jul:0,cr:0.3,ci:0},view:{cx:0,cy:0,span:3.2},style:'scarabeo'},
    {name:'Julia esponenziale (c = 0,3)',p:{jul:1,cr:0.3,ci:0},view:{cx:0,cy:0,span:6},style:'neon'}]},
- sin:{name:'Seno',code:11,axes:'complex',de:true,view:{cx:0,cy:0,span:5},iter:200,params:['jul','cr','ci'],
+ sin:{name:'Seno',code:11,caps:CAP({}),axes:'complex',de:true,view:{cx:0,cy:0,span:5},iter:200,params:['jul','cr','ci'],
   txt:'Si itera z → c · sin(z), con la formula di sin complesso. In modalità parametro si parte dal punto critico z = π/2 e c varia sul piano; in Julia c è fisso. La fuga avviene quando |Im z| > 50 (con protezione da overflow di sinh/cosh). I confini formano strisce e isole tipiche delle funzioni intere trascendenti. Il mu continuo usa l’overshoot su |Im| per evitare banding.',
   presets:[
    {name:'Seno parametro (c = 1)',p:{jul:0,cr:1,ci:0},view:{cx:0,cy:0,span:5},style:'smeraldo'},
    {name:'Seno (c = 1 + 0,1i)',p:{jul:0,cr:1,ci:0.1},view:{cx:0,cy:0,span:5},style:'pavone'},
    {name:'Julia seno (c = 1)',p:{jul:1,cr:1,ci:0},view:{cx:0,cy:0,span:8},style:'bronzo'}]},
- buddha:{name:'Buddhabrot (traiettorie)',code:-2,axes:'none',de:false,view:{cx:0,cy:-0.5,span:3.1},iter:1000,noauto:true,params:[],
+ buddha:{name:'Buddhabrot (traiettorie)',code:-2,caps:CAP({escape:false,phase:false,point:false,profile:false,grid:'none',newtonThresholds:false,juliaPick:false}),axes:'none',de:false,view:{cx:0,cy:-0.5,span:3.1},iter:1000,noauto:true,params:[],
   txt:'Si campionano c a caso, si seguono le orbite z → z² + c e si tengono solo quelle che scappano: ogni punto toccato dall\'orbita accende un pixel. Ne esce una figura simile a un Buddha in meditazione. Più iterazioni e più campioni, più dettaglio: l\'immagine si affina man mano che arrivano punti. Il colore dipende dalla lunghezza delle orbite.',
   presets:[
    {name:'Vista intera',view:{cx:0,cy:-0.5,span:3.1},style:'nebulosa'},
    {name:'Testa e cuore (zoom)',view:{cx:0,cy:-0.3,span:1.3},style:'nebulosa'},
    {name:'Oro su verde',view:{cx:0,cy:-0.5,span:3.1},style:'oro'}]},
- ifs:{name:'IFS e chaos game (felce, draghi)',code:-1,axes:'none',de:false,view:{cx:0,cy:5,span:11},iter:0,params:['ifs'],
+ ifs:{name:'IFS e chaos game (felce, draghi)',code:-1,caps:CAP({escape:false,phase:false,point:false,profile:false,grid:'none',newtonThresholds:false,juliaPick:false}),axes:'none',de:false,view:{cx:0,cy:5,span:11},iter:0,params:['ifs'],
   txt:'Un sistema di funzioni iterate: poche trasformazioni affini, scelte a caso migliaia di volte. I punti si addensano su un\'unica figura autosimile. La felce di Barnsley ne usa solo quattro; il colore segue la densità dei punti e le trasformazioni usate.',
   presets:IFSS.map((f,i)=>({name:f.name,p:{ifs:i},style:i===0?'smeraldo':'oro'}))}
 };
@@ -1008,24 +1028,104 @@ function findRoots(c){
  }
  return z;
 }
-function baseJob(W,H,view){
- view=view||AV.view;
- const f=FAM[S.fam],P=S.P[S.fam],s=view.span/H;
- const J={fam:f.code,W,H,s,x0:view.cx-(W/2-0.5)*s,y0:view.cy+(H/2-0.5)*s,maxIt:curIter(view),d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai,v:P.v,jul:P.jul};
- if(S.fam==='mandel'){J.cr=0;J.ci=0;}
- if(S.fam==='newton'){
+const ROOTS_CACHE={};
+// parametri di famiglia per i job (condivisi da baseJob ed evalPoint): nessuna dipendenza da vista o da AV
+function famJobParams(key,P,nw){
+ const f=FAM[key],J={fam:f.code,d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai,v:P.v,jul:P.jul};
+ if(key==='mandel'){J.cr=0;J.ci=0;}
+ if(key==='newton'){
   const pp=POLYS[P.poly];
-  if(pp.c){const c=pp.c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=findRoots(c);J.roots=new Float64Array(r.flat());J.trans=-1;}
+  if(pp.c){const c=pp.c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=ROOTS_CACHE[P.poly]||(ROOTS_CACHE[P.poly]=findRoots(c));J.roots=new Float64Array(r.flat());J.trans=-1;}
   else {J.trans=pp.trans;J.a0=P.a0;J.a1=P.a1;J.co=null;J.roots=null;}
-  const nw=S.nw||{};
+  nw=nw||{};
   if(nw.divergenceRadius)J.Rmax=nw.divergenceRadius;
   if(nw.convergenceTolerance)J.tol=nw.convergenceTolerance*nw.convergenceTolerance;
   if(nw.minDerivativeThreshold){J.dmin=nw.minDerivativeThreshold;J.ddmin=2*nw.minDerivativeThreshold*nw.minDerivativeThreshold;}
  }
-
- if(S.fam==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
+ if(key==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
  return J;
 }
+function baseJob(W,H,view){
+ view=view||AV.view;
+ const P=S.P[S.fam],s=view.span/H;
+ return Object.assign({W,H,s,x0:view.cx-(W/2-0.5)*s,y0:view.cy+(H/2-0.5)*s,maxIt:curIter(view)},famJobParams(S.fam,P,S.nw));
+}
+/* ---------- evalPoint (1.9.0): valutatore puntuale, cursore informativo ---------- */
+// evalPoint(fam, params, z0x, z0y, cx, cy, maxIt[, nw]) -> {kind,n,mu,zx,zy,mod,arg,de,root} oppure null (famiglia senza caps.point).
+// fam: chiave di FAM (o codice numerico); params: come S.P[fam]; (z0x,z0y) partenza e (cx,cy) parametro c già risolti; nw: soglie Newton opzionali.
+// kind: 0 fuga (Nova: convergenza), 1 non fugge/timeout, 2.. radice, 253 singolarità, 254 divergenza. n: iterazioni eseguite (maxIt se non fugge).
+// mu: continuo (0 se non definito). de: in unità del piano (−1 se non disponibile). root: indice radice (Newton) o −1.
+function evalPoint(fam,params,z0x,z0y,cx,cy,maxIt,nw){
+ const key=typeof fam==='string'?fam:Object.keys(FAM).find(k=>FAM[k].code===fam),f=FAM[key];
+ if(!f||!f.caps||!f.caps.point)return null;
+ const P=params||S.P[key];
+ return LIB.evalPoint(f.code,famJobParams(key,P,nw||null),+z0x,+z0y,+cx,+cy,Math.max(1,(maxIt||S.iterBase[key])|0));
+}
+// punto (px,py) del piano visualizzato -> (z0,c) con le stesse regole di computeBand, poi evalPoint
+function evalPlane(key,P,px,py,maxIt,nw){
+ const c=FAM[key].code;let z0x,z0y,cx,cy;
+ if(c===5){z0x=px;z0y=py;cx=0;cy=0;}
+ else if(c===6){z0x=1;z0y=0;cx=px;cy=py;}
+ else{
+  const jul=(c===1||c===4||((c===2||c===8||c===9||c===10||c===11)&&P.jul));
+  if(jul){z0x=px;z0y=py;cx=P.cr;cy=P.ci;}
+  else{z0x=(c===11)?Math.PI/2:0;z0y=0;cx=px;cy=(c===2)?-py:py;}
+ }
+ return evalPoint(key,P,z0x,z0y,cx,cy,maxIt,nw);
+}
+function fmtG(v){const a=Math.abs(v);if(v===0)return '0';return (a>=1e5||a<1e-4)?v.toExponential(3).replace('.',','):fmt(v,5);}
+function pointLines(key,r,N){
+ const k=r.kind,P=S.P[key];let st;
+ if(k===253)st='singolarità';
+ else if(k===254)st='diverge a '+r.n+' iterazioni';
+ else if(key==='newton'){
+  if(k>=2){st='convergenza alla radice k = '+r.root;const pp=POLYS[P.poly];if(pp&&pp.c)st+=' ≈ '+fmt(r.zx,4)+(r.zy<0?' − ':' + ')+fmt(Math.abs(r.zy),4)+'i';}
+  else st='timeout: nessuna convergenza entro '+N+' iterazioni';
+ }
+ else if(key==='nova')st=k===0?'converge a '+r.n+' iterazioni':'timeout: nessuna convergenza entro '+N+' iterazioni';
+ else st=k===0?'diverge a '+r.n+' iterazioni':'non diverge entro '+N+' iterazioni';
+ const hasMu=k===0||(k>=2&&k<253);
+ const md=r.mod,ms=!isFinite(md)?'—':(md>1e6?'log10|zₙ| = '+fmt(Math.log10(md),3):'|zₙ| = '+fmtG(md));
+ const as=(!isFinite(md)||md===0)?'—':fmt(r.arg,4)+' rad ('+fmt(r.arg*180/Math.PI,2)+'°)';
+ return [st,'n = '+r.n+' · μ = '+(hasMu?fmt(r.mu,4):'—'),ms+' · arg zₙ = '+as];
+}
+// testo del cursore/marker per il punto (x,y) del piano; null se la famiglia non supporta evalPoint o in caso di errore
+function planeText(vp,x,y,label){
+ try{
+  const F=FAM[S.fam];if(!F.caps||!F.caps.point)return null;
+  const N=curIter(vp.view),r=evalPlane(S.fam,S.P[S.fam],x,y,N,S.nw);if(!r)return null;
+  return (label||'')+'Re '+fmt(x,5)+' · Im '+fmt(y,5)+'\n'+pointLines(S.fam,r,N).join('\n');
+ }catch(e){return null;}
+}
+// test di parità da console: evalPointParityTest(500) -> {ok,tol,fams:{...}}; confronta evalPoint con computeBand sullo stesso pixel
+function evalPointParityTest(nPer,seed){
+ nPer=nPer>0?nPer|0:500;let sd=(seed>>>0)||123456789;
+ const rnd=()=>{sd^=sd<<13;sd>>>=0;sd^=sd>>>17;sd^=sd<<5;sd>>>=0;return sd/4294967296;};
+ const TOL=1e-9,out={ok:true,tol:TOL,fams:{}};
+ for(const key in FAM){
+  const f=FAM[key];if(!f.caps||!f.caps.point)continue;
+  const R={tested:0,kindDiff:0,nDiff:0,muDiff:0,muMax:0,deDiff:0,kinds:{}};
+  for(let t=0;t<nPer;t++){
+   const P=Object.assign({},S.P[key],{d:2+Math.floor(rnd()*4),cr:-1+2*rnd(),ci:-1+2*rnd(),qr:-0.9+1.8*rnd(),qi:-0.5+rnd(),ar:0.5+1.2*rnd(),ai:(rnd()-0.5)*0.6,n:3+Math.floor(rnd()*5),
+    poly:Math.floor(rnd()*POLYS.length),v:Math.floor(rnd()*5),jul:rnd()<0.5?1:0,a0:-1+2*rnd(),a1:-1+2*rnd()});
+   const Wb=4,Hb=4,span=f.view.span*Math.pow(10,-3*rnd()),s=span/Hb,
+    x0=f.view.cx+(rnd()-0.5)*f.view.span-(Wb/2-0.5)*s,y0=f.view.cy+(rnd()-0.5)*f.view.span+(Hb/2-0.5)*s,maxIt=30+Math.floor(rnd()*570);
+   const pr=new Float64Array(Wb*Hb*6),J=Object.assign({},famJobParams(key,P,null),{W:Wb,H:Hb,s,x0,y0,r0:0,r1:Hb,maxIt,pr});
+   const B=LIB.computeBand(J),i=Math.floor(rnd()*Wb),j=Math.floor(rnd()*Hb),q=j*Wb+i,o=q*6;
+   const px=x0+i*s,py=y0-j*s; // stesse espressioni di computeBand
+   const r=evalPlane(key,P,px,py,maxIt,null);
+   R.tested++;R.kinds[B.kind[q]]=(R.kinds[B.kind[q]]||0)+1;
+   if(r.kind!==B.kind[q])R.kindDiff++;
+   if(r.n!==pr[o])R.nDiff++;
+   const dm=Math.abs(Math.fround(r.mu)-B.mu[q]);if(dm>R.muMax)R.muMax=dm;if(!(dm<=TOL))R.muDiff++;
+   const dr=Math.fround((r.de===-1||r.de===0||r.de===1e9)?r.de:r.de/s),db=B.de[q]; // de del punto in unità del piano: la banda lo divide per sif(!(Math.abs(dr-db)<=1e-6*Math.max(1,Math.abs(db))))R.deDiff++;
+  }
+  R.ok=R.kindDiff===0&&R.nDiff===0&&R.muDiff===0&&R.deDiff===0;if(!R.ok)out.ok=false;out.fams[key]=R;
+ }
+ try{console.log('evalPointParityTest: '+(out.ok?'OK':'FALLITO'),out.fams);}catch(e){}
+ return out;
+}
+/* ---------- fine evalPoint ---------- */
 function makeTileJobs(B,pass,id,vp){
  vp=vp||AV;
  const J0=baseJob(B.W,B.H,vp.view);
@@ -1436,7 +1536,7 @@ class Viewport{
   cv.addEventListener('pointerdown',e=>this.onDown(e));
   cv.addEventListener('pointermove',e=>this.onMove(e));
   cv.addEventListener('pointerup',e=>this.onEnd(e));cv.addEventListener('pointercancel',e=>this.onEnd(e));
-  cv.addEventListener('pointerleave',()=>{if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():'';});
+  cv.addEventListener('pointerleave',()=>{clearTimeout(this.hvT);this.hvT=0;this.hvC=null;if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():'';});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(this.sel)return;setActive(this);this.startGesture();const [px,py]=this.toPx(e);this.zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(()=>this.drawGesture());clearTimeout(this.wheelT);this.wheelT=setTimeout(()=>this.endGesture(),250);},{passive:false});
  }
  observe(){
@@ -1448,7 +1548,7 @@ class Viewport{
  }
  destroy(){
   this.dead=true;this.cancel();
-  clearTimeout(this.longT);clearTimeout(this.wheelT);clearTimeout(this.progT);clearTimeout(this.rsT);
+  clearTimeout(this.hvT);clearTimeout(this.longT);clearTimeout(this.wheelT);clearTimeout(this.progT);clearTimeout(this.rsT);
   if(this.ro){try{this.ro.disconnect();}catch(_){}}
   if(this.fro){try{this.fro.disconnect();}catch(_){}}
   this.el.remove();
@@ -1588,6 +1688,7 @@ class Viewport{
  }
  markerText(){
   const m=this.marker;if(!m)return '';
+  if(!this.gest){const pt=planeText(this,m.x,m.y,'Marker ');if(pt)return pt;} // 1.9.0: stesso valutatore del cursore
   let t='Marker '+fmt(m.x,6)+(m.y<0?' − ':' + ')+fmt(Math.abs(m.y),6)+'i';
   const d=this.markerInfo();if(d)t+=' · '+d;
   return t;
@@ -1638,10 +1739,21 @@ class Viewport{
    }
   } else {if(this.longT){clearTimeout(this.longT);this.longT=0;}this.tapStart&&(this.tapStart.moved=true);}
  }
+ hoverHud(c){
+  this.hvC=c;const now=performance.now(),dt=now-(this.hvLast||0);
+  if(dt>=HOVER_MS){this.hvLast=now;this.hoverRun();}
+  else if(!this.hvT)this.hvT=setTimeout(()=>{this.hvT=0;this.hvLast=performance.now();this.hoverRun();},HOVER_MS-dt);
+ }
+ hoverRun(){
+  if(this.dead||!this.hvC||this.gest||this.sel||this.ptrs.size!==0||!this.hud.m)return;
+  const c=this.hvC,t=planeText(this,c[0],c[1]);
+  this.hud.m.textContent=t!==null?t:fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
+ }
  onMove(e){
   if(!this.gest&&!this.sel&&this.ptrs.size===0){
-   const p=this.toPx(e),c=this.pxToC(p[0],p[1]);
-   if(this.hud.m)this.hud.m.textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
+   const p=this.toPx(e),c=this.pxToC(p[0],p[1]),F=FAM[S.fam];
+   if(F.caps&&F.caps.point)this.hoverHud(c); // 1.9.0: informazioni sul punto, con throttling
+   else if(this.hud.m)this.hud.m.textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
   }
   if(this.sel){if(e.pointerId===this.sel.id)this.moveSel(e);return;}
   if(!this.ptrs.has(e.pointerId))return;
@@ -1729,6 +1841,7 @@ class Viewport{
 }
 /* ---------- viste: creazione, layout 1→2→4, chiusura, reflow, vista attiva ---------- */
 const MAX_VIEWS=4,REFLOW_MS=200;
+const HOVER_MS=50; // intervallo minimo fra due valutazioni del cursore informativo
 const MK_FAMS={mandel:1,julia:1,ship:1,tricorn:1,phoenix:1,magnet:1,exp:1,sin:1};
 // ambiente: schermo stretto (<700 px: viste in colonna, max 3) o telefono in orizzontale (altezza <500 px: max 2 affiancate)
 function envNarrow(){try{return typeof matchMedia==='function'?matchMedia('(max-width:699px)').matches:innerWidth<700;}catch(e){return innerWidth<700;}}
@@ -1971,12 +2084,22 @@ function buildParams(){
  const ib=$('iterbox');ib.innerHTML='';
  if(S.fam!=='ifs'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
  $('autobox').style.display=(S.fam==='ifs'||FAM[S.fam].noauto)?'none':'';
- $('tojulia').style.display=S.fam==='mandel'?'':'none';
- $('pick').style.display=S.fam==='mandel'?'':'none';
+ applyCaps();
  $('famtxt').textContent=FAM[S.fam].txt;
  syncGridUI();
  const ps=$('preset');ps.innerHTML='<option value="-1">— scegli un preset —</option>';
  FAM[S.fam].presets.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;ps.appendChild(o);});
+}
+/* 1.9.0 - visibilità dei controlli per famiglia: mostra/nasconde (display) gli elementi con data-cap="cap1 cap2" in base a FAM[S.fam].caps */
+function capOK(cap,F){const c=F&&F.caps;if(!c)return true;if(cap==='grid')return c.grid!=='none';return c[cap]!==false;}
+function applyCaps(){
+ try{
+  const F=FAM[S.fam];if(!F)return;
+  document.querySelectorAll('[data-cap]').forEach(el=>{
+   const ok=el.getAttribute('data-cap').split(/\s+/).filter(Boolean).every(k=>capOK(k,F));
+   el.style.display=ok?'':'none';
+  });
+ }catch(e){/* nessun errore verso l'utente */}
 }
 function scheduleRender(ms){clearTimeout(renderPending);renderPending=setTimeout(render,ms);}
 function setFam(f,keepView){
@@ -2043,7 +2166,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.8.5',APP_VERSION_SHORT='1.8.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.9.0',APP_VERSION_SHORT='1.9.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -2172,6 +2295,7 @@ function applyState(obj){
  // aggiorna color inputs custom
  if(pal==='custom'){const inps=$('custom').querySelectorAll('input[type=color]');PALS.custom.c.forEach((c,i)=>{if(inps[i])inps[i].value=c;});}
  syncColorUI(); buildLUT();
+ applyCaps();
  if(mode==='equal'){VPS.forEach(v=>{if(v.cur.pre)buildCDF(v.cur.pre);if(v.cur.full)buildCDF(v.cur.full);});}
  render();
  const m='Stato applicato';$('headmsg').textContent=m;
@@ -2301,7 +2425,7 @@ initWorkers();
 (function(){const vp=new Viewport(0,$('vp0'),FAM.mandel.view);VPS.push(vp);setActive(vp);syncLayoutUI();})();
 buildColorUI();
 setFam('mandel');
-syncColorUI();buildLUT();
+syncColorUI();buildLUT();applyCaps();
 (function(){
  let loaded=false;
  try{

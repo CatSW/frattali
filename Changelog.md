@@ -16,6 +16,25 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.9.0 — 2026-11-23 
+
+### Novità
+- `evalPoint(fam, params, z0x, z0y, cx, cy, maxIt)`: valutatore puntuale su tutte le famiglie a bande (Mandelbrot/Multibrot, Julia, Burning Ship e varianti, Tricorno, Newton polinomiale e trascendente, Nova, Phoenix, Magnet I e II, esponenziale, seno). Restituisce `{ kind, n, mu, zx, zy, mod, arg, de, root }`. Condivide `computeBand` (strumentazione opzionale, nessun effetto sul calcolo a bande).
+- `evalPointParityTest(500)` da console: confronta `evalPoint` con `computeBand` sullo stesso pixel (kind, n, mu, de).
+- Cursore informativo nell'HUD (e nel marker touch): coordinate Re/Im, stato, `n` e `mu`, `|zₙ|` (log10 se > 10⁶), `arg zₙ` in radianti e gradi. Calcolo on demand, senza nuovi buffer, con throttling a 50 ms e sospeso durante pan, zoom e selezione.
+- `caps` per ogni famiglia (`escape`, `phase`, `point`, `profile`, `grid`, `newtonThresholds`, `juliaPick`) e `applyCaps()`: i controlli marcati `data-cap` si nascondono se non pertinenti. Chiamata a ogni cambio famiglia, dopo `applyState` e all'avvio.
+- Con «Interno» e «Modo esterno» nascosti per IFS e Buddhabrot (inerti per quelle famiglie).
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Per i punti che non divergono lo stato è «non diverge entro N iterazioni»: vicino al bordo può divergere aumentando N.
+- `mu` della banda è memorizzato in Float32: il test confronta `mu` dopo arrotondamento a Float32 (tolleranza 1e-9 sul valore memorizzato).
+- Nessun modo di fase né UI per le soglie Newton esistono in 1.8.5: i flag `phase` e `newtonThresholds` sono definiti ma non governano ancora controlli.
+- Nella famiglia Burning Ship in modalità parametro il piano mostrato è speculare (Im c = −Im del piano); Re/Im del cursore sono le coordinate del piano.
+
+
 ## 1.8.5 — 2026-11-22 
 
 ### Novità
