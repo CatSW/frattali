@@ -16,6 +16,22 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.14.0 — 23/11/2026
+
+### Novità
+- Guida in-app, scheda **B «Storia e riferimenti»**: dodici mini-schede (chi, quando, cosa) su Fatou e Julia, Mandelbrot, Newton e Cayley, Burning Ship, Tricorno/Mandelbar, Phoenix, Magnet, Hénon/Clifford/de Jong, mappa logistica e Feigenbaum, Koch, IFS e Barnsley, Buddhabrot. Ogni scheda ha almeno un link di approfondimento (`target="_blank" rel="noopener"`).
+- Layout compatto per telefono: titoli e testo a larghezza piena, link con area di tocco di almeno 40 px.
+- Versione aggiornata a 1.14.0 (`APP_VERSION`, `APP_VERSION_SHORT`, pulsante «Guida - Ver. 1.14.0», riga «Versione»).
+
+### Correzioni
+- Nessuna in questa release. Schede A e C invariate; ID DOM, scorciatoie, preset, cronologia e funzioni pubbliche non toccati.
+
+### Limiti noti
+- I link esterni richiedono connessione; offline l'app funziona normalmente, i link non si aprono.
+- I link sono verso Wikipedia in inglese, o verso pagine di Paul Bourke dove non è stata trovata una voce Wikipedia adatta (Phoenix, Magnet, Clifford, de Jong). Non sono state usate pagine in italiano.
+- La scheda Koch non rimanda a un controllo dell'app: la famiglia Koch non è ancora presente.
+- La scheda **D «Laboratorio»** resta un segnaposto per la release successiva.
+
 ## 1.13.5 — 2026-11-23
 
 ### Novità
