@@ -160,6 +160,12 @@ a{color:inherit}
 /* 1.9.0 — cursore informativo su più righe */
 .hud{align-items:flex-end}
 .hud span:nth-child(2){white-space:pre-line;max-width:100%;overflow-wrap:anywhere}
+
+/* 1.10.5 — profilo sezionale */
+.vpr{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.vp>canvas.prof{cursor:crosshair}
+.vp>canvas.prof-h{cursor:grab}
+.vp>canvas.prof-hd{cursor:grabbing}
 </style>
 </head>
 <body><div class="wrap">
@@ -168,7 +174,7 @@ a{color:inherit}
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
   <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.10.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.10.0 · 23 novembre 2026</p>
+<p class="updated">Versione 1.10.5 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -191,6 +197,9 @@ a{color:inherit}
    <span class="seg" role="group" aria-label="Numero di viste"><span class="seglab">Viste</span><button class="tbtn on" id="lay1" type="button" aria-pressed="true" title="Una vista">1</button><button class="tbtn" id="lay2" type="button" aria-pressed="false" title="Due viste (affiancate o impilate)">2</button><button class="tbtn" id="lay4" type="button" aria-pressed="false" title="Quattro viste (griglia 2×2)">4</button></span>
    <button class="tbtn on" id="frames" type="button" aria-pressed="true" hidden title="Mostra o nascondi, su ogni vista, le cornici delle altre viste">Cornici</button>
    <button class="tbtn" id="grid" data-cap="grid" type="button" aria-pressed="false" aria-keyshortcuts="G" title="Mostra o nascondi gli assi e le tacche del piano di Gauss (G)">Griglia</button>
+   <button class="tbtn" id="profile" data-cap="profile" type="button" aria-pressed="false" aria-keyshortcuts="O" title="Traccia un segmento profilo sul piano complesso (O)">Profilo</button>
+   <button class="tbtn" id="profclear" data-cap="profile" type="button" title="Rimuovi il segmento profilo dalla vista attiva">Cancella profilo</button>
+   <button class="tbtn" id="profcenter" data-cap="profile" type="button" title="Inquadra il segmento profilo nella vista attiva">Centra sul segmento</button>
    <button class="tbtn" id="tojulia" data-cap="juliaPick">Julia da qui</button>
    <button class="tbtn" id="pick" data-cap="juliaPick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
@@ -1624,6 +1633,8 @@ if(typeof window!=='undefined')window.addEventListener('resize',()=>scheduleFram
 // 4 colori fissi (Okabe-Ito, testo nero: contrasto >= 6:1 sul badge; bordo visibile su sfondo nero del canvas), assegnati per id
 const VCOL=[{c:'#E69F00',t:'#000'},{c:'#56B4E9',t:'#000'},{c:'#009E73',t:'#000'},{c:'#CC79A7',t:'#000'}];
 let zoomMode=false;
+let profileMode=false;
+let spaceDown=false; // 1.10.5: Spazio+trascinamento = pan in modalità Profilo
 class Viewport{
  constructor(id,el,view){
   this.id=id;this.el=el;
@@ -1634,7 +1645,7 @@ class Viewport{
   this.fv={};                                             // ultima vista per famiglia
   this.cur={pre:null,full:null};                          // buffer {mu,de,tp,tx,kind,img}, cache pre/full/CDF
   this.jobId=0;this.t0=0;this.lastRS='';this.st='';this.dead=false;
-  this.ptrs=new Map();this.gest=null;this.lastTap=0;this.tapStart=null;this.longT=0;this.panBtn=false;this.sel=null;this.wheelT=0;this.progT=0;this.rsT=0;this.ro=null;this.marker=null;this.mkEl=null;this.tapPrev=null;
+  this.ptrs=new Map();this.gest=null;this.lastTap=0;this.tapStart=null;this.longT=0;this.panBtn=false;this.sel=null;this.wheelT=0;this.progT=0;this.rsT=0;this.ro=null;this.marker=null;this.mkEl=null;this.tapPrev=null;this.profile=null;this.profDrag=null;this.profDraw=null;this.pr=null;this.prx=null;
   const col=VCOL[id%VCOL.length];el.style.setProperty('--vc',col.c);el.style.setProperty('--vt',col.t);
   this.buildOverlay();this.buildFrames();this.bind();this.observe();
  }
@@ -1651,6 +1662,10 @@ class Viewport{
   });
   top.appendChild(bd);top.appendChild(bt);const ov=this.el.querySelector('.vov');ov.appendChild(top);
   const mk=document.createElement('div');mk.className='vmk';mk.setAttribute('aria-hidden','true');ov.appendChild(mk);this.mkEl=mk;
+  try{
+   const pc=document.createElement('canvas');pc.className='vpr';pc.setAttribute('aria-hidden','true');
+   ov.appendChild(pc);this.pr=pc;this.prx=pc.getContext('2d');
+  }catch(e){this.pr=null;this.prx=null;}
  }
  buildFrames(){
   this.fr=null;this.frx=null;this.fro=null;
@@ -1747,6 +1762,7 @@ class Viewport{
   if(cur.pre&&cur.pre.cv&&(cur.left1>0||!cur.full.cv))ctx.drawImage(cur.pre.cv,0,0,cv.width,cv.height);
   if(cur.full&&cur.full.cv)ctx.drawImage(cur.full.cv,0,0);
   if(this.marker)this.markerHud();
+  this.drawProfile();
  }
  recolor(){
   const cur=this.cur;
@@ -1760,6 +1776,7 @@ class Viewport{
   this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
   this.hud.r.textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
   this.placeMarker();
+  this.drawProfile(); // 1.10.5: il segmento resta ancorato al piano
   scheduleFrames(); // le cornici seguono ogni cambio di vista (pan/zoom/render) senza toccare l'immagine
  }
  /* IFS / Buddhabrot */
@@ -1828,6 +1845,76 @@ class Viewport{
  markerHud(){if(this.hud.m)this.hud.m.textContent=this.markerText();}
  setMarkerAt(px,py){const c=this.pxToC(px,py);this.marker={x:c[0],y:c[1]};this.placeMarker();this.markerHud();}
  clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';legendRefresh();}
+ /* 1.10.5 — profilo sezionale */
+ clearProfile(){this.profile=null;this.profDrag=null;this.profDraw=null;this.drawProfile();this.syncProfCursor();}
+ setProfileFromScreen(ax,ay,bx,by){
+  const a=this.pxToC(ax,ay),b=this.pxToC(bx,by);
+  this.profile={ax:a[0],ay:a[1],bx:b[0],by:b[1]};
+  this.profDraw=null;this.drawProfile();
+ }
+ hitProfileHandle(px,py,isTouch){
+  const p=this.profile;if(!p)return null;
+  const cv=this.cv,r=cv.getBoundingClientRect();
+  if(!(r.width>0&&cv.width>0))return null;
+  const k=r.width/cv.width; // px CSS / px canvas
+  const thr=(isTouch?28:14)/k; // soglia in coordinate canvas
+  const A=worldToScreen(this.view,cv.width,cv.height,p.ax,p.ay);
+  const B=worldToScreen(this.view,cv.width,cv.height,p.bx,p.by);
+  const dA=Math.hypot(px-A[0],py-A[1]),dB=Math.hypot(px-B[0],py-B[1]);
+  if(dA<=thr&&dA<=dB)return 'a';
+  if(dB<=thr)return 'b';
+  return null;
+ }
+ syncProfCursor(){
+  const cv=this.cv;
+  cv.classList.remove('prof','prof-h','prof-hd');
+  if(!profileMode&&!this.profile)return;
+  if(this.profDrag)cv.classList.add('prof-hd');
+  else if(profileMode)cv.classList.add('prof');
+ }
+ drawProfile(){
+  const c=this.pr,ctx=this.prx;if(!c||!ctx)return;
+  const r=this.cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,3);
+  const W=Math.max(1,Math.round(r.width*dpr)),H=Math.max(1,Math.round(r.height*dpr));
+  if(c.width!==W||c.height!==H){c.width=W;c.height=H;}
+  ctx.clearRect(0,0,W,H);
+  const p=this.profile,dr=this.profDraw;
+  if(!p&&!dr)return;
+  const sx=W/(this.cv.width||1),sy=H/(this.cv.height||1);
+  let ax,ay,bx,by;
+  if(dr){ax=dr.a[0]*sx;ay=dr.a[1]*sy;bx=dr.b[0]*sx;by=dr.b[1]*sy;}
+  else{
+   const A=worldToScreen(this.view,this.cv.width,this.cv.height,p.ax,p.ay);
+   const B=worldToScreen(this.view,this.cv.width,this.cv.height,p.bx,p.by);
+   ax=A[0]*sx;ay=A[1]*sy;bx=B[0]*sx;by=B[1]*sy;
+  }
+  if(![ax,ay,bx,by].every(isFinite))return;
+  const col='#9b5de5';
+  ctx.save();
+  ctx.lineCap='round';ctx.lineJoin='round';
+  // contorno doppio + tratteggio viola
+  const dash=[8*dpr,6*dpr];
+  ctx.setLineDash(dash);
+  ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineWidth=5.5*dpr;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3.5*dpr;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+  ctx.strokeStyle=col;ctx.lineWidth=2*dpr;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+  ctx.setLineDash([]);
+  // handle A e B
+  const hr=7*dpr;
+  for(const [x,y,lab] of [[ax,ay,'A'],[bx,by,'B']]){
+   ctx.beginPath();ctx.arc(x,y,hr+2*dpr,0,Math.PI*2);
+   ctx.fillStyle='rgba(0,0,0,.55)';ctx.fill();
+   ctx.beginPath();ctx.arc(x,y,hr,0,Math.PI*2);
+   ctx.fillStyle=col;ctx.fill();
+   ctx.strokeStyle='#fff';ctx.lineWidth=1.5*dpr;ctx.stroke();
+   ctx.font=`600 ${11*dpr}px system-ui,sans-serif`;
+   ctx.textAlign='center';ctx.textBaseline='bottom';
+   ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineWidth=3*dpr;ctx.strokeText(lab,x,y-hr-2*dpr);
+   ctx.fillStyle='#fff';ctx.fillText(lab,x,y-hr-2*dpr);
+  }
+  ctx.restore();
+ }
  // tocco breve (solo touch): «Tocca per scegliere c» ha la precedenza; doppio tocco = zoom ×2 come prima
  onTap(p){
   const cv=this.cv,k=cv.getBoundingClientRect().width/(cv.width||1),now=performance.now();
@@ -1860,11 +1947,30 @@ class Viewport{
   setActive(this); // il gesto agisce sulla vista toccata, che diventa attiva
   if(this.ptrs.size===0&&zoomMode&&e.button===0){this.startSel(e);return;}
   const isRight=e.button===2||e.buttons===2;
+  const isMid=e.button===1||e.buttons===4;
+  const p0=this.toPx(e);
+  const isTouch=e.pointerType==='touch';
+  // 1.10.5: afferra subito un handle del profilo se colpito
+  if(this.ptrs.size===0&&(this.profile||profileMode)&&!isRight&&!isMid){
+   const h=this.hitProfileHandle(p0[0],p0[1],isTouch);
+   if(h){
+    try{this.cv.setPointerCapture(e.pointerId);}catch(_){}
+    this.ptrs.set(e.pointerId,p0);
+    this.profDrag=h;this.tapStart=null;this.syncProfCursor();e.preventDefault();return;
+   }
+  }
+  // 1.10.5: in modalità Profilo, trascinamento = traccia segmento (salvo pan con Spazio / tasto centrale / due dita)
+  if(profileMode&&this.ptrs.size===0&&!isRight&&!isMid&&!(spaceDown&&e.pointerType==='mouse')){
+   try{this.cv.setPointerCapture(e.pointerId);}catch(_){}
+   this.ptrs.set(e.pointerId,p0);
+   this.profDraw={a:p0.slice(),b:p0.slice()};this.tapStart=null;
+   this.drawProfile();e.preventDefault();return;
+  }
   try{this.cv.setPointerCapture(e.pointerId);}catch(_){}
-  this.ptrs.set(e.pointerId,this.toPx(e));
+  this.ptrs.set(e.pointerId,p0);
   if(this.ptrs.size===1){
-   this.tapStart={p:this.toPx(e),t:performance.now(),moved:false,right:isRight,mouse:e.pointerType==='mouse'&&e.button===0,touch:e.pointerType==='touch'};
-   if(isRight){this.panBtn=true;this.startGesture();}
+   this.tapStart={p:p0,t:performance.now(),moved:false,right:isRight,mouse:e.pointerType==='mouse'&&e.button===0,touch:isTouch,mid:isMid,space:!!spaceDown};
+   if(isRight||isMid||(spaceDown&&e.pointerType==='mouse')){this.panBtn=true;this.startGesture();}
    else if(this.tapStart.touch){if(!zoomMode){const cx=e.clientX,cy=e.clientY;this.longT=setTimeout(()=>this.touchLong(cx,cy),450);}} // touch: la pressione prolungata apre il menu, il pan parte dalla soglia di movimento
    else if(!zoomMode){
     this.longT=setTimeout(()=>{if(this.tapStart&&!this.tapStart.moved){this.panBtn=true;this.startGesture();this.tapStart.moved=true;}},450);
@@ -1882,12 +1988,28 @@ class Viewport{
   this.hud.m.textContent=t!==null?t:fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
  }
  onMove(e){
+  // 1.10.5: hover cursore su handle
+  if(!this.gest&&!this.sel&&this.ptrs.size===0&&(this.profile||profileMode)){
+   const p=this.toPx(e),h=this.hitProfileHandle(p[0],p[1],e.pointerType==='touch');
+   this.cv.classList.toggle('prof-h',!!h);
+   this.cv.classList.toggle('prof',profileMode&&!h);
+  }
   if(!this.gest&&!this.sel&&this.ptrs.size===0){
    const p=this.toPx(e),c=this.pxToC(p[0],p[1]),F=FAM[S.fam];
    if(F.caps&&F.caps.point)this.hoverHud(c); // 1.9.0: informazioni sul punto, con throttling
    else if(this.hud.m)this.hud.m.textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
   }
   if(this.sel){if(e.pointerId===this.sel.id)this.moveSel(e);return;}
+  // 1.10.5: trascina handle o disegna segmento
+  if(this.profDrag&&this.ptrs.has(e.pointerId)&&this.profile){
+   const now=this.toPx(e),c=this.pxToC(now[0],now[1]);
+   if(this.profDrag==='a'){this.profile.ax=c[0];this.profile.ay=c[1];}
+   else{this.profile.bx=c[0];this.profile.by=c[1];}
+   this.ptrs.set(e.pointerId,now);this.drawProfile();return;
+  }
+  if(this.profDraw&&this.ptrs.has(e.pointerId)){
+   const now=this.toPx(e);this.profDraw.b=now;this.ptrs.set(e.pointerId,now);this.drawProfile();return;
+  }
   if(!this.ptrs.has(e.pointerId))return;
   const old=this.ptrs.get(e.pointerId),now=this.toPx(e),ts=this.tapStart;
   if(this.ptrs.size===1){
@@ -1923,6 +2045,18 @@ class Viewport{
  onEnd(e){
   if(this.longT){clearTimeout(this.longT);this.longT=0;}
   if(this.sel){if(e.pointerId===this.sel.id){if(e.type==='pointerup')this.moveSel(e);this.endSel(e.type==='pointerup');}return;}
+  // 1.10.5: fine drag handle o tracciamento segmento
+  if(this.profDrag&&this.ptrs.has(e.pointerId)){
+   this.ptrs.delete(e.pointerId);this.profDrag=null;this.syncProfCursor();this.drawProfile();return;
+  }
+  if(this.profDraw&&this.ptrs.has(e.pointerId)){
+   const dr=this.profDraw;this.ptrs.delete(e.pointerId);
+   const dx=dr.b[0]-dr.a[0],dy=dr.b[1]-dr.a[1];
+   if(Math.hypot(dx,dy)>=8){ // soglia minima in px canvas
+    this.setProfileFromScreen(dr.a[0],dr.a[1],dr.b[0],dr.b[1]);
+   } else {this.profDraw=null;this.drawProfile();}
+   this.syncProfCursor();return;
+  }
   if(!this.ptrs.has(e.pointerId))return;this.ptrs.delete(e.pointerId);
   if(this.ptrs.size===0){
    const wasPan=this.panBtn;this.panBtn=false;const ts=this.tapStart;
@@ -2044,6 +2178,8 @@ function closeView(vp){
  if(!vp||VPS.length<2||VPS.indexOf(vp)<0)return;
  pushHist();
  const i=VPS.indexOf(vp),next=(AV===vp)?(VPS[i+1]||VPS[i-1]):AV;
+ // 1.10.5: il profilo appartiene alla vista; chiudendola si rimuove
+ if(vp.profile)vp.clearProfile();
  removeView(vp);
  setActive(next);
  viewNote='';
@@ -2124,10 +2260,51 @@ function fvSave(){VPS.forEach(vp=>{vp.fv[S.fam]={...vp.view};});}
 /* ---------- zoom rettangolare (modalità) ---------- */
 function setZoomMode(on,auto){
  zoomMode=!!on;const b=$('zoomarea');b.classList.toggle('on',zoomMode);b.setAttribute('aria-pressed',zoomMode?'true':'false');VPS.forEach(v=>v.cv.classList.toggle('zsel',zoomMode));
- if(zoomMode){if(!auto){S.pick=false;$('pick').classList.remove('on');setStatus('Zoom area: trascina un rettangolo (Esc annulla). Pan con tasto destro o pressione lunga.');}}
+ if(zoomMode){if(!auto){S.pick=false;$('pick').classList.remove('on');if(profileMode)setProfileMode(false);setStatus('Zoom area: trascina un rettangolo (Esc annulla). Pan con tasto destro o pressione lunga.');}}
  else{VPS.forEach(v=>{if(v.sel)v.endSel(false);});if(!auto)setStatus('');}
 }
+// 1.10.5 — modalità Profilo
+function setProfileMode(on){
+ on=!!on;
+ const F=FAM[S.fam];
+ if(on&&!(F&&F.caps&&F.caps.profile)){setStatus('Profilo non disponibile per questa famiglia');return;}
+ profileMode=on;
+ const b=$('profile');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}
+ if(on){
+  if(zoomMode)setZoomMode(false,true);
+  S.pick=false;const pb=$('pick');if(pb)pb.classList.remove('on');
+  setStatus('Profilo: trascina A→B. Esc esce (segmento resta). Spazio+trascina / tasto centrale / due dita = pan.');
+ }else{
+  VPS.forEach(v=>{if(v.profDraw){v.profDraw=null;v.drawProfile();}});
+  if(!zoomMode)setStatus('');
+ }
+ VPS.forEach(v=>v.syncProfCursor());
+}
+function clearActiveProfile(){
+ const vp=AV;if(!vp)return;
+ if(vp.profile||vp.profDraw){vp.clearProfile();setStatus('Profilo cancellato');}
+}
+function centerOnProfile(vp){
+ vp=vp||AV;if(!vp||!vp.profile){setStatus('Nessun segmento profilo nella vista attiva');return;}
+ const p=vp.profile,ax=+p.ax,ay=+p.ay,bx=+p.bx,by=+p.by;
+ const mx=(ax+bx)/2,my=(ay+by)/2;
+ const dx=Math.abs(bx-ax),dy=Math.abs(by-ay);
+ const W=vp.cv.width||1,H=vp.cv.height||1,aspect=W/H;
+ let span=Math.max(dy,dx/aspect)*1.35;
+ if(!(span>0)||!isFinite(span))span=(FAM[S.fam].view.span||3)*0.15;
+ const m=Math.max(1,Math.abs(mx),Math.abs(my)),minSpan=H*4e-16*m*8*1.001;
+ if(span<minSpan)span=minSpan;
+ pushHist();
+ vp.view={cx:mx,cy:my,span,rot:vp.view.rot||0};
+ render([vp]);
+}
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&VPS.some(v=>v.sel)){endSel(false);e.preventDefault();}});
+window.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&profileMode){setProfileMode(false);e.preventDefault();}
+});
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)){spaceDown=true;if(profileMode)e.preventDefault();}});
+window.addEventListener('keyup',e=>{if(e.code==='Space')spaceDown=false;});
+window.addEventListener('blur',()=>{spaceDown=false;});
 
 /* ---------- UI ---------- */
 function setStatus(t){$('status').textContent=t;}
@@ -2242,6 +2419,9 @@ function setFam(f,keepView){
  if(!keepView)fvSave(); // ogni vista ricorda la propria vista per famiglia
  S.fam=f;$('fam').value=f;
  if(!keepView){VPS.forEach(vp=>{vp.view={...(vp.fv[f]||FAM[f].view),rot:0};});S.nw={};}
+ // 1.10.5: fuori dalle famiglie con profile, chiudi modalità e rimuovi segmenti
+ const ok=FAM[f]&&FAM[f].caps&&FAM[f].caps.profile;
+ if(!ok){if(profileMode)setProfileMode(false);VPS.forEach(v=>{if(v.profile)v.clearProfile();});}
  buildParams();
  if(f==='ifs')fitIFS();
 }
@@ -2328,7 +2508,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.10.0',APP_VERSION_SHORT='1.10.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.10.5',APP_VERSION_SHORT='1.10.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -2393,6 +2573,11 @@ function getState(){
   if(S.src==='stripe'&&S.stripeS!==5)st.stripeS=S.stripeS;
   if(S.src==='final'&&S.levels===2)st.levels=2;
  }
+ // 1.10.5: profilo sezionale (un solo segmento, della vista in cui è stato tracciato)
+ {const pv=VPS.find(v=>v.profile);if(pv&&pv.profile){
+  const p=pv.profile;
+  st.profile={view:pv.id,a:[String(p.ax),String(p.ay)],b:[String(p.bx),String(p.by)]};
+ }}
  return st;
 }
 function clamp(v,lo,hi){v=+v;if(!isFinite(v))return lo;return Math.min(hi,Math.max(lo,v));}
@@ -2464,6 +2649,18 @@ function applyState(obj){
  setViews(specs,actId);
  setFam(fam,true); // viste già impostate
  if(fam==='ifs')setViews(specs,actId); // non lasciare che fitIFS sovrascriva le viste serializzate
+ // 1.10.5: ripristina profilo se presente e la famiglia lo supporta
+ VPS.forEach(v=>{v.profile=null;});
+ if(obj.profile&&typeof obj.profile==='object'&&FAM[fam].caps&&FAM[fam].caps.profile){
+  try{
+   const pr=obj.profile;const vid=pr.view!=null?Number(pr.view):NaN;
+   const vp=vpById(vid)||AV;
+   let ax,ay,bx,by;
+   if(Array.isArray(pr.a)&&Array.isArray(pr.b)){ax=+pr.a[0];ay=+pr.a[1];bx=+pr.b[0];by=+pr.b[1];}
+   else{ax=+pr.ax;ay=+pr.ay;bx=+pr.bx;by=+pr.by;}
+   if(vp&&[ax,ay,bx,by].every(isFinite)){vp.profile={ax,ay,bx,by};}
+  }catch(e){}
+ }
  $('fam').value=fam; $('qual').value=qual; $('auto').checked=auto;
 
  $('style').value=''; $('preset').value='-1'; showPresetDesc('');
@@ -2473,6 +2670,7 @@ function applyState(obj){
  applyCaps();
  if(mode==='equal'){VPS.forEach(v=>{if(v.cur.pre)buildCDF(v.cur.pre);if(v.cur.full)buildCDF(v.cur.full);});}
  render();
+ VPS.forEach(v=>v.drawProfile());
  const m='Stato applicato';$('headmsg').textContent=m;
  viewNote=cut.length?'schermo stretto: max '+specs.length+' viste, '+(cut.length>1?'chiuse le viste ':'chiusa la vista ')+cut.join(', '):'';
  setStatus(m+(viewNote?' · '+viewNote:''));
@@ -2569,6 +2767,9 @@ $('back').addEventListener('click',()=>{
 });
 function zoomStep(f,vp){vp=vp||AV;pushHist();vp.view={...vp.view,span:vp.view.span/f};render([vp]);}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
+$('profile').addEventListener('click',()=>setProfileMode(!profileMode));
+$('profclear').addEventListener('click',clearActiveProfile);
+$('profcenter').addEventListener('click',()=>centerOnProfile(AV));
 $('frames').addEventListener('click',()=>{FRAMES_ON=!FRAMES_ON;const b=$('frames');b.classList.toggle('on',FRAMES_ON);b.setAttribute('aria-pressed',FRAMES_ON?'true':'false');scheduleFrames();});
 $('grid').addEventListener('click',toggleGrid);
 $('tojulia').addEventListener('click',()=>{const c=screenToWorld(AV.view,AV.cv.width,AV.cv.height,AV.cv.width/2,AV.cv.height/2);juliaFrom(c[0],c[1]);});
@@ -2586,7 +2787,7 @@ $('fs').addEventListener('click',toggleFS);
 function togglePanel(){const f=$('app').classList.toggle('full');$('ptog').textContent=f?'Mostra pannello':'Nascondi pannello';}
 $('ptog').addEventListener('click',togglePanel);
 window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();
- if(k==='+'||k==='=')zoomStep(2);else if(k==='-')zoomStep(0.5);else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();else if(k==='g')toggleGrid();});
+ if(k==='+'||k==='=')zoomStep(2);else if(k==='-')zoomStep(0.5);else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();else if(k==='g')toggleGrid();else if(k==='o'){const F=FAM[S.fam];if(F&&F.caps&&F.caps.profile)setProfileMode(!profileMode);}});
 
 /* ---------- Legenda cromatica (1.9.5) ----------
    Una sola barra per tutte le viste. Deriva solo dallo stato esistente (S, LUT, FAM[..].caps, curIter): nessun campo nuovo in JSON/URL.

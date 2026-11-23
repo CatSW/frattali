@@ -16,6 +16,23 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.10.5 — 2026-11-23
+
+### Novità
+- Modalità **Profilo** (scorciatoia **O**, pulsante in barra) per le famiglie con `caps.profile`: trascinamento nella vista attiva traccia il segmento A→B sul piano complesso.
+- Overlay del segmento: linea tratteggiata viola con contorno doppio, handle circolari etichettati «A» e «B»; il segmento è memorizzato in coordinate mondo e resta ancorato a pan/zoom.
+- Trascinamento degli handle (area di presa ≥14 px mouse / ≥28 px touch) con feedback cursore; pan in modalità Profilo tramite due dita, Spazio+trascinamento o tasto centrale.
+- Pulsanti **Cancella profilo** e **Centra sul segmento**; Esc esce dalla modalità lasciando il segmento.
+- Blocco opzionale `profile` in stato JSON/URL (`view`, `a`, `b`); il profilo si rimuove se la vista associata viene chiusa.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Un solo profilo alla volta (associato a una vista); non c’è ancora il pannello grafici (previsto in 1.11.0).
+- In modalità Profilo il pan a un dito è disattivato di proposito (serve a tracciare).
+
+
 ## 1.10.0 — 2026-11-23
 
 ### Novità
