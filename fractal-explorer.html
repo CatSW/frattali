@@ -1,10 +1,6 @@
 <!doctype html>
-<!--
-  Esploratore di frattali - file autonomo, funziona offline.
-  Nota sul modello: questo task non ha accesso ai metadati della piattaforma che
-  indicano quale modello lo esegue. Qualunque nome scritto qui sarebbe una
-  supposizione, quindi non ne scrivo nessuno.
--->
+<!-- Licensed under the MIT License. See LICENSE file in the project root for full license information. -->
+<!-- Esploratore di frattali - copyright: © 2026 Stefano Vesco (IK0VCK) - CatSW. All rights reserved. -->
 <html lang="it">
 <head>
 <meta charset="utf-8">
@@ -82,14 +78,21 @@ select{width:100%;font:14px var(--sans);padding:8px;border:1px solid var(--rule)
 .note{font-size:13px;color:var(--muted);margin:0}
 #status{font:12px/1.4 var(--mono);color:var(--muted);min-height:1.4em}
 #famtxt{font-size:14px;margin:0}
-details.more{padding:12px 0;border-bottom:1px solid var(--rule)}
-details.more summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) 16px;column-gap:12px}
-details.more summary::-webkit-details-marker{display:none}
-details.more summary b{font:600 17px/1.3 var(--sans)}
-details.more summary span{grid-column:1;margin-top:2px;font-size:14px;color:var(--muted)}
-details.more summary::after{content:"";grid-column:2;grid-row:1/span 2;align-self:center;width:7px;height:7px;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:rotate(45deg)}
-details.more[open] summary::after{transform:rotate(-135deg)}
-details.more ul{margin:10px 0 0;padding-left:19px}
+/* 1.13.5 - guida didattica a fisarmonica: stesso pattern collassabile delle didascalie «i» (makeInfo con opts.title) */
+.gitem{border-bottom:1px solid var(--rule)}
+.gitem .gh{margin:0;font:inherit}
+.ibtn.gbtn{display:grid;grid-template-columns:30px minmax(0,1fr) 16px;column-gap:12px;align-items:center;width:100%;min-height:56px;margin:0;padding:10px 0;border-radius:0;text-align:left;font:inherit;color:var(--ink)}
+.gbtn .gl{width:28px;height:28px;border:1.5px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:italic 700 14px/1 var(--serif);color:var(--muted)}
+.gbtn[aria-expanded="true"] .gl{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.gbtn .gt{min-width:0}
+.gbtn .gt b{display:block;font:600 17px/1.3 var(--sans)}
+.gbtn .gt span{display:block;margin-top:2px;font:14px/1.35 var(--sans);color:var(--muted)}
+.gbtn::after{content:"";grid-column:3;grid-row:1;width:7px;height:7px;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:rotate(45deg)}
+.gbtn[aria-expanded="true"]::after{transform:rotate(-135deg)}
+.gbody{padding:0 0 14px;font-size:15px;line-height:1.5}
+.gbody p{margin:0 0 9px}
+.gbody .gph{color:var(--muted);font-style:italic}
+.gbody a{text-underline-offset:2px}
 li{margin:0 0 6px}
 a{color:inherit}
 /* 1.8.0 — touch e schermi piccoli */
@@ -192,9 +195,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.13.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.13.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.13.0 · 23 novembre 2026</p>
+<p class="updated">Versione 1.13.5 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -302,33 +305,40 @@ a{color:inherit}
  </div>
 </div>
 
-<h2>Come nascono i colori</h2>
-<details class="more"><summary><b>Sfumato continuo</b><span>Il colore dipende da quanto velocemente il punto scappa.</span></summary><ul>
-<li>Per ogni pixel si conta dopo quante iterazioni l'orbita supera il raggio di fuga, con una correzione logaritmica che rende il conteggio continuo.</li>
-<li>Quel numero scorre lungo una palette ciclica: niente bande a gradini.</li></ul></details>
-<details class="more"><summary><b>Luce e rilievo</b><span>Il colore diventa una superficie in rilievo, illuminata.</span></summary><ul>
-<li>Il campo che decide il colore viene trattato come altitudine; dal suo gradiente si ricava la normale di ogni pixel (bump mapping).</li>
-<li>Luce diffusa più riflesso speculare tinto del colore stesso, come un metallo; "cangiante" sposta la tinta sui pendii, come una vernice perlata.</li></ul></details>
-<details class="more"><summary><b>Neon e steli</b><span>Filamenti luminosi e germogli dalle trappole d'orbita.</span></summary><ul>
-<li>Neon: la luminosità cala con la distanza stimata dal frattale, così i filamenti sottili brillano su fondo scuro.</li>
-<li>Steli: si misura quanto l'orbita passa vicino agli assi (trappola di Pickover); ne escono germogli e viticci.</li></ul></details>
-<details class="more"><summary><b>Fase dell'orbita</b><span>Colorare con gli angoli dell'orbita invece che con la velocità di fuga.</span></summary><ul>
-<li>Fase finale: all'istante di fuga si prende l'angolo θ di zₙ (da 0 a 2π) e lo si usa come posizione ciclica nella palette. Con Livelli = 2 restano due colori, secondo il segno di Im zₙ.</li>
-<li>Stripe average (Härkönen): lungo l'orbita si media 0,5 + 0,5·sin(s·θ), con θ angolo di ogni punto; s è il numero di strisce per giro. Il valore è interpolato fra l'iterazione precedente e quella finale con la parte frazionaria dell'iterazione liscia, per evitare le bande.</li>
-<li>Fase media (sperimentale): media circolare degli angoli dell'orbita, senza interpolazione.</li>
-<li>Il peso α mescola fase (α = 1) e iterazioni (α = 0) nello spazio OKLab. Vale solo per l'esterno: l'interno resta governato da «Interno». Il raggio di fuga è 1000 per ogni fonte.</li></ul></details>
-<details class="more"><summary><b>Interno ed equalizzato</b><span>Colorare anche i punti che non scappano mai.</span></summary><ul>
-<li>Trappola punto e croce colorano l'interno con la distanza minima dell'orbita da 0 o dagli assi.</li>
-<li>Equalizzato distribuisce i colori in base all'istogramma dell'immagine, così nessuna tinta domina.</li></ul></details>
-<details class="more"><summary><b>Famiglie aggiunte</b><span>Varianti con valore assoluto, Magnet, esponenziale, seno, Buddhabrot e attrattori strani.</span></summary><ul>
-<li>Burning Ship e varianti: nel passo z² si inseriscono valori assoluti. Celtic usa |Re z²|; Heart (|x|+iy)²; Perpendicolare (|x|−iy)²; Nave perpendicolare cambia il segno di y dentro il prodotto. L'interruttore Julia fissa c e fa variare z.</li>
-<li>Magnet I e II: mappe razionali dalla fisica statistica dei magneti. Magnet I: ((z²+c−1)/(2z+c−2))²; Magnet II di grado 3. Orbite che scappano o convergono; confini a petali. DE analitico solo su Magnet I.</li>
-<li>Esponenziale: z → c·e^z (fuga su Re z > 50). Biforcazione parabolica a c=1/e; bouquet di Cantor per c≈0,3. Seno: z → c·sin(z) (fuga su |Im z| > 50), partenza dal punto critico π/2 in modalità parametro.</li>
-<li>Buddhabrot: non colora il punto di partenza ma disegna le traiettorie dei punti che scappano, accumulandole. L'immagine si affina man mano che arrivano campioni; il colore segue la lunghezza delle orbite.</li>
-<li>Attrattori strani (Clifford, de Jong, Hénon): mappe discrete dissipative. L'insieme attrattore ha misura nulla; la dinamica è espansiva in almeno una direzione e sensibile alle condizioni iniziali. Si scartano ~100 passi di transitorio; i punti si accumulano in densità. Una stima di λ (esponente di Lyapunov massimo, metodo di Benettin) compare nell'HUD.</li></ul></details>
-<details class="more"><summary><b>Limiti</b><span>Precisione, tempi e cosa non fa.</span></summary><ul>
-<li>Il calcolo è in doppia precisione: oltre uno zoom di circa 10¹³ i dettagli si sgranano, e la pagina lo segnala.</li>
-<li>La qualità Ultra e le molte iterazioni richiedono qualche secondo su telefono.</li></ul></details>
+<h2>Guida didattica</h2>
+<div class="guida" id="guida">
+<section class="gitem" data-g="A">
+<h3 class="gh" data-t="Manuale breve" data-s="Come muoversi e come leggere ciò che si vede.">A · Manuale breve</h3>
+<div class="gbody" id="guida-A">
+<p><b>Navigazione.</b> Mouse: la rotella ingrandisce sul cursore, il doppio clic raddoppia lo zoom, trascinando disegni un rettangolo da ingrandire (Esc annulla). Per spostare la vista: tasto destro o centrale, Spazio premuto, oppure pressione lunga. Touch: un dito sposta, due dita pizzicano per ingrandire, un tocco breve mette un marker (un tocco sul marker lo toglie), un doppio tocco raddoppia lo zoom, la pressione prolungata apre un menu; per il rettangolo usa «Zoom area». Tastiera: + − zoom, R vista iniziale, B indietro, F schermo intero, P pannello, G griglia, O Profilo.</p>
+<p><b>«Julia da qui» e «Tocca per scegliere c».</b> Solo con Mandelbrot: ogni c definisce un insieme di Julia. Per z² + c vale la dicotomia di Fatou–Julia: se l'orbita di 0 non diverge (c dentro il Mandelbrot) l'insieme di Julia è connesso, altrimenti è una polvere di punti disconnessi. «Julia da qui» usa il centro della vista attiva; «Tocca per scegliere c»: il prossimo clic o tocco fissa c.</p>
+<p><b>Iterazioni e precisione.</b> «Iterazioni base» è il massimo di passi per punto; con «Iterazioni automatiche con lo zoom» cresce quando ingrandisci. In doppia precisione, oltre circa 10¹³ ingrandimenti i dettagli si sgranano e lo stato segnala «limite di precisione raggiunto».</p>
+<p><b>Perché il nero.</b> Il nero (la tinta interna) non indica un punto «stabile»: dice solo «non diverge entro N iterazioni». Il calcolo si ferma a maxIt per limitare il tempo: vicino al bordo, con N più grande, il punto può divergere. In Mandelbrot e Julia il nero è l'interno non divergente, la parte colorata è il bacino dell'infinito e le sfumature misurano la velocità di fuga (μ minore = fuga più rapida). In Newton i bacini sono tutti colorati, uno per radice: il nero indica solo il timeout.</p>
+<p><b>Colori, legenda, rilievo.</b> La legenda riporta la scala di μ (0 → maxIt) e il colore interno; la sua «i» spiega i criteri di arresto. «Luce e rilievo» tratta il campo colore come un'altitudine illuminata: evidenzia le pendenze, senza nuova informazione. «Fonte colore» (Mandelbrot, Julia e affini) usa Iterazioni, Fase finale, Stripe average o Fase media (sperimentale); il peso α le mescola con le iterazioni.</p>
+<p><b>Cursore, griglia, Profilo.</b> Il cursore informativo mostra Re e Im, stato, n e μ, modulo e fase di zₙ (su touch, col marker). «Griglia» (G) disegna assi e tacche del piano complesso. «Profilo» (O) traccia un segmento A→B; «Grafici» ne mostra l'andamento di μ e della fase.</p>
+<p><a id="guida-manuale" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener">Manuale completo (README su GitHub)</a></p>
+</div>
+</section>
+<section class="gitem" data-g="B">
+<h3 class="gh" data-t="Storia e riferimenti" data-s="In preparazione.">B · Storia e riferimenti</h3>
+<div class="gbody" id="guida-B"><p class="gph">In preparazione: questa scheda sarà compilata in una versione successiva.</p></div>
+</section>
+<section class="gitem" data-g="C">
+<h3 class="gh" data-t="Applicazioni" data-s="Dove compaiono i frattali, dalla matematica alla fisica.">C · Applicazioni</h3>
+<div class="gbody" id="guida-C">
+<p><b>Analisi numerica.</b> Il metodo di Newton cerca le radici di f(z) = 0 iterando una mappa: da un punto vicino a una radice converge in pochi passi, ma vicino ai confini fra bacini piccole differenze nel punto iniziale portano a radici diverse. Provalo con la famiglia Newton.</p>
+<p><b>Sistemi dinamici.</b> Mandelbrot e Julia sono il caso più studiato di iterazione di una mappa: il comportamento dell'orbita (limitata o in fuga) decide il colore. Attrattori strani e diagramma di biforcazione della mappa logistica mostrano il caos deterministico: regole semplici e forte sensibilità alle condizioni iniziali.</p>
+<p><b>Fisica statistica.</b> In prossimità dei punti critici di vari sistemi, per esempio la percolazione, cluster e interfacce risultano frattali, con invarianza di scala. Le mappe Magnet nascono da calcoli di rinormalizzazione su modelli di magneti; il legame fine con le transizioni di fase è materia da corsi più avanzati.</p>
+<p><b>Telecomunicazioni e antenne frattali.</b> Antenne con forme autosimili, come la curva di Koch o il triangolo di Sierpiński, sono state studiate per ottenere più bande di funzionamento in un ingombro ridotto. I vantaggi dipendono dal progetto e vanno confrontati con le soluzioni tradizionali: non sono automatici.</p>
+<p><b>Compressione e grafica procedurale.</b> Un IFS genera immagini complesse (felce, draghi) con pochi coefficienti: provalo con «IFS e chaos game». La compressione frattale ha sfruttato l'autosimilarità fra parti di un'immagine, ma non è diventata uno standard diffuso. In grafica procedurale terreni, nuvole e piante si ottengono ripetendo regole a più scale.</p>
+<p><b>Biologia e Terra.</b> Coste, reti fluviali, bronchi, vasi sanguigni e il broccolo romanesco somigliano a frattali su un intervallo limitato di scale. La «dimensione frattale» misurata dipende dalla scala e dal metodo (la lunghezza di una costa cresce al diminuire del righello): sono modelli, non descrizioni esatte.</p>
+</div>
+</section>
+<section class="gitem" data-g="D">
+<h3 class="gh" data-t="Laboratorio" data-s="In preparazione.">D · Laboratorio</h3>
+<div class="gbody" id="guida-D"><p class="gph">In preparazione: questa scheda sarà compilata in una versione successiva.</p></div>
+</section>
+</div>
 </div>
 
 <script id="wsrc" type="text/plain">
@@ -2565,6 +2575,8 @@ function setStatus(t){$('status').textContent=t;}
 //  opts.el   elemento esistente da riusare come didascalia (resta al suo posto, con id e testo; il pulsante gli viene messo davanti)
 //  opts.mount  senza opts.el: contenitore in cui creare pulsante + didascalia
 //  opts.open   stato iniziale (default chiusa); opts.label  nome accessibile del pulsante
+//  opts.title  (1.13.5) intestazione di fisarmonica: il pulsante mostra letter + title + sub e prende il nome accessibile dal testo visibile
+//  opts.noEsc  (1.13.5) il pannello non si chiude con Esc (la guida è lettura, non una didascalia)
 // Ritorna {btn,panel,isOpen,open,close,toggle,setHtml} oppure null se il browser non lo consente (la didascalia resta visibile).
 const INFOS=[];
 function makeInfo(id,html,o){
@@ -2576,8 +2588,15 @@ function makeInfo(id,html,o){
   if(html!=null)pan.innerHTML=html;
   const btn=document.createElement('button');
   btn.type='button';btn.className='ibtn';btn.id='info-'+id;
-  const ii=document.createElement('span');ii.className='ii';ii.setAttribute('aria-hidden','true');ii.textContent='i';btn.appendChild(ii);
-  const lab=o.label||'Informazioni';btn.title=lab;btn.setAttribute('aria-label',lab);
+  if(o.title){
+   btn.classList.add('gbtn');
+   const gl=document.createElement('span'),gt=document.createElement('span'),gb=document.createElement('b'),gs=document.createElement('span');
+   gl.className='gl';gl.textContent=o.letter||'';gt.className='gt';gb.textContent=o.title;gs.textContent=o.sub||'';
+   gt.appendChild(gb);if(o.sub)gt.appendChild(gs);btn.appendChild(gl);btn.appendChild(gt);
+  }else{
+   const ii=document.createElement('span');ii.className='ii';ii.setAttribute('aria-hidden','true');ii.textContent='i';btn.appendChild(ii);
+   const lab=o.label||'Informazioni';btn.title=lab;btn.setAttribute('aria-label',lab);
+  }
   btn.setAttribute('aria-controls',pan.id);
   if(o.el&&o.el.parentNode)o.el.parentNode.insertBefore(btn,pan);
   else if(o.mount){o.mount.appendChild(btn);o.mount.appendChild(pan);}
@@ -2589,7 +2608,7 @@ function makeInfo(id,html,o){
    setHtml(h){pan.innerHTML=h;return api;}};
   btn.addEventListener('click',()=>api.toggle());
   api.set(!!o.open);
-  INFOS.push(api);
+  if(!o.noEsc)INFOS.push(api);
   return api;
  }catch(e){return null;}
 }
@@ -2766,7 +2785,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.13.0',APP_VERSION_SHORT='1.13.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.13.5',APP_VERSION_SHORT='1.13.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3539,6 +3558,20 @@ function profCopyCSV(){
  LG.infoTxt=makeInfo('arresto',undefined,{el:$('lgtxt'),label:'Informazioni: criteri di arresto e colori'});
  LG.info=makeInfo('legenda',undefined,{el:$('legend'),label:'Legenda cromatica',open:!mobile});
  legendSync();
+})();
+(function(){ // 1.13.5: guida didattica a fisarmonica (una scheda aperta alla volta); se makeInfo non riesce, le schede restano visibili
+ try{
+  const root=$('guida');if(!root)return;
+  const lk=$('guida-manuale');if(lk&&typeof GUIDE_URL==='string'){lk.href=GUIDE_URL;lk.target='_blank';lk.rel='noopener';}
+  const all=[];
+  root.querySelectorAll('.gitem').forEach(it=>{
+   const body=it.querySelector('.gbody'),h=it.querySelector('.gh');if(!body||!h)return;
+   const api=makeInfo('g'+it.getAttribute('data-g'),undefined,{el:body,letter:it.getAttribute('data-g'),title:h.getAttribute('data-t'),sub:h.getAttribute('data-s'),noEsc:true});
+   if(!api)return;
+   h.textContent='';h.appendChild(api.btn);all.push(api);
+   api.btn.addEventListener('click',()=>{if(api.isOpen())all.forEach(o=>{if(o!==api)o.close();});});
+  });
+ }catch(e){/* degradazione elegante */}
 })();
 initWorkers();
 (function(){const vp=new Viewport(0,$('vp0'),FAM.mandel.view);VPS.push(vp);setActive(vp);syncLayoutUI();})();

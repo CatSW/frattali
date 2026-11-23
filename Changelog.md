@@ -16,6 +16,24 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.13.5 — 2026-11-23
+
+### Novità
+- Guida didattica a fisarmonica (una scheda aperta alla volta) al posto delle sette voci «Come nascono i colori»: **A Manuale breve**, **B Storia e riferimenti**, **C Applicazioni**, **D Laboratorio**.
+- **A Manuale breve**: navigazione (mouse, touch e tastiera), «Julia da qui» e «Tocca per scegliere c» con la dicotomia di Fatou–Julia, iterazioni e limite di precisione, perché il nero (con il caso Mandelbrot/Julia e il caso Newton), colori, legenda e rilievo, «Fonte colore», cursore informativo, griglia (G) e Profilo; rimando al manuale completo (README su GitHub).
+- **C Applicazioni**: analisi numerica, sistemi dinamici, fisica statistica, antenne frattali, compressione e grafica procedurale, biologia e Terra.
+- **B** e **D** sono presenti nella struttura come segnaposto («In preparazione»).
+- `makeInfo` accetta `opts.title`/`opts.letter`/`opts.sub` (intestazione di fisarmonica, nome accessibile dal testo visibile) e `opts.noEsc` (il pannello non si chiude con Esc). Le didascalie «i» esistenti non cambiano.
+- Pulsante «Guida - Ver. 1.13.5», `APP_VERSION` e `APP_VERSION_SHORT` aggiornati.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Le schede B e D sono segnaposto: contenuti previsti nelle release successive (1.14.0 e 1.14.5).
+- Le sette voci rimosse (Sfumato continuo, Luce e rilievo, Neon e steli, Fase dell'orbita, Interno ed equalizzato, Famiglie aggiunte, Limiti) non sono più in pagina. Restano la descrizione di ogni famiglia («i»), la legenda e il testo sui criteri di arresto; le formule delle «Famiglie aggiunte» e i dettagli su neon/steli e interno equalizzato non sono più riassunti da nessuna parte e andrebbero ricollocati in B/D o nel manuale.
+- Il testo di A cita 10¹³ ingrandimenti come ordine di grandezza del limite di precisione; la soglia effettiva dipende dalla posizione (stato: «limite di precisione raggiunto»).
+
 ## 1.13.0 — 2026-11-23
 
 ### Novità
