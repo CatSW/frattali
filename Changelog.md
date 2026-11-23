@@ -16,6 +16,25 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.13.0 — 2026-11-23
+
+### Novità
+- Nuova famiglia **Biforcazione (mappa logistica)**: diagramma di biforcazione a colonne deterministico della mappa \(x \mapsto r\,x(1-x)\), integrato nel percorso densità/istogramma (buffer `cnt`/`col` come IFS/Buddha/attrattori).
+- Selettore asse **r** (intervallo tipico [2,5 – 4]) / **c** (coniugazione \(c = \frac{r}{2}(1-\frac{r}{2})\), ramo \(r = 1+\sqrt{1-4c}\)).
+- \(N_{\mathrm{trans}}\) e \(N_{\mathrm{plot}}\) adattivi allo zoom e alla qualità; pan/zoom su entrambi gli assi; griglia `rx`.
+- Linee guida verticali opzionali (r₁=3, r₂≈3,449, r_∞≈3,570, finestra periodo 3 ≈3,828), convertite su c quando serve.
+- Preset: vista intera (r/c), cascata 3,4–3,6, finestra periodo 3.
+- HUD: valore di r o c e di x sotto il cursore; testo didattico con legame r↔c e richiamo a Feigenbaum δ≈4,6692.
+- `caps`: escape/phase/point/profile/juliaPick false, grid `'rx'`; controlli non pertinenti nascosti via `applyCaps`.
+
+### Correzioni
+- Nessuna (release additiva).
+
+### Limiti noti
+- Precisione a 64 bit: zoom molto profondi sulle finestre periodiche possono mostrare artefatti numerici sulla mappa logistica.
+- Il motore è a colonne intere (un job deterministico per vista); su schermi molto larghi in qualità Ultra il calcolo può richiedere qualche secondo.
+- Le linee guida usano valori di riferimento fissi (non calcolati dinamicamente nell’app).
+
 ## 1.12.0 — 2026-11-23
 
 ### Novità

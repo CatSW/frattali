@@ -192,9 +192,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.12.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.13.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.12.0 · 23 novembre 2026</p>
+<p class="updated">Versione 1.13.0 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -766,11 +766,39 @@ function computeAttractor(J){
   var lyap=0;if(doLy&&lcnt>0)lyap=lsum/lcnt;
   return {cnt:cnt,col:col,seed:seed,lyap:lyap};
 }
+// 1.13.0 — Diagramma di biforcazione (mappa logistica): motore a colonne deterministico
+function computeBif(J){
+  var W=J.W,H=J.H,cnt=new Float32Array(W*H),col=new Float32Array(W*H);
+  var axis=J.axis|0, ntrans=J.ntrans|0, nplot=J.nplot|0;
+  var x0=J.x0,y0=J.y0,s=J.s;
+  if(!(ntrans>0))ntrans=200;
+  if(!(nplot>0))nplot=400;
+  if(!(s>0)||!isFinite(s))return {cnt:cnt,col:col};
+  for(var i=0;i<W;i++){
+    var rx=x0+(i+0.5)*s, r;
+    if(axis===0){
+      r=rx; if(!(r>=0&&r<=4)) continue;
+    } else {
+      var cc=rx; if(!(cc>=-2&&cc<=0.25)) continue;
+      var disc=1-4*cc; if(disc<0) continue;
+      r=1+Math.sqrt(disc);
+    }
+    var x=0.5, t, p, j, idx;
+    for(t=0;t<ntrans;t++){ x=r*x*(1-x); if(!isFinite(x)){x=0.5; break;} }
+    for(p=0;p<nplot;p++){
+      x=r*x*(1-x);
+      if(!isFinite(x)||x<0||x>1) continue;
+      j=(y0-x)/s|0;
+      if(j>=0&&j<H){ idx=j*W+i; cnt[idx]+=1; col[idx]+= (p+1)/nplot; }
+    }
+  }
+  return {cnt:cnt,col:col};
+}
 if(typeof importScripts==='function'){
   self.onmessage=function(e){
     var J=e.data;
-    if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'){
-      var R=J.type==='ifs'?computeIFS(J):(J.type==='buddha'?computeBuddha(J):computeAttractor(J));
+    if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'){
+      var R=J.type==='ifs'?computeIFS(J):(J.type==='buddha'?computeBuddha(J):(J.type==='attr'?computeAttractor(J):computeBif(J)));
       self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col,lyap:R.lyap},[R.cnt.buffer,R.col.buffer]);
     }
     else {
@@ -785,7 +813,7 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor,computeBif:computeBif};')();
 
 /* ---------- definizioni ---------- */
 const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
@@ -934,6 +962,14 @@ const FAM={
    {name:'Clifford (a=−1,4 · b=1,6 · c=1 · d=0,7)',view:{cx:0,cy:0,span:3.6},p:{var:0,a:-1.4,b:1.6,c:1,d:0.7},style:'pavone'},
    {name:'de Jong (a=1,641 · b=1,902 · c=0,316 · d=1,525)',view:{cx:0,cy:0,span:3.2},p:{var:1,a:1.641,b:1.902,c:0.316,d:1.525},style:'scarabeo'},
    {name:'Hénon (a=1,4 · b=0,3)',view:{cx:0.1,cy:0,span:2.8},p:{var:2,a:1.4,b:0.3,c:0,d:0},style:'fuoco'}
+  ]},
+ bif:{name:'Biforcazione (mappa logistica)',code:-4,caps:CAP({escape:false,phase:false,point:false,profile:false,grid:'rx',newtonThresholds:false,juliaPick:false}),axes:'rx',de:false,view:{cx:3.25,cy:0.5,span:1.5},iter:0,noauto:true,params:['axis','guides'],
+  txt:'Diagramma di biforcazione della mappa logistica x ↦ r·x·(1−x). Per ogni valore del parametro sull\'asse orizzontale si scartano N_trans iterazioni a partire da x₀ = 0,5 e si accumulano N_plot stati sull\'asse verticale x ∈ [0,1]. La coniugazione topologica con la famiglia quadratica z ↦ z² + c è data da c = (r/2)(1 − r/2); il ramo utile dell\'inverso è r = 1 + √(1−4c) (con c ∈ [−2, 0,25]). Le biforcazioni di periodo-doppio convergono a r_∞ ≈ 3,56995 con rapporto di Feigenbaum δ ≈ 4,6692. In modalità c l\'asse orizzontale mostra il parametro della mappa quadratica.',
+  presets:[
+   {name:'Vista intera (r)',view:{cx:3.25,cy:0.5,span:1.5},p:{axis:0,guides:1},style:'fuoco'},
+   {name:'Cascata (3,4–3,6)',view:{cx:3.5,cy:0.5,span:0.22},p:{axis:0,guides:1},style:'fuoco'},
+   {name:'Finestra periodo 3',view:{cx:3.8284,cy:0.5,span:0.06},p:{axis:0,guides:1},style:'scarabeo'},
+   {name:'Vista intera (c)',view:{cx:-0.875,cy:0.5,span:2.3},p:{axis:1,guides:1},style:'fuoco'}
   ]}
 };
 const PARAMDEF={
@@ -956,7 +992,9 @@ const PARAMDEF={
  a:{label:'Parametro a',min:-3,max:3,step:0.001},
  b:{label:'Parametro b',min:-3,max:3,step:0.001},
  c:{label:'Parametro c',min:-3,max:3,step:0.001},
- d:{label:'Parametro d',min:-3,max:3,step:0.001}
+ d:{label:'Parametro d',min:-3,max:3,step:0.001},
+ axis:{label:'Asse',options:['r (logistica)','c (quadratica)']},
+ guides:{label:'Linee guida',options:['Nascoste','Visibili']}
 };
 const PALS={
  pavone:{name:'Pavone metallico',c:['#06281f','#0f6e4a','#3fcf96','#0e5a8a','#1d2f8f','#5b2a9e','#a8306e','#d9503a','#f0b341','#7a5a12']},
@@ -992,6 +1030,7 @@ const S={fam:'mandel',P:{},iterBase:{},auto:true,qual:'normale',
 const PHM={final:1,stripe:2,mean:3};
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0,var:0,a:-1.4,b:1.6,c:1,d:0.7};S.iterBase[f]=FAM[f].iter;}
 S.P.strange={var:0,a:-1.4,b:1.6,c:1,d:0.7};
+S.P.bif={axis:0,guides:1};
 
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
 S.nw={}; // override soglie Newton (solo campi diversi dal default, già validati)
@@ -1102,7 +1141,7 @@ function buildCDF(B){
  B.cdf={cdf,lo,hi,NB};
 }
 function colorize(B){
- const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha'||fam==='strange',hasDE=FAM[fam].de;
+ const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha'||fam==='strange'||fam==='bif',hasDE=FAM[fam].de;
  const dens=S.dens,off=S.off,res=H/700,glowW=3*S.glow*Math.max(0.5,res),stw=0.04*S.glow;
  const inc=hex(S.incol); let nroots=1; if(isNewton){const pp=POLYS[S.P.newton.poly];nroots=pp.c?pp.c.length-1:8;}
  const mu=B.mu,de=B.de,tp=B.tp,tx=B.tx,kind=B.kind,h=B.h,t=B.t,b=B.b,fl=B.fl;
@@ -1228,7 +1267,7 @@ function pump(){
  if(useWorkers){
   for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'){const X=J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):LIB.computeAttractor(J));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'){const X=J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J)));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
  }
 }
 
@@ -1844,7 +1883,7 @@ class Viewport{
   this.cancel();
   const {W,H}=this.dims();
   this.cv.width=W;this.cv.height=H;this.t0=performance.now();{const rr=this.cv.getBoundingClientRect();this.lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
-  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'){this.renderIFS(W,H);return null;}
+  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'){this.renderIFS(W,H);return null;}
   const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
   const pre=newBuf(pw,ph),full=newBuf(W,H),cur=this.cur={pre,full,id:this.jobId,W,H,left:0};
   const j1=makeTileJobs(pre,0,this.jobId,this),j2=makeTileJobs(full,1,this.jobId,this);
@@ -1888,19 +1927,44 @@ class Viewport{
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   if(cur.pre&&cur.pre.cv&&(cur.left1>0||!cur.full.cv))ctx.drawImage(cur.pre.cv,0,0,cv.width,cv.height);
   if(cur.full&&cur.full.cv)ctx.drawImage(cur.full.cv,0,0);
+  if(S.fam==='bif'&&(S.P.bif.guides|0))this.drawBifGuides();
   if(this.marker)this.markerHud();
   this.drawProfile();
  }
+ drawBifGuides(){
+  // linee verticali di riferimento (r o c convertiti)
+  const W=this.cv.width,H=this.cv.height,v=this.view,axis=(S.P.bif.axis|0);
+  const rs=[3, 1+Math.sqrt(6), 3.5699456, 1+Math.sqrt(8)]; // r1, r2≈3.449, r∞, periodo-3
+  const labels=['r₁=3','r₂≈3,449','r_∞≈3,570','per.3 ≈3,828'];
+  ctx=this.ctx;
+  ctx.save();
+  try{
+   ctx.setLineDash([4,3]);ctx.lineWidth=1.2;
+   for(let k=0;k<rs.length;k++){
+    let rx=rs[k];
+    if(axis===1){ // c = (r/2)(1-r/2)
+     rx=(rx/2)*(1-rx/2);
+    }
+    const scr=worldToScreen(v,W,H,rx,v.cy);
+    if(!isFinite(scr[0])||scr[0]<0||scr[0]>W)continue;
+    ctx.strokeStyle='rgba(255,209,102,.85)';
+    ctx.beginPath();ctx.moveTo(scr[0],0);ctx.lineTo(scr[0],H);ctx.stroke();
+    ctx.fillStyle='rgba(255,209,102,.95)';ctx.font='11px ui-monospace,Menlo,Consolas,monospace';
+    ctx.textAlign='center';ctx.fillText(labels[k],scr[0],14+k*12);
+   }
+  }finally{ctx.restore();}
+ }
  recolor(){
   const cur=this.cur;
-  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'){if(cur.full&&cur.full.cv){colorize(cur.full);this.draw();}return;}
+  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'){if(cur.full&&cur.full.cv){colorize(cur.full);this.draw();}return;}
   if(cur.pre&&cur.pre.img)colorize(cur.pre);
   if(cur.full&&cur.full.img)colorize(cur.full);
   this.draw();
  }
  updateHud(){
   const v=this.view,z=FAM[S.fam].view.span/v.span,ax=famAxes(S.fam);
-  if(ax==='xy'||ax==='rx')this.hud.l.textContent='Centro x '+fmt(v.cx,6)+' · y '+fmt(v.cy,6);
+  if(ax==='rx'){const axn=(S.P.bif&&(S.P.bif.axis|0))?'c':'r';this.hud.l.textContent='Centro '+axn+' '+fmt(v.cx,6)+' · x '+fmt(v.cy,6);}
+  else if(ax==='xy')this.hud.l.textContent='Centro x '+fmt(v.cx,6)+' · y '+fmt(v.cy,6);
   else this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
   this.hud.r.textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
   if(S.fam==='strange'&&this.lyapEst!=null&&isFinite(this.lyapEst)){
@@ -1910,11 +1974,25 @@ class Viewport{
   this.drawProfile(); // 1.10.5: il segmento resta ancorato al piano
   scheduleFrames(); // le cornici seguono ogni cambio di vista (pan/zoom/render) senza toccare l'immagine
  }
- /* IFS / Buddhabrot / Attrattori strani */
+ /* IFS / Buddhabrot / Attrattori strani / Biforcazione */
  renderIFS(W,H){
   const id=this.jobId,full=newBuf(W,H);full.done.fill(1);full.kind.fill(1);
   const cur=this.cur={pre:null,full,id,W,H,left1:0,n1:1}; // done già 1 per tutti i pixel
-  const bd=S.fam==='buddha',at=S.fam==='strange',s=this.view.span/H;
+  const bd=S.fam==='buddha',at=S.fam==='strange',bf=S.fam==='bif',s=this.view.span/H;
+  if(bf){
+   // motore a colonne deterministico: un solo job
+   const P=S.P.bif,axis=P.axis|0;
+   const qMul={veloce:0.6,normale:1,alta:1.6,ultra:2.5}[S.qual]||1;
+   // N_trans adattivo allo zoom (vicino alle biforcazioni la convergenza è lenta)
+   const zf=Math.max(1,Math.sqrt((FAM.bif.view.span||1.5)/Math.max(1e-9,this.view.span)));
+   const ntrans=Math.round(Math.min(8000, (180+120*zf)*qMul ));
+   const nplot=Math.round(Math.min(12000, (350+200*zf)*qMul ));
+   const base={type:'bif',id,target:this.id,W,H,axis,ntrans,nplot,x0:this.view.cx-W/2*s,y0:this.view.cy+H/2*s,s};
+   cur.ifsLeft=1;cur.ifsPer=1;cur.ifsBase=base;cur.seed=1;cur.inflight=0;cur.lyapSum=0;cur.lyapN=0;
+   this.queueIFS();
+   this.setSt('Calcolo biforcazione…');this.updateHud();
+   return;
+  }
   const {maps,cum}=(!bd&&!at)?ifsMaps():{};
   // densità: più campioni con qualità alta e zoom maggiore (span più piccolo)
   const qMul={veloce:0.45,normale:1,alta:1.8,ultra:3.2}[S.qual]||1;
@@ -2165,7 +2243,12 @@ class Viewport{
   if(!this.gest&&!this.sel&&this.ptrs.size===0){
    const p=this.toPx(e),c=this.pxToC(p[0],p[1]),F=FAM[S.fam];
    if(F.caps&&F.caps.point)this.hoverHud(c); // 1.9.0: informazioni sul punto, con throttling
-   else if(this.hud.m)this.hud.m.textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
+   else if(this.hud.m){
+    if(S.fam==='bif'){
+     const ax=(S.P.bif.axis|0)===0;
+     this.hud.m.textContent=(ax?'r ':'c ')+fmt(c[0],5)+' · x '+fmt(c[1],5);
+    } else this.hud.m.textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
+   }
   }
   if(this.sel){if(e.pointerId===this.sel.id)this.moveSel(e);return;}
   // 1.10.5: trascina handle o disegna segmento
@@ -2564,8 +2647,8 @@ function buildParams(){
   paramRows.push(ctlRow(box,{label,min:d.min,max:d.max,step:d.step,int:d.step===1,dec:d.step===1?0:4,get:()=>P[k],set:v=>{P[k]=v;},live:()=>{if(d.step!==1)scheduleRender(90);},done:()=>render()}));
  }
  const ib=$('iterbox');ib.innerHTML='';
- if(S.fam!=='ifs'&&S.fam!=='strange'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
- $('autobox').style.display=(S.fam==='ifs'||S.fam==='strange'||FAM[S.fam].noauto)?'none':'';
+ if(S.fam!=='ifs'&&S.fam!=='strange'&&S.fam!=='bif'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
+ $('autobox').style.display=(S.fam==='ifs'||S.fam==='strange'||S.fam==='bif'||FAM[S.fam].noauto)?'none':'';
  applyCaps();
  $('famtxt').textContent=FAM[S.fam].txt;
  syncGridUI();
@@ -2597,6 +2680,7 @@ function setFam(f,keepView){
  buildParams();
  if(f==='ifs')fitIFS();
  if(f==='strange')fitStrange();
+ // bif: nessuna fit speciale, vista già in FAM
 }
 function applyStyle(k){
  const st=STYLES[k];if(!st)return;
@@ -2682,7 +2766,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.12.0',APP_VERSION_SHORT='1.12.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.13.0',APP_VERSION_SHORT='1.13.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3032,7 +3116,7 @@ function legendInterior(m){
 }
 function legendCaption(m){
  const f=S.fam;let t;
- if(m.kind==='none')t=f==='buddha'?'Colore secondo la lunghezza delle orbite, luminosità secondo la densità dei punti. Nessuna scala numerica.':'Colore secondo la densità dei punti e le trasformazioni usate. Nessuna scala numerica.';
+ if(m.kind==='none')t=f==='buddha'?'Colore secondo la lunghezza delle orbite, luminosità secondo la densità dei punti. Nessuna scala numerica.':(f==='bif'?'Colore e luminosità secondo la densità dei punti visitati sull\'attrattore per ciascun parametro. Nessuna scala numerica.':'Colore secondo la densità dei punti e le trasformazioni usate. Nessuna scala numerica.');
  else if(m.kind==='pct')t='Asse: percentile di μ tra i punti che escono nella vista (modo equalizzato), con densità e fase correnti.';
  else if(m.kind==='newton')t='Asse: μ, iterazioni continue (0 → maxIt); una fascia per radice. Luminosità calante con μ.';
  else if(m.kind==='phase'){
