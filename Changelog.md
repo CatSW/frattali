@@ -16,6 +16,28 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.9.5 — 2026-11-23 
+
+### Novità
+- Legenda cromatica condivisa dalle viste, sotto il contenitore delle viste (desktop) oppure in un pannello «i» chiuso (mobile, tramite `makeInfo`). Disegna la LUT corrente con lo stesso mapping di `colorize` (densità, fase, ciclicità). Asse orizzontale in μ (iterazioni continue, 0 → maxIt della vista attiva); in modo «Equalizzato» l'asse è in percentile. Su Newton una fascia per radice.
+- Tacche: `0`, periodo del ciclo colore (se completato entro l'asse, con tacche minori per i cicli successivi), `maxIt` (in percentile: `100 %`). Il raggio di fuga non è una tacca.
+- Campione separato «non diverge entro N iterazioni» (Newton/Nova: «non converge…») con il colore interno (tinta unita) o con la rampa e l'indicazione del modo interno (trappola punto / croce).
+- Indicatore sulla barra: la posizione e il valore di μ del punto sotto il cursore o del marker della vista attiva (stesso `evalPoint` del cursore informativo). Per i punti interni si evidenzia il campione interno; per divergenza/singolarità (Newton) nessun indicatore.
+- Blocco «i» collassabile «criteri di arresto e colori»: il calcolo si ferma a maxIt per limitare il tempo, non perché il punto sia «stabile»; lettura dei colori adattata alla famiglia (Mandelbrot/Julia, altre famiglie con fuga, Newton, Nova).
+- Famiglie con `caps.escape === false` (Buddhabrot, IFS): barra senza scala numerica, con la didascalia pertinente; blocco «i» e campione interno nascosti.
+- Lo stato JSON/URL non cambia: la legenda deriva solo dallo stato esistente.
+- Su desktop l'altezza delle viste è ridotta di 80 px per far posto alla legenda.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- La barra mostra la rampa di base (luminosità 1, senza luce e rilievo); in Neon e Steli non rende luminosità e steli.
+- L'asse in μ usa il maxIt della vista attiva. Con «Iterazioni automatiche» altre viste possono avere un maxIt diverso: un μ oltre la fine della barra viene fissato al bordo destro, ma il valore numerico resta quello reale.
+- In modo «Equalizzato» il percentile dell'indicatore usa la CDF della vista in cui si trova il puntatore o il marker.
+- I colori di divergenza (rosso) e singolarità (magenta) di Newton non hanno un campione nella legenda.
+- Con le viste a schermo intero la legenda, che sta fuori dal contenitore, non è visibile.
+
 ## 1.9.0 — 2026-11-23 
 
 ### Novità

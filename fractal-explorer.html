@@ -31,7 +31,7 @@ a.tbtn{display:inline-block;text-decoration:none}
 @media (min-width:900px){.app{grid-template-columns:minmax(0,1fr) 340px;align-items:start}.app.full{grid-template-columns:minmax(0,1fr)}.panel{max-height:calc(100vh - 24px);overflow:auto;position:sticky;top:12px}}
 .app.full .panel{display:none}
 .stage{position:relative;background:#000;border-radius:18px;overflow:hidden;aspect-ratio:1/1;touch-action:none;user-select:none;-webkit-user-select:none}
-@media (min-width:900px){.stage{aspect-ratio:auto;height:max(480px,calc(100vh - 215px))}.app.full .stage{height:max(480px,calc(100vh - 175px))}.kicker,.updated{display:none}h1{margin:8px 0 2px}.lede{margin:2px 0 10px;font-size:15px}}
+@media (min-width:900px){.stage{aspect-ratio:auto;height:max(480px,calc(100vh - 295px))}.app.full .stage{height:max(480px,calc(100vh - 255px))}.kicker,.updated{display:none}h1{margin:8px 0 2px}.lede{margin:2px 0 10px;font-size:15px}}
 @media (max-width:899px) and (orientation:portrait){.stage.l2{aspect-ratio:1/1.7}.stage.l3,.stage.l4{aspect-ratio:1/1.3}}
 .stage:fullscreen{height:100vh!important;height:100dvh!important;border-radius:0;aspect-ratio:auto}.stage:-webkit-full-screen{height:100vh!important;height:100dvh!important;border-radius:0;aspect-ratio:auto}
 .vgrid{position:absolute;inset:0;display:grid;gap:3px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);background:#000}
@@ -130,6 +130,29 @@ a{color:inherit}
 .card>.ibtn{justify-self:start}
 .ipan[hidden]{display:none!important}
 @media (max-width:699px),(orientation:landscape) and (max-height:499px),(pointer:coarse){.ibtn{min-width:40px;min-height:40px}}
+/* 1.9.5 — legenda cromatica condivisa */
+.legend{margin:8px 2px 0;font:12px/1.35 var(--sans);color:var(--muted)}
+.lgrow{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:flex-start}
+.lgmain{flex:1 1 260px;min-width:0}
+.lgbarw{position:relative;margin-top:18px}
+#lgbar{display:block;width:100%;height:12px;border:1px solid var(--rule);border-radius:4px}
+.lgmk{position:absolute;top:-4px;height:20px;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 1px var(--ground);pointer-events:none}
+.lgmk[hidden]{display:none}
+.lgmk b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding:0 0 2px;font:11px/1 var(--mono);color:var(--ink);white-space:nowrap;background:var(--ground)}
+.lgticks{position:relative;height:22px}
+.lgt{position:absolute;top:0;padding-top:5px;transform:translateX(-50%);font:11px/1.2 var(--mono);white-space:nowrap;cursor:default}
+.lgt::before{content:"";position:absolute;top:0;left:50%;height:4px;border-left:1px solid var(--muted)}
+.lgt.l{transform:none}.lgt.l::before{left:0}
+.lgt.r{transform:translateX(-100%)}.lgt.r::before{left:auto;right:0}
+.lgt.m::before{height:2px}
+.lgin{display:flex;align-items:center;gap:6px;margin-top:14px;padding:2px 6px 2px 2px;border:1px solid transparent;border-radius:6px}
+.lgin.hit{border-color:var(--ink);color:var(--ink)}
+.lgsw{width:26px;height:12px;flex:none;border:1px solid var(--rule);border-radius:3px}
+.lgcaprow{display:flex;flex-wrap:wrap;align-items:center;gap:0 4px}
+.lgcap{margin:0;flex:1 1 220px}
+.lgcaprow .ipan{flex:0 0 100%;margin:2px 0 6px}
+.lgcaprow .ipan p{margin:4px 0}
+@media (min-width:900px) and (pointer:fine){#info-legenda{display:none}}
 /* 1.9.0 — cursore informativo su più righe */
 .hud{align-items:flex-end}
 .hud span:nth-child(2){white-space:pre-line;max-width:100%;overflow-wrap:anywhere}
@@ -139,9 +162,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.9.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.9.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.9.0 · 22 novembre 2026</p>
+<p class="updated">Versione 1.9.5 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -149,6 +172,13 @@ a{color:inherit}
   <div class="stage" id="stage">
    <div class="vgrid" id="vgrid"><div class="vp" id="vp0" data-vid="0"><canvas id="cv"></canvas><div class="vov"><div id="selrect" class="selr"></div><div class="hud"><span id="hudl"></span><span id="hudm"></span><span id="hudr"></span></div></div></div></div>
    <div class="fab"><button id="fs" type="button" aria-label="Schermo intero" title="Schermo intero"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div>
+  </div>
+  <div class="legend" id="legend" role="group" aria-label="Legenda cromatica">
+   <div class="lgrow">
+    <div class="lgmain"><div class="lgbarw" id="lgbarw"><canvas id="lgbar" width="512" height="12" aria-hidden="true"></canvas><div class="lgmk" id="lgmk" hidden><b id="lgmkv"></b></div></div><div class="lgticks" id="lgticks"></div></div>
+    <div class="lgin" id="lgin"><span class="lgsw" id="lgsw"></span><span id="lgint"></span></div>
+   </div>
+   <div class="lgcaprow"><p class="lgcap" id="lgcap"></p><div id="lgtxt"></div></div>
   </div>
   <div class="bar">
    <button class="tbtn" id="reset" type="button" title="Vista iniziale" aria-label="Vista iniziale" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg><span>Vista iniziale</span></button>
@@ -865,6 +895,7 @@ function buildLUT(){
  }
  const st=[];for(let i=0;i<=16;i++){const k=Math.floor(i/16*(LUTN-1))*3;st.push(`rgb(${LUT[k]*255|0},${LUT[k+1]*255|0},${LUT[k+2]*255|0})`);}
  $('palprev').style.background=`linear-gradient(90deg,${st.join(',')})`;
+ try{legendSync();}catch(e){}
 }
 
 /* ---------- buffer e colorazione ---------- */
@@ -1094,6 +1125,7 @@ function planeText(vp,x,y,label){
  try{
   const F=FAM[S.fam];if(!F.caps||!F.caps.point)return null;
   const N=curIter(vp.view),r=evalPlane(S.fam,S.P[S.fam],x,y,N,S.nw);if(!r)return null;
+  try{legendFeed(r,vp,!!label);}catch(e){} // 1.9.5: indicatore sulla legenda (stesso evalPoint)
   return (label||'')+'Re '+fmt(x,5)+' · Im '+fmt(y,5)+'\n'+pointLines(S.fam,r,N).join('\n');
  }catch(e){return null;}
 }
@@ -1151,6 +1183,7 @@ function makeTileJobs(B,pass,id,vp){
 // ricalcola le viste visibili (o solo quelle indicate); le altre non vengono toccate
 function render(only){
  clearTimeout(renderPending);
+ try{legendSync();}catch(e){}
  const list=(only&&only.length?only:VPS).filter(v=>VPS.indexOf(v)>=0);
  staleMs=0;
  let j1=[],j2=[];
@@ -1186,7 +1219,7 @@ function refreshStatus(){
  else t=VPS[0]?VPS[0].st:'';
  setStatus(t+(viewNote?' · '+viewNote:''));
 }
-function recolor(){VPS.forEach(v=>v.recolor());}
+function recolor(){VPS.forEach(v=>v.recolor());try{legendSync();}catch(e){}}
 /* Nomi globali storici: delegano alla vista attiva (draw/updateHud/recolor a tutte le viste) */
 function draw(){VPS.forEach(v=>v.draw());}
 function updateHud(){VPS.forEach(v=>v.updateHud());}
@@ -1536,7 +1569,7 @@ class Viewport{
   cv.addEventListener('pointerdown',e=>this.onDown(e));
   cv.addEventListener('pointermove',e=>this.onMove(e));
   cv.addEventListener('pointerup',e=>this.onEnd(e));cv.addEventListener('pointercancel',e=>this.onEnd(e));
-  cv.addEventListener('pointerleave',()=>{clearTimeout(this.hvT);this.hvT=0;this.hvC=null;if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():'';});
+  cv.addEventListener('pointerleave',()=>{clearTimeout(this.hvT);this.hvT=0;this.hvC=null;if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():'';legendRefresh();});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(this.sel)return;setActive(this);this.startGesture();const [px,py]=this.toPx(e);this.zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(()=>this.drawGesture());clearTimeout(this.wheelT);this.wheelT=setTimeout(()=>this.endGesture(),250);},{passive:false});
  }
  observe(){
@@ -1695,7 +1728,7 @@ class Viewport{
  }
  markerHud(){if(this.hud.m)this.hud.m.textContent=this.markerText();}
  setMarkerAt(px,py){const c=this.pxToC(px,py);this.marker={x:c[0],y:c[1]};this.placeMarker();this.markerHud();}
- clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';}
+ clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';legendRefresh();}
  // tocco breve (solo touch): «Tocca per scegliere c» ha la precedenza; doppio tocco = zoom ×2 come prima
  onTap(p){
   const cv=this.cv,k=cv.getBoundingClientRect().width/(cv.width||1),now=performance.now();
@@ -1704,13 +1737,13 @@ class Viewport{
   if(tp&&now-tp.t<350&&Math.hypot(p[0]-tp.p[0],p[1]-tp.p[1])*k<32){
    this.tapPrev=null;this.marker=tp.before;this.placeMarker();
    if(this.marker)this.markerHud();else if(this.hud.m)this.hud.m.textContent='';
-   pushHist();this.zoomAt(p[0],p[1],2);render([this]);return;
+   legendRefresh();pushHist();this.zoomAt(p[0],p[1],2);render([this]);return;
   }
   const before=this.marker?{x:this.marker.x,y:this.marker.y}:null;
   this.tapPrev={t:now,p:p.slice(),before};
   let hit=false;
   if(this.marker){const s=worldToScreen(this.view,cv.width,cv.height,this.marker.x,this.marker.y);hit=Math.hypot(s[0]-p[0],s[1]-p[1])*k<24;}
-  if(hit){this.marker=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';}
+  if(hit){this.marker=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';legendRefresh();}
   else this.setMarkerAt(p[0],p[1]);
  }
  touchLong(cx,cy){
@@ -1857,6 +1890,7 @@ function syncLayCaps(){
 function setActive(vp){
  if(!vp||VPS.indexOf(vp)<0)return;
  AV=vp;VPS.forEach(v=>v.el.classList.toggle('act',v===vp));
+ try{legendSync();}catch(e){}
 }
 function freeId(){for(let i=0;i<MAX_VIEWS;i++)if(!vpById(i))return i;return -1;}
 // id 0 conserva gli ID DOM storici (cv, selrect, hudl/m/r); le altre viste usano il suffisso dell'id. VPS resta ordinato per id.
@@ -2099,6 +2133,7 @@ function applyCaps(){
    const ok=el.getAttribute('data-cap').split(/\s+/).filter(Boolean).every(k=>capOK(k,F));
    el.style.display=ok?'':'none';
   });
+  legendSync();
  }catch(e){/* nessun errore verso l'utente */}
 }
 function scheduleRender(ms){clearTimeout(renderPending);renderPending=setTimeout(render,ms);}
@@ -2166,7 +2201,7 @@ function buildColorUI(){
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
 }
-const APP_VERSION='1.9.0',APP_VERSION_SHORT='1.9.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.9.5',APP_VERSION_SHORT='1.9.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -2413,6 +2448,137 @@ $('ptog').addEventListener('click',togglePanel);
 window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();
  if(k==='+'||k==='=')zoomStep(2);else if(k==='-')zoomStep(0.5);else if(k==='r')$('reset').click();else if(k==='b')$('back').click();else if(k==='f')toggleFS();else if(k==='p')togglePanel();else if(k==='g')toggleGrid();});
 
+/* ---------- Legenda cromatica (1.9.5) ----------
+   Una sola barra per tutte le viste. Deriva solo dallo stato esistente (S, LUT, FAM[..].caps, curIter): nessun campo nuovo in JSON/URL.
+   Stesso mapping di colorize(): t = off + dens·g(μ), g(μ)=0,12·√μ (Newton: radice/n + 0,03·μ); equalizzato: t = off + dens·percentile.
+   Rappresenta la rampa di base (luminosità 1, senza luce e rilievo). Asse in μ: 0 → maxIt della vista attiva. */
+const LG={cv:null,N:0,kind:'mu',nr:1,last:null,raf:0,info:null,infoTxt:null};
+function legendModel(){
+ const F=FAM[S.fam],c=F&&F.caps||{};let N=0;
+ try{N=Math.max(1,curIter())|0;}catch(e){N=Math.max(1,S.iterBase[S.fam]|0);}
+ if(c.escape===false)return {kind:'none',N,nr:1,F};
+ if(c.newtonThresholds){const pp=POLYS[S.P.newton.poly];return {kind:'newton',N,nr:pp&&pp.c?pp.c.length-1:8,F};}
+ return {kind:S.mode==='equal'?'pct':'mu',N,nr:1,F};
+}
+function legendLUT(t){let li=((t%1)+1)%1*LUTN|0;if(li>=LUTN)li=LUTN-1;return li*3;}
+function legendCss(t,b){const k=legendLUT(t);b=b==null?1:b;return 'rgb('+(LUT[k]*b*255|0)+','+(LUT[k+1]*b*255|0)+','+(LUT[k+2]*b*255|0)+')';}
+function legendDraw(m){
+ const cv=LG.cv;if(!cv)return;const ctx=cv.getContext&&cv.getContext('2d');if(!ctx)return;
+ const W=512,off=+S.off||0,dens=+S.dens||1,nr=m.kind==='newton'?m.nr:1,sh=m.kind==='newton'?Math.max(1,Math.round(16/nr)):12,H=sh*nr;
+ if(cv.width!==W)cv.width=W;if(cv.height!==H)cv.height=H;
+ const img=ctx.createImageData(W,H),D=img.data;
+ for(let r=0;r<nr;r++)for(let x=0;x<W;x++){
+  const u=(x+0.5)/W;let t,br=1;
+  if(m.kind==='mu'){t=off+dens*0.12*Math.sqrt(u*m.N);}
+  else if(m.kind==='pct'){t=off+dens*u;}
+  else if(m.kind==='newton'){const mu=u*m.N;t=off+r/nr+dens*0.03*mu;br=0.3+0.7*Math.exp(-0.06*mu);}
+  else{t=off+dens*(S.fam==='buddha'?0.75:1)*u;}
+  const k=legendLUT(t);
+  for(let y=r*sh;y<(r+1)*sh;y++){const q=(y*W+x)*4;D[q]=LUT[k]*br*255;D[q+1]=LUT[k+1]*br*255;D[q+2]=LUT[k+2]*br*255;D[q+3]=255;}
+ }
+ ctx.putImageData(img,0,0);
+}
+function legendTicks(m){
+ const box=$('lgticks');if(!box)return;box.innerHTML='';
+ if(m.kind==='none')return;
+ const dens=+S.dens||1,N=m.N,T=[];
+ const add=(pos,txt,cls,title)=>{const e=document.createElement('span');e.className='lgt'+(cls?' '+cls:'');e.style.left=(pos*100)+'%';if(txt)e.textContent=txt;if(title)e.title=title;box.appendChild(e);};
+ add(0,m.kind==='pct'?'0 %':'0','l','Inizio della scala');
+ // periodo del ciclo colore: t torna a un multiplo di 1 quando dens·g(μ) = 1
+ let w=[];
+ if(m.kind==='pct'){for(let k=1;k/dens<0.999&&k<=8;k++)w.push([k/dens,100*k/dens]);}
+ else{const mu1=m.kind==='newton'?1/(0.03*dens):Math.pow(1/(0.12*dens),2);
+  for(let k=1;k<=8;k++){const mu=m.kind==='newton'?k*mu1:k*k*mu1;if(mu<N*0.999)w.push([mu/N,mu]);}}
+ w.forEach((p,i)=>{
+  const lab=m.kind==='pct'?Math.round(p[1])+' %':fmt(p[1],p[1]<10?1:0);
+  const txt=(i===0&&p[0]>0.14&&p[0]<0.86)?'ciclo '+lab:'';
+  add(p[0],txt,i===0?'':'m',(i===0?'Un ciclo completo di colore: ':'Ciclo successivo: ')+(m.kind==='pct'?lab+' dei punti':'μ = '+lab));
+ });
+ add(1,m.kind==='pct'?'100 %':'maxIt '+N,'r',m.kind==='pct'?'Fine della scala: percentile 100 % (valore massimo nella vista)':'Limite di iterazioni (maxIt) della vista attiva');
+}
+function legendInterior(m){
+ const sw=$('lgsw'),lab=$('lgint'),box=$('lgin');if(!sw||!lab||!box)return;
+ if(m.kind==='none'){box.style.display='none';return;}
+ box.style.display='';
+ const conv=m.kind==='newton'||S.fam==='nova',N=m.N,off=+S.off||0,dens=+S.dens||1;
+ let txt=conv?'non converge entro '+N+' iterazioni':'non diverge entro '+N+' iterazioni';
+ if(S.inmode==='flat'){sw.style.background=S.incol;}
+ else{const st=[];for(let i=0;i<=8;i++)st.push(legendCss(off+0.5+dens*i/8));sw.style.background='linear-gradient(90deg,'+st.join(',')+')';
+  txt+=' · interno: '+(S.inmode==='tp'?'trappola punto':'trappola croce');}
+ lab.textContent=txt;
+}
+function legendCaption(m){
+ const f=S.fam;let t;
+ if(m.kind==='none')t=f==='buddha'?'Colore secondo la lunghezza delle orbite, luminosità secondo la densità dei punti. Nessuna scala numerica.':'Colore secondo la densità dei punti e le trasformazioni usate. Nessuna scala numerica.';
+ else if(m.kind==='pct')t='Asse: percentile di μ tra i punti che escono nella vista (modo equalizzato), con densità e fase correnti.';
+ else if(m.kind==='newton')t='Asse: μ, iterazioni continue (0 → maxIt); una fascia per radice. Luminosità calante con μ.';
+ else t='Asse: μ, iterazioni continue (0 → maxIt), con densità, fase e ciclicità correnti.'+((S.mode==='neon'||S.mode==='stalk')?' Mostra la rampa di base.':'');
+ if(m.kind!=='none')t+=' Senza luce e rilievo.';
+ return t;
+}
+function legendTextHtml(m){
+ if(m.kind==='none')return '';
+ const N=m.N,c=m.F.caps||{},f=S.fam,conv=m.kind==='newton'||f==='nova';
+ let h='<p><b>Perché il calcolo si ferma.</b> Ogni punto viene iterato al massimo '+N+' volte (maxIt) per limitare il tempo di elaborazione, non perché sia davvero «stabile». Un punto colorato come interno è soltanto «'+(conv?'non converge':'non diverge')+' entro '+N+' iterazioni»: vicino al bordo potrebbe '+(conv?'convergere':'divergere')+' aumentando N (Iterazioni base).</p>';
+ if(c.newtonThresholds)h+='<p><b>Come leggere i colori.</b> I bacini sono tutti colorati, una tinta per radice. Il colore interno (di norma nero) indica solo il timeout: nessuna convergenza entro '+N+' iterazioni. Tinte più cupe dentro un bacino sono convergenze lente, non timeout. Rosso e magenta, dove compaiono, segnano divergenza e singolarità.</p>';
+ else if(f==='nova')h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) segna i punti che non convergono entro '+N+' iterazioni; fuori, le sfumature indicano la velocità di convergenza.</p>';
+ else if(f==='mandel'||f==='julia')h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) rappresenta l\'interno: i punti che non divergono. La parte colorata esterna è il bacino di attrazione dell\'infinito e le sfumature indicano la velocità di fuga (μ più basso = fuga più rapida).</p>';
+ else h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) rappresenta i punti che non escono entro '+N+' iterazioni; la parte colorata esterna è formata dai punti che escono e le sfumature indicano la velocità di fuga (μ più basso = fuga più rapida).</p>';
+ return h;
+}
+function legendSync(){
+ if(LG.raf)return;
+ const run=()=>{LG.raf=0;try{
+  if(!LG.cv)return;
+  const m=legendModel();LG.N=m.N;LG.kind=m.kind;LG.nr=m.nr;
+  legendDraw(m);legendTicks(m);legendInterior(m);
+  const cap=$('lgcap');if(cap)cap.textContent=legendCaption(m);
+  const tx=$('lgtxt');
+  if(tx){
+   if(LG.infoTxt){LG.infoTxt.setHtml(legendTextHtml(m));}else tx.innerHTML=legendTextHtml(m);
+   const none=m.kind==='none';tx.style.display=none?'none':'';
+   if(LG.infoTxt&&LG.infoTxt.btn)LG.infoTxt.btn.style.display=none?'none':'';
+  }
+  if(!(m.F.caps&&m.F.caps.point))LG.last=null;
+  legendPlace();
+ }catch(e){/* nessun errore verso l'utente */}};
+ try{LG.raf=requestAnimationFrame(run);}catch(e){LG.raf=1;run();}
+}
+// percentile di μ secondo la CDF della vista (stessa interpolazione di colorize)
+function legendPct(vp,mu){
+ const cur=vp&&vp.cur,B=cur&&((cur.full&&cur.full.cdf)?cur.full:(cur.pre&&cur.pre.cdf)?cur.pre:null),cd=B&&B.cdf;
+ if(!cd)return null;
+ const v=(Math.log(1+mu)-cd.lo)/(cd.hi-cd.lo)*cd.NB,a=Math.max(0,Math.min(cd.NB-1,Math.floor(v))),f=Math.max(0,Math.min(1,v-a));
+ return cd.cdf[a]*(1-f)+cd.cdf[a+1]*f;
+}
+// r = risultato di evalPoint; i marker contano solo se della vista attiva e senza cursore in hover su di essa
+function legendFeed(r,vp,isMarker){
+ if(!LG.cv)return;
+ if(isMarker&&(vp!==AV||AV.hvC))return;
+ const k=r.kind,hasMu=k===0||(k>=2&&k<253);
+ if(hasMu){const m=legendModel();LG.last={mu:r.mu,inside:false,pct:m.kind==='pct'?legendPct(vp,r.mu):null};}
+ else if(k===1)LG.last={inside:true};
+ else LG.last=null;
+ legendPlace();
+}
+function legendRefresh(){
+ try{if(AV&&AV.marker&&!AV.hvC)AV.markerText();else{LG.last=null;legendPlace();}}catch(e){}
+}
+function legendPlace(){
+ const mk=$('lgmk'),v=$('lgmkv'),inn=$('lgin');if(!mk||!v)return;
+ const L=LG.last;
+ if(inn)inn.classList.toggle('hit',!!(L&&L.inside));
+ if(!L||L.inside||LG.kind==='none'){mk.hidden=true;return;}
+ let pos,txt;
+ if(LG.kind==='pct'){if(L.pct==null){mk.hidden=true;return;}pos=L.pct;txt=fmt(100*L.pct,1)+' % (μ '+fmt(L.mu,2)+')';}
+ else{pos=L.mu/LG.N;txt='μ '+fmt(L.mu,2);}
+ pos=Math.max(0,Math.min(1,pos));
+ mk.hidden=false;mk.style.left=(pos*100)+'%';v.textContent=txt;
+ v.style.left=pos<0.12?'0':pos>0.88?'100%':'50%';
+ v.style.transform=pos<0.12?'none':pos>0.88?'translateX(-100%)':'translateX(-50%)';
+}
+(function(){try{LG.cv=$('lgbar');}catch(e){LG.cv=null;}})();
+
 /* ---------- avvio ---------- */
 (function(){ // didascalie «i»: introduzione aperta solo su desktop; famiglia e luce chiuse
  let mobile=false;try{mobile=window.matchMedia('(max-width:899px),(pointer:coarse)').matches;}catch(e){}
@@ -2420,6 +2586,10 @@ window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.t
  makeInfo('fam',undefined,{el:$('famtxt'),label:'Informazioni sulla famiglia'});
  const nt=document.querySelector('.card .note');
  if(nt)makeInfo('luce',undefined,{el:nt,label:'Informazioni su luce e rilievo'});
+ // 1.9.5: testo sui criteri di arresto (chiuso) dentro la legenda; su mobile l'intera legenda è un pannello «i» chiuso
+ LG.infoTxt=makeInfo('arresto',undefined,{el:$('lgtxt'),label:'Informazioni: criteri di arresto e colori'});
+ LG.info=makeInfo('legenda',undefined,{el:$('legend'),label:'Legenda cromatica',open:!mobile});
+ legendSync();
 })();
 initWorkers();
 (function(){const vp=new Viewport(0,$('vp0'),FAM.mandel.view);VPS.push(vp);setActive(vp);syncLayoutUI();})();
