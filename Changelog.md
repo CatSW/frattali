@@ -16,7 +16,33 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
-## 1.9.5 — 2026-11-23 
+## 1.10.0 — 2026-11-23
+
+### Novità
+- **Modi di fase basati sull'argomento dell'orbita** per le famiglie con `caps.phase === true` (Mandelbrot e Multibrot, Julia, Burning Ship e varianti, Tricorno e Multicorn, Phoenix).
+- **Buffer `ph`** (`Float32Array`) per pixel, trasportato come `mu`, `de`, `kind`: calcolato nei worker, restituito da bande e tile, copiato nei buffer di vista, unito nel percorso Mariani-Silver. Convenzione: `ph` vale 0 per i punti interni e con fonte «Iterazioni»; per gli esterni è `θ/2π` in [0, 1) (fase finale, fase media) oppure la media delle strisce in [0, 1] (stripe average).
+- **Selettore «Fonte colore»**: «Iterazioni» (predefinito, rendering identico alla 1.9.5), «Fase finale», «Stripe average», «Fase media (sperimentale)». Si applica solo all'esterno; l'interno resta governato da «Interno». Il selettore e i sotto-controlli sono nascosti tramite `data-cap="phase"` nelle famiglie senza fase.
+- **Fase finale**: θ = atan2(Im zₙ, Re zₙ) all'istante di fuga, in [0, 2π), come posizione ciclica nella palette. Opzione «Livelli»: continuo oppure 2 (segno di Im zₙ).
+- **Stripe average** (Härkönen): media di 0,5 + 0,5·sin(s·θₖ) lungo l'orbita, saltando z₁ e z₂; s intero da 1 a 32 (predefinito 5). Interpolazione: `ph = f·Aₙ + (1−f)·Aₙ₋₁`, con `f = 1 − log_d(ln|zₙ| / ln R)`, cioè la parte frazionaria dell'iterazione liscia.
+- **Fase media** (sperimentale): media circolare `atan2(Σ sin θₖ, Σ cos θₖ)` con gli stessi k della stripe average.
+- **Peso α** [0, 1] (predefinito 1): 0 = solo iterazioni, 1 = solo fonte di fase; i valori intermedi mescolano due posizioni della stessa palette nello spazio OKLab. Visibile solo con fonte diversa da «Iterazioni». «Livelli» e α ricolorano senza ricalcolare.
+- **Raggio di fuga**: invariato, R = 1000 per ogni fonte (già ≥ 100); `mu` non cambia.
+- **Legenda e cursore**: con una fonte di fase l'asse mostra 0–2π (π/2, π, 3π/2) oppure [0, 1] per la stripe average, e l'indicatore segue il valore di fase. Il cursore e il marker touch aggiungono una riga con il valore della fonte. `evalPoint` restituisce anche `ph`.
+- **Stato JSON/URL**: campi opzionali `src` (`final`, `stripe`, `mean`), `alpha`, `stripeS`, `levels` (`2`), omessi se coincidono con i valori predefiniti e ignorati per le famiglie senza fase.
+- **Preset didattici** con descrizione di 2 righe: Mandelbrot «Fase finale: raggi esterni», «Fase binaria (decomposizione binaria)», «Stripe average: valle dei cavallucci marini»; Julia «Stripe average (neuroni)». I preset preesistenti non toccano la fonte colore.
+- Nuova voce «Fase dell'orbita» nella guida in pagina.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Il futuro backend GPU (WebGL2) e la modalità a perturbazione/deep zoom dovranno leggere e scrivere il buffer `ph` con la stessa convenzione, altrimenti le fonti di fase non saranno disponibili o daranno risultati diversi.
+- La fase finale mostra salti a gusci tra punti che escono a iterazioni diverse: è propria del metodo e non viene interpolata. La fase media non è interpolata e può mostrare rumore.
+- Il rilievo (luce) resta calcolato dal campo μ, non dalla fonte di fase.
+- Le fonti angolari usano cicli interi di palette (Densità arrotondata, minimo 1) per non creare tagli su θ = 0.
+- Il buffer `ph` aggiunge 4 byte per pixel ai buffer di calcolo e di vista.
+
+## 1.9.5 — 2026-11-23 	
 
 ### Novità
 - Legenda cromatica condivisa dalle viste, sotto il contenitore delle viste (desktop) oppure in un pannello «i» chiuso (mobile, tramite `makeInfo`). Disegna la LUT corrente con lo stesso mapping di `colorize` (densità, fase, ciclicità). Asse orizzontale in μ (iterazioni continue, 0 → maxIt della vista attiva); in modo «Equalizzato» l'asse è in percentile. Su Newton una fascia per radice.

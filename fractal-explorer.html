@@ -153,6 +153,10 @@ a{color:inherit}
 .lgcaprow .ipan{flex:0 0 100%;margin:2px 0 6px}
 .lgcaprow .ipan p{margin:4px 0}
 @media (min-width:900px) and (pointer:fine){#info-legenda{display:none}}
+/* 1.10.0 — fonte colore: sotto-controlli e descrizione dei preset */
+.srcbox{display:grid;gap:6px}
+#presetdesc,.srcnote{font-size:13px;color:var(--muted);margin:0}
+#presetdesc{white-space:pre-line}
 /* 1.9.0 — cursore informativo su più righe */
 .hud{align-items:flex-end}
 .hud span:nth-child(2){white-space:pre-line;max-width:100%;overflow-wrap:anywhere}
@@ -162,9 +166,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.9.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.10.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.9.5 · 23 novembre 2026</p>
+<p class="updated">Versione 1.10.0 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -214,6 +218,7 @@ a{color:inherit}
    <h3>Frattale</h3>
    <div class="sel"><span class="cl">Famiglia</span><select id="fam"></select></div>
    <div class="sel"><span class="cl">Preset</span><select id="preset"></select></div>
+   <p class="pdesc" id="presetdesc" style="display:none"></p>
    <div id="params" style="display:grid;gap:6px"></div>
    <div id="iterbox" style="display:grid;gap:6px"></div>
    <label class="chk" id="autobox"><input type="checkbox" id="auto" checked> Iterazioni automatiche con lo zoom</label>
@@ -228,6 +233,9 @@ a{color:inherit}
    <div class="custom" id="custom"></div>
    <div class="sel" data-cap="escape"><span class="cl">Modo esterno</span><select id="mode">
      <option value="smooth">Sfumato continuo</option><option value="equal">Equalizzato</option><option value="neon">Neon (filamenti)</option><option value="stalk">Steli (germogli)</option></select></div>
+   <div class="sel" data-cap="phase"><span class="cl">Fonte colore</span><select id="src">
+     <option value="iter">Iterazioni</option><option value="final">Fase finale</option><option value="stripe">Stripe average</option><option value="mean">Fase media (sperimentale)</option></select></div>
+   <div class="srcbox" id="srcctl" data-cap="phase"></div>
    <div class="sel" data-cap="escape"><span class="cl">Interno</span><select id="inmode">
      <option value="flat">Tinta unita</option><option value="tp">Trappola punto</option><option value="tx">Trappola croce</option></select></div>
    <div class="sel"><span class="cl">Tinta interna</span><input type="color" id="incol" value="#000000"></div>
@@ -251,6 +259,11 @@ a{color:inherit}
 <details class="more"><summary><b>Neon e steli</b><span>Filamenti luminosi e germogli dalle trappole d'orbita.</span></summary><ul>
 <li>Neon: la luminosità cala con la distanza stimata dal frattale, così i filamenti sottili brillano su fondo scuro.</li>
 <li>Steli: si misura quanto l'orbita passa vicino agli assi (trappola di Pickover); ne escono germogli e viticci.</li></ul></details>
+<details class="more"><summary><b>Fase dell'orbita</b><span>Colorare con gli angoli dell'orbita invece che con la velocità di fuga.</span></summary><ul>
+<li>Fase finale: all'istante di fuga si prende l'angolo θ di zₙ (da 0 a 2π) e lo si usa come posizione ciclica nella palette. Con Livelli = 2 restano due colori, secondo il segno di Im zₙ.</li>
+<li>Stripe average (Härkönen): lungo l'orbita si media 0,5 + 0,5·sin(s·θ), con θ angolo di ogni punto; s è il numero di strisce per giro. Il valore è interpolato fra l'iterazione precedente e quella finale con la parte frazionaria dell'iterazione liscia, per evitare le bande.</li>
+<li>Fase media (sperimentale): media circolare degli angoli dell'orbita, senza interpolazione.</li>
+<li>Il peso α mescola fase (α = 1) e iterazioni (α = 0) nello spazio OKLab. Vale solo per l'esterno: l'interno resta governato da «Interno». Il raggio di fuga è 1000 per ogni fonte.</li></ul></details>
 <details class="more"><summary><b>Interno ed equalizzato</b><span>Colorare anche i punti che non scappano mai.</span></summary><ul>
 <li>Trappola punto e croce colorano l'interno con la distanza minima dell'orbita da 0 o dagli assi.</li>
 <li>Equalizzato distribuisce i colori in base all'istogramma dell'immagine, così nessuna tinta domina.</li></ul></details>
@@ -269,8 +282,11 @@ a{color:inherit}
 function computeBand(J){
   var W=J.W, r0=J.r0, r1=J.r1, n=(r1-r0)*W;
   var mu=new Float32Array(n), de=new Float32Array(n), tp=new Float32Array(n), tx=new Float32Array(n), kind=new Uint8Array(n);
+  // 1.10.0: ph = fonte di fase per pixel (Float32, in [0,1]); 0 per i punti interni e quando la fonte e' 'Iterazioni'.
+  // Per J.phm: 0 = nessuna (ph resta 0), 1 = fase finale, 2 = stripe average, 3 = fase media. Convenzione: u = theta/(2*pi) in [0,1), theta in [0,2*pi).
+  var ph=new Float32Array(n), phm=(J.phm|0), phs=(J.phs>0?J.phs:5), TWOPI=2*Math.PI;
   var fam=J.fam, maxIt=J.maxIt, s=J.s, x0=J.x0, y0=J.y0, d=J.d|0, cr=J.cr, ci=J.ci;
-  var R2=1e6, lnR=Math.log(1000), lnd=Math.log(d>1?d:2);
+  var R2=1e6, lnR=Math.log(1000), lnd=Math.log(d>1?d:2); // bailout R=1000 (R2=1e6): invariato per tutte le fonti, e gia' >= 100 come richiesto dai modi di fase
   var k=0, PR=J.pr, PT=J.pt; // 1.9.0: PR = uscita opzionale per punto (n,zx,zy,mu,de,root), PT = override [z0x,z0y,cx,cy]; assenti = comportamento invariato
   if(fam<=4||fam===8||fam===9||fam===10||fam===11){
     for(var j=r0;j<r1;j++){
@@ -285,6 +301,7 @@ function computeBand(J){
         var pzx=0,pzy=0,pdx=0,pdy=0;
         var mtp=1e30,mtx=1e30,it=0,esc=false,szx=zx,szy=zy,per=8,pc=0,r2=zx*zx+zy*zy;
         var prevx=zx,prevy=zy;
+        var pSum=0,pCnt=0,pLast=0,pSS=0,pSC=0; // 1.10.0: accumulatori di fase (usati solo se phm>=2)
         for(it=0;it<maxIt;it++){
           var nx,ny;
           if(fam<=1){
@@ -391,6 +408,10 @@ function computeBand(J){
           r2=zx*zx+zy*zy;
           var az=Math.sqrt(r2); if(az<mtp)mtp=az;
           var m2=Math.min(Math.abs(zx),Math.abs(zy)); if(m2<mtx)mtx=m2;
+          if(phm>=2&&it>=2&&az>0){ // 1.10.0: si saltano z1 e z2 (it=0,1); l'ultimo z_n, quello della fuga, e' incluso
+            if(phm===2){pLast=0.5+0.5*Math.sin(phs*Math.atan2(zy,zx));pSum+=pLast;pCnt++;}
+            else{pSC+=zx/az;pSS+=zy/az;pCnt++;} // media circolare: somma dei versori, senza trigonometria
+          }
           if(fam===10){if(zx>50){esc=true;break;}}
           else if(fam===11){if(Math.abs(zy)>50){esc=true;break;}}
           else if(r2>R2){esc=true;break;}
@@ -419,6 +440,23 @@ function computeBand(J){
             if(m<0)m=0;
           }
           mu[k]=m; kind[k]=0; if(PR)PR[k*6+3]=m;
+          if(phm===1){ // fase finale: theta = atan2(Im z_n, Re z_n) all'istante di fuga, mappato in [0,1)
+            var th=Math.atan2(zy,zx); if(th<0)th+=TWOPI; var fu=Math.fround(th/TWOPI); ph[k]=(fu>=1||!(fu>=0))?0:fu;
+          } else if(phm===2){
+            // stripe average (Harkonen). A_n = media di a_j (j=3..n); A_(n-1) = (somma - a_n)/(conteggio - 1).
+            // Interpolazione: ph = f*A_n + (1-f)*A_(n-1), con f = clamp(m-it, 0, 1) = 1 - log_d(ln|z_n| / ln R)  (parte frazionaria dell'iterazione liscia).
+            // f=1 (|z_n|=R) da A_n; f=0 (|z_n|=R^d) da A_(n-1): e' lo stesso valore del punto che esce un'iterazione dopo -> nessuna banda.
+            var A;
+            if(pCnt<1)A=0.5; // fuga troppo precoce: media neutra
+            else {
+              var An=pSum/pCnt, ff=m-it; if(!(ff>0))ff=0; else if(ff>1)ff=1;
+              A=(pCnt>1)?ff*An+(1-ff)*((pSum-pLast)/(pCnt-1)):An;
+            }
+            ph[k]=(A>=0&&A<=1)?A:0.5;
+          } else if(phm===3){
+            // fase media (sperimentale): media circolare atan2(sum sin, sum cos) degli angoli theta_k, k>=3
+            var tm=(pCnt>0)?Math.atan2(pSS,pSC):0; if(tm<0)tm+=TWOPI; var fm=Math.fround(tm/TWOPI); ph[k]=(fm>=1||!(fm>=0))?0:fm;
+          }
           if(fam<=1||fam===4||fam===8||fam===10||fam===11){var dm=Math.sqrt(dx*dx+dy*dy); var dv1=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9;de[k]=dv1;if(PR)PR[k*6+4]=dv1;} else {de[k]=-1;if(PR)PR[k*6+4]=-1;}
         } else {mu[k]=0;de[k]=0;kind[k]=1;}
       }
@@ -539,7 +577,7 @@ function computeBand(J){
     }
   }
 
-  return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
+  return {mu:mu,de:de,tp:tp,tx:tx,kind:kind,ph:ph};
 }
 // 1.9.0 - valutatore puntuale: stessa funzione computeBand su un solo punto (parita' per costruzione).
 // fam = codice numerico; P = parametri di job (vedi famJobParams); (z0x,z0y) = partenza, (cx,cy) = parametro c gia' risolti.
@@ -549,7 +587,7 @@ function evalPoint(fam,P,z0x,z0y,cx,cy,maxIt){
   J.fam=fam;J.W=1;J.H=1;J.r0=0;J.r1=1;J.x0=0;J.y0=0;J.s=1;J.maxIt=maxIt|0;J.pt=[z0x,z0y,cx,cy];
   var pr=new Float64Array(6);J.pr=pr;
   var B=computeBand(J),zx=pr[1],zy=pr[2];
-  return {kind:B.kind[0],n:pr[0],mu:pr[3],zx:zx,zy:zy,mod:Math.sqrt(zx*zx+zy*zy),arg:Math.atan2(zy,zx),de:pr[4],root:pr[5]};
+  return {kind:B.kind[0],n:pr[0],mu:pr[3],zx:zx,zy:zy,mod:Math.sqrt(zx*zx+zy*zy),arg:Math.atan2(zy,zx),de:pr[4],root:pr[5],ph:B.ph[0]};
 }
 function computeMS(J){
   // Mariani-Silver: perimeter first; if all interior (kind===1) and fillFlat, fill block; else recurse to 4 or direct
@@ -573,9 +611,9 @@ function computeMS(J){
   for(var i=0;i<W;i++){if(top.kind[i]!==1||bot.kind[i]!==1){allIn=false;break;}}
   if(allIn)for(var j=0;j<left.kind.length;j++){if(left.kind[j]!==1||right.kind[j]!==1){allIn=false;break;}}
   if(allIn&&fillFlat){
-    var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n);
-    for(var p=0;p<n;p++){kind[p]=1;tp[p]=1e-6;tx[p]=1e-6;}
-    return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
+    var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n),ph=new Float32Array(n);
+    for(var p=0;p<n;p++){kind[p]=1;tp[p]=1e-6;tx[p]=1e-6;} // interno: ph resta 0 (stessa convenzione di computeBand)
+    return {mu:mu,de:de,tp:tp,tx:tx,kind:kind,ph:ph};
   }
   // recurse 4 quadrants
   var hw=W>>1,hh=H>>1;
@@ -585,7 +623,7 @@ function computeMS(J){
   var q3=computeMS(Object.assign({},J,{W:hw,H:H-hh,x0:x0,y0:y0-hh*s,ms:true,fillFlat:fillFlat}));
   var q4=computeMS(Object.assign({},J,{W:W-hw,H:H-hh,x0:x0+hw*s,y0:y0-hh*s,ms:true,fillFlat:fillFlat}));
   // merge
-  var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n);
+  var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n),ph=new Float32Array(n);
   function blit(src,ox,oy,sw,sh){
     for(var jj=0;jj<sh;jj++){
       var so=jj*sw, do_=(oy+jj)*W+ox;
@@ -594,10 +632,11 @@ function computeMS(J){
       tp.set(src.tp.subarray(so,so+sw),do_);
       tx.set(src.tx.subarray(so,so+sw),do_);
       kind.set(src.kind.subarray(so,so+sw),do_);
+      if(src.ph)ph.set(src.ph.subarray(so,so+sw),do_);
     }
   }
   blit(q1,0,0,hw,hh);blit(q2,hw,0,W-hw,hh);blit(q3,0,hh,hw,H-hh);blit(q4,hw,hh,W-hw,H-hh);
-  return {mu:mu,de:de,tp:tp,tx:tx,kind:kind};
+  return {mu:mu,de:de,tp:tp,tx:tx,kind:kind,ph:ph};
 }
 function computeIFS(J){
   var W=J.W,H=J.H,cnt=new Float32Array(W*H),col=new Float32Array(W*H);
@@ -641,7 +680,7 @@ if(typeof importScripts==='function'){
     if(J.type==='ifs'||J.type==='buddha'){var R=J.type==='ifs'?computeIFS(J):computeBuddha(J); self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col},[R.cnt.buffer,R.col.buffer]);}
     else {
       var B=J.ms?computeMS(J):computeBand(J);
-      self.postMessage({id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,mu:B.mu,de:B.de,tp:B.tp,tx:B.tx,kind:B.kind},[B.mu.buffer,B.de.buffer,B.tp.buffer,B.tx.buffer,B.kind.buffer]);
+      self.postMessage({id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,mu:B.mu,de:B.de,tp:B.tp,tx:B.tx,kind:B.kind,ph:B.ph},[B.mu.buffer,B.de.buffer,B.tp.buffer,B.tx.buffer,B.kind.buffer,B.ph.buffer]);
     }
   };
 }
@@ -692,7 +731,13 @@ const FAM={
    {name:'Dendriti vicino a c = i',view:{cx:-0.0452,cy:0.9868,span:0.03},p:{d:2},style:'neon'},
    {name:'Mini-Mandelbrot sull\'asse',view:{cx:-1.7549,cy:0,span:0.05},p:{d:2},style:'smeraldo'},
    {name:'Multibrot d = 3',view:{cx:0,cy:0,span:2.9},p:{d:3}},
-   {name:'Multibrot d = 5',view:{cx:0,cy:0,span:2.3},p:{d:5},style:'scarabeo'}]},
+   {name:'Multibrot d = 5',view:{cx:0,cy:0,span:2.3},p:{d:5},style:'scarabeo'},
+   {name:'Fase finale: raggi esterni',view:{cx:-0.6,cy:0,span:2.7},p:{d:2},style:'scarabeo',src:'final',
+    desc:'Il colore è l\'angolo θ di zₙ nell\'istante di fuga, da 0 a 2π, usato come posizione ciclica nella palette.\nI raggi che si aprono dal frattale sono le direzioni di fuga; i salti a ellisse separano i punti che escono a iterazioni diverse.'},
+   {name:'Fase binaria (decomposizione binaria)',view:{cx:-0.6,cy:0,span:2.7},p:{d:2},style:'classico',src:'final',levels:2,
+    desc:'Solo il segno di Im zₙ alla fuga: due colori.\nLe cellette seguono i raggi esterni e i gusci del tempo di fuga: è la decomposizione binaria del Mandelbrot.'},
+   {name:'Stripe average: valle dei cavallucci marini',view:{cx:-0.7453,cy:0.1127,span:0.012},p:{d:2},style:'pavone',src:'stripe',stripeS:5,
+    desc:'Lungo l\'orbita si media 0,5 + 0,5·sin(s·θ): l\'angolo θ di ogni passo disegna strisce, con s = 5.\nL\'interpolazione con la parte frazionaria dell\'iterazione elimina le bande. Prova altri valori di s.'}]},
  julia:{name:'Julia',code:1,caps:CAP({phase:true}),axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:400,params:['d','cr','ci'],
   txt:'Qui c è fisso e varia il punto di partenza z. Se c appartiene al Mandelbrot l\'insieme di Julia è connesso, altrimenti è polvere sparsa. Con c = i è una dendrite pura: connessa, senza interno, tutta rami.',
   presets:[
@@ -704,7 +749,9 @@ const FAM={
    {name:'Disco di Siegel',p:{d:2,cr:-0.390541,ci:-0.586788},style:'pavone'},
    {name:'Fulmini (−0,4 + 0,6i)',p:{d:2,cr:-0.4,ci:0.6},style:'neon'},
    {name:'Germogli (0,285 + 0,01i)',p:{d:2,cr:0.285,ci:0.01},style:'smeraldo'},
-   {name:'Cubica (d = 3, c = 0,4 + 0,5i)',p:{d:3,cr:0.4,ci:0.5},style:'scarabeo'}]},
+   {name:'Cubica (d = 3, c = 0,4 + 0,5i)',p:{d:3,cr:0.4,ci:0.5},style:'scarabeo'},
+   {name:'Stripe average (neuroni)',p:{d:2,cr:-0.7269,ci:0.1889},style:'oro',src:'stripe',stripeS:5,
+    desc:'Stesso metodo del Mandelbrot, ma con c fisso e il punto di partenza che varia.\nLe strisce seguono le linee di campo dell\'insieme di Julia. Prova s = 2 oppure s = 12 per cambiare la trama.'}]},
  ship:{name:'Burning Ship e varianti',code:2,caps:CAP({phase:true}),axes:'complex',de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
   txt:'Come il Mandelbrot, ma con valori assoluti dentro il passo: Burning Ship (|x|, |y|)², Celtic |Re z²|, Heart (|x| + iy)², Perpendicolare (|x| − iy)², Nave perpendicolare. Le funzioni non sono analitiche e nascono forme spigolose. L\'interruttore Julia fissa c e fa variare il punto di partenza.',
   presets:[
@@ -833,7 +880,9 @@ const STYLES={
 /* ---------- stato ---------- */
 const S={fam:'mandel',P:{},iterBase:{},auto:true,qual:'normale',
  pal:'pavone',mode:'smooth',inmode:'flat',incol:'#000000',dens:1,off:0,glow:1,
- light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false,grid:false};
+ light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false,grid:false,
+ src:'iter',alpha:1,stripeS:5,levels:0}; // 1.10.0: fonte colore ('iter'|'final'|'stripe'|'mean'), peso alpha (1 = solo fase), frequenza stripe s, livelli (0 = continuo, 2 = binario)
+const PHM={final:1,stripe:2,mean:3};
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0};S.iterBase[f]=FAM[f].iter;}
 
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
@@ -895,11 +944,45 @@ function buildLUT(){
  }
  const st=[];for(let i=0;i<=16;i++){const k=Math.floor(i/16*(LUTN-1))*3;st.push(`rgb(${LUT[k]*255|0},${LUT[k+1]*255|0},${LUT[k+2]*255|0})`);}
  $('palprev').style.background=`linear-gradient(90deg,${st.join(',')})`;
+ try{buildLAB();}catch(e){}
  try{legendSync();}catch(e){}
 }
 
+/* ---------- 1.10.0: fonte di fase (helper di colore) ---------- */
+const LUTLAB=new Float32Array(LUTN*3);
+function buildLAB(){ // LUT in OKLab, stessa indicizzazione di LUT: serve per mescolare due posizioni della stessa palette
+ const lin=v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4);
+ for(let i=0;i<LUTN;i++){
+  const R=lin(LUT[i*3]),G=lin(LUT[i*3+1]),B=lin(LUT[i*3+2]);
+  const l=Math.cbrt(0.4122214708*R+0.5363325363*G+0.0514459929*B),m=Math.cbrt(0.2119034982*R+0.6806995451*G+0.1073969566*B),q=Math.cbrt(0.0883024619*R+0.2817188376*G+0.6299787005*B);
+  LUTLAB[i*3]=0.2104542553*l+0.7936177850*m-0.0040720468*q;
+  LUTLAB[i*3+1]=1.9779984951*l-2.4285922050*m+0.4505937099*q;
+  LUTLAB[i*3+2]=0.0259040371*l+0.7827717662*m-0.8086757660*q;
+ }
+}
+function lutIdx3(t){let li=((t%1)+1)%1*LUTN|0;if(li>=LUTN)li=LUTN-1;return li*3;}
+// posizione LUT (senza fase 'off') della fonte di fase per il valore ph in [0,1]. Fasi angolari: cicli interi (nessun taglio su theta = 0);
+// stripe average: la densita' scala l'intervallo [0,1] della media; livelli 2: due colori fissi (meta' superiore/inferiore del piano di Im z).
+function phasePos(u,dens){
+ if(S.src==='final'&&S.levels===2)return u<0.5?0.25:0.75;
+ if(S.src==='stripe')return dens*u;
+ return Math.max(1,Math.round(dens))*u;
+}
+// colore (r,g,b in 0..1, senza luminosita') mescolando in OKLab due posizioni della stessa LUT: tIt (iterazioni) e tPh (fase), peso al su tPh
+function phaseColor(tIt,tPh,al,out){
+ const a=lutIdx3(tIt),b=lutIdx3(tPh);
+ if(al>=1){out[0]=LUT[b];out[1]=LUT[b+1];out[2]=LUT[b+2];return;}
+ if(al<=0){out[0]=LUT[a];out[1]=LUT[a+1];out[2]=LUT[a+2];return;}
+ const L=LUTLAB[a]+(LUTLAB[b]-LUTLAB[a])*al,A=LUTLAB[a+1]+(LUTLAB[b+1]-LUTLAB[a+1])*al,B=LUTLAB[a+2]+(LUTLAB[b+2]-LUTLAB[a+2])*al;
+ const l=L+0.3963377774*A+0.2158037573*B,m=L-0.1055613458*A-0.0638541728*B,q=L-0.0894841775*A-1.2914855480*B,l3=l*l*l,m3=m*m*m,q3=q*q*q;
+ const enc=v=>{v=v<0?0:v>1?1:v;return v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055;};
+ out[0]=enc(4.0767416621*l3-3.3077115913*m3+0.2309699292*q3);
+ out[1]=enc(-1.2684380046*l3+2.6097574011*m3-0.3413193965*q3);
+ out[2]=enc(-0.0041960863*l3-0.7034186147*m3+1.7076147010*q3);
+}
+
 /* ---------- buffer e colorazione ---------- */
-function newBuf(W,H){const n=W*H;return {W,H,mu:new Float32Array(n),de:new Float32Array(n),tp:new Float32Array(n),tx:new Float32Array(n),kind:new Uint8Array(n),done:new Uint8Array(n),h:new Float32Array(n),t:new Float32Array(n),b:new Float32Array(n),fl:new Uint8Array(n),img:null,cv:null,cdf:null,max:0,s:1};}
+function newBuf(W,H){const n=W*H;return {W,H,mu:new Float32Array(n),de:new Float32Array(n),tp:new Float32Array(n),tx:new Float32Array(n),kind:new Uint8Array(n),ph:new Float32Array(n),done:new Uint8Array(n),h:new Float32Array(n),t:new Float32Array(n),b:new Float32Array(n),fl:new Uint8Array(n),img:null,cv:null,cdf:null,max:0,s:1};}
 function buildCDF(B){
  const NB=2048, hgm=new Float64Array(NB); let lo=1e30,hi=-1e30,cnt=0;
  const n=B.W*B.H;
@@ -920,6 +1003,8 @@ function colorize(B){
 
  let lmax=1; if(isIFS){lmax=Math.log1p(B.max||1);}
  const cdf=B.cdf;
+ // 1.10.0: con fonte 'Iterazioni' (o famiglie senza caps.phase) PHON e' falso e il percorso e' identico al precedente
+ const PHON=!!(B.ph&&!isIFS&&!isNewton&&FAM[fam].caps&&FAM[fam].caps.phase&&S.src&&S.src!=='iter'),PHA=Math.min(1,Math.max(0,+S.alpha)),phB=B.ph,pc=PHON?new Float32Array(3):null;
  for(let j=0;j<H;j++){
   for(let i=0;i<W;i++){
    const p=j*W+i; if(!B.done[p])continue;
@@ -995,7 +1080,8 @@ function colorize(B){
     tt+=irid*(1-nz);
     let li=((tt%1)+1)%1*LUTN|0; if(li>=LUTN)li=LUTN-1; li*=3;
     const br=b[p];
-    const cr0=LUT[li]*br,cg0=LUT[li+1]*br,cb0=LUT[li+2]*br;
+    let cr0=LUT[li]*br,cg0=LUT[li+1]*br,cb0=LUT[li+2]*br;
+    if(PHON&&kind[p]===0){phaseColor(tt,off+phasePos(phB[p],dens)+irid*(1-nz),PHA,pc);cr0=pc[0]*br;cg0=pc[1]*br;cb0=pc[2]*br;} // fonte di fase (solo esterno)
     if(L>0){
      const dif=Math.max(0,nx*lx+ny*ly+nz*lz);
      const sp=Math.pow(Math.max(0,nx*hx+ny*hy+nz*hz),shin);
@@ -1006,6 +1092,7 @@ function colorize(B){
    } else {
     let li=((tt%1)+1)%1*LUTN|0; if(li>=LUTN)li=LUTN-1; li*=3;
     const br=b[p];r=LUT[li]*br;g=LUT[li+1]*br;bl=LUT[li+2]*br;
+    if(PHON&&kind[p]===0){phaseColor(tt,off+phasePos(phB[p],dens),PHA,pc);r=pc[0]*br;g=pc[1]*br;bl=pc[2]*br;}
    }
    const dn=(52.9829189*((0.06711056*i+0.00583715*j)%1))%1-0.5;D[q]=Math.min(255,r*255+dn);D[q+1]=Math.min(255,g*255+dn);D[q+2]=Math.min(255,bl*255+dn);D[q+3]=255;
   }
@@ -1064,6 +1151,7 @@ const ROOTS_CACHE={};
 function famJobParams(key,P,nw){
  const f=FAM[key],J={fam:f.code,d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai,v:P.v,jul:P.jul};
  if(key==='mandel'){J.cr=0;J.ci=0;}
+ if(f.caps&&f.caps.phase&&S.src&&S.src!=='iter'){J.phm=PHM[S.src]|0;J.phs=S.stripeS>0?S.stripeS|0:5;} // 1.10.0: fonte di fase (bailout invariato: R=1000, gia' >= 100)
  if(key==='newton'){
   const pp=POLYS[P.poly];
   if(pp.c){const c=pp.c;J.co=new Float64Array(c.length*2);c.forEach((v,i)=>J.co[2*i]=v);const r=ROOTS_CACHE[P.poly]||(ROOTS_CACHE[P.poly]=findRoots(c));J.roots=new Float64Array(r.flat());J.trans=-1;}
@@ -1118,7 +1206,17 @@ function pointLines(key,r,N){
  const hasMu=k===0||(k>=2&&k<253);
  const md=r.mod,ms=!isFinite(md)?'—':(md>1e6?'log10|zₙ| = '+fmt(Math.log10(md),3):'|zₙ| = '+fmtG(md));
  const as=(!isFinite(md)||md===0)?'—':fmt(r.arg,4)+' rad ('+fmt(r.arg*180/Math.PI,2)+'°)';
- return [st,'n = '+r.n+' · μ = '+(hasMu?fmt(r.mu,4):'—'),ms+' · arg zₙ = '+as];
+ const L=[st,'n = '+r.n+' · μ = '+(hasMu?fmt(r.mu,4):'—'),ms+' · arg zₙ = '+as],pl=phaseLine(key,r);
+ if(pl)L.push(pl);
+ return L;
+}
+// 1.10.0: riga con il valore della fonte di fase (solo punti esterni, famiglie con caps.phase, fonte diversa da «Iterazioni»)
+function phaseLine(key,r){
+ const F=FAM[key];if(!F||!F.caps||!F.caps.phase||!S.src||S.src==='iter'||r.kind!==0||r.ph==null||!isFinite(r.ph))return '';
+ const u=r.ph;
+ if(S.src==='stripe')return 'stripe average A = '+fmt(u,4)+' (s = '+S.stripeS+')';
+ if(S.src==='mean')return 'fase media θ̄ = '+fmt(u*2*Math.PI,4)+' rad (u = '+fmt(u,4)+', sperimentale)';
+ return 'fase finale θ = '+fmt(u*2*Math.PI,4)+' rad (u = '+fmt(u,4)+')'+(S.levels===2?' · livello '+(u<0.5?'Im zₙ ≥ 0':'Im zₙ < 0'):'');
 }
 // testo del cursore/marker per il punto (x,y) del piano; null se la famiglia non supporta evalPoint o in caso di errore
 function planeText(vp,x,y,label){
@@ -1625,6 +1723,7 @@ class Viewport{
    B.tp.set(R.tp.subarray(src,src+tw),dst);
    B.tx.set(R.tx.subarray(src,src+tw),dst);
    B.kind.set(R.kind.subarray(src,src+tw),dst);
+   if(R.ph)B.ph.set(R.ph.subarray(src,src+tw),dst);
    for(let ii=0;ii<tw;ii++)B.done[dst+ii]=1;
   }
   if(R.pass===0){if(--cur.left0===0){buildCDF(cur.pre);colorize(cur.pre);this.draw();}}
@@ -2123,6 +2222,7 @@ function buildParams(){
  syncGridUI();
  const ps=$('preset');ps.innerHTML='<option value="-1">— scegli un preset —</option>';
  FAM[S.fam].presets.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;ps.appendChild(o);});
+ showPresetDesc('');
 }
 /* 1.9.0 - visibilità dei controlli per famiglia: mostra/nasconde (display) gli elementi con data-cap="cap1 cap2" in base a FAM[S.fam].caps */
 function capOK(cap,F){const c=F&&F.caps;if(!c)return true;if(cap==='grid')return c.grid!=='none';return c[cap]!==false;}
@@ -2150,13 +2250,17 @@ function applyStyle(k){
  Object.assign(S,{pal:st.pal,mode:st.mode,inmode:st.inmode,dens:st.dens,light:st.light,relief:st.relief,shin:st.shin,irid:st.irid,off:0});
  $('style').value=k;syncColorUI();buildLUT();
 }
+function showPresetDesc(t){const e=$('presetdesc');if(!e)return;e.textContent=t||'';e.style.display=t?'':'none';}
 function applyPreset(i){
  const p=FAM[S.fam].presets[i];if(!p)return;pushHist();S.nw={};
+ if(p.src){S.src=p.src;S.alpha=p.alpha!=null?p.alpha:1;S.stripeS=p.stripeS||5;S.levels=p.levels===2?2:0;} // 1.10.0: solo i preset di fase toccano la fonte colore
  if(p.p)Object.assign(S.P[S.fam],p.p);
  if(S.fam==='ifs'){buildParams();fitIFS();}
  else {const pv=p.view||FAM[S.fam].view;VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});buildParams();} // il preset vale per tutte le viste
  $('preset').value=i;
  if(p.style)applyStyle(p.style);
+ try{syncSrcUI();}catch(e){}
+ showPresetDesc(p.desc||'');
  render();
 }
 function juliaFrom(x,y){
@@ -2169,6 +2273,7 @@ function syncColorUI(){
  $('pal').value=S.pal;$('mode').value=S.mode;$('inmode').value=S.inmode;$('incol').value=S.incol;
  colRows.concat(lightRows).forEach(r=>r._show());
  $('custom').style.display=S.pal==='custom'?'flex':'none';
+ try{syncSrcUI();}catch(e){}
 }
 function buildColorUI(){
  const fs=$('fam');for(const f in FAM){const o=document.createElement('option');o.value=f;o.textContent=FAM[f].name;fs.appendChild(o);}
@@ -2200,8 +2305,30 @@ function buildColorUI(){
  mkc(lc,lightRows,'Rilievo','relief',0.5,30,{log:true});
  mkc(lc,lightRows,'Lucentezza','shin',2,200,{log:true});
  mkc(lc,lightRows,'Cangiante','irid',0,0.6);
+ // 1.10.0: fonte colore (sotto-controlli mostrati secondo la fonte attiva da syncSrcUI)
+ const sc=$('srcctl');
+ if(sc){
+  const rowLev=selRow(sc,'Livelli',['Continuo','2 (binario)'],()=>S.levels===2?1:0,v=>{S.levels=v===1?2:0;recolor();});
+  const rowS=ctlRow(sc,{label:'Frequenza s',min:1,max:32,step:1,int:true,dec:0,get:()=>S.stripeS,set:v=>{S.stripeS=Math.max(1,Math.min(32,Math.round(v)));},done:()=>render()});
+  const rowA=ctlRow(sc,{label:'Peso α',min:0,max:1,step:0.01,dec:2,get:()=>S.alpha,set:v=>{S.alpha=Math.max(0,Math.min(1,+v));},live:rc});
+  const note=document.createElement('p');note.className='srcnote';sc.appendChild(note);
+  SRCUI={rowLev,rowS,rowA,note};
+  $('src').addEventListener('change',e=>{const v=e.target.value;S.src=(v==='final'||v==='stripe'||v==='mean')?v:'iter';syncSrcUI();render();});
+  syncSrcUI();
+ }
 }
-const APP_VERSION='1.9.5',APP_VERSION_SHORT='1.9.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+let SRCUI=null;
+const SRC_NOTE={final:'Colore dall\'angolo di zₙ alla fuga: mostra i raggi esterni. Livelli 2: solo il segno di Im zₙ.',stripe:'Media di 0,5 + 0,5·sin(s·θ) lungo l\'orbita: s intero, così la funzione è continua sul taglio θ = ±π.',mean:'Sperimentale: media circolare degli angoli dell\'orbita. Può mostrare discontinuità e rumore; nessuna interpolazione.'};
+function syncSrcUI(){
+ const u=SRCUI;if(!u)return;
+ const on=S.src!=='iter';
+ $('src').value=S.src;
+ u.rowLev.style.display=S.src==='final'?'':'none';u.rowLev.querySelector('select').value=S.levels===2?'1':'0';
+ u.rowS.style.display=S.src==='stripe'?'':'none';u.rowS._show();
+ u.rowA.style.display=on?'':'none';u.rowA._show();
+ u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
+}
+const APP_VERSION='1.10.0',APP_VERSION_SHORT='1.10.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -2259,6 +2386,13 @@ function getState(){
  if(S.pal==='custom')st.custom=PALS.custom.c.slice();
  if(fam==='newton'){const nb=nwExport();if(nb)st.newton=nb;}
  if(S.grid&&gridAvail())st.grid=true; // omesso se falso
+ // 1.10.0: campi opzionali della fonte colore, omessi se coincidono con i valori predefiniti (iter, alpha 1, stripeS 5, livelli continuo)
+ if(FAM[fam].caps&&FAM[fam].caps.phase&&S.src&&S.src!=='iter'){
+  st.src=S.src;
+  if(+S.alpha!==1)st.alpha=Math.round(+S.alpha*1000)/1000;
+  if(S.src==='stripe'&&S.stripeS!==5)st.stripeS=S.stripeS;
+  if(S.src==='final'&&S.levels===2)st.levels=2;
+ }
  return st;
 }
 function clamp(v,lo,hi){v=+v;if(!isFinite(v))return lo;return Math.min(hi,Math.max(lo,v));}
@@ -2316,17 +2450,23 @@ function applyState(obj){
  const shin=clamp(obj.shin!=null?obj.shin:S.shin,2,200);
  const irid=clamp(obj.irid!=null?obj.irid:S.irid,0,0.6);
  const grid=obj.grid===true&&!!GRID_LAB[famAxes(fam)]; // assente = spenta
+ const capPh=!!(FAM[fam].caps&&FAM[fam].caps.phase); // 1.10.0: campi assenti = valori predefiniti; ignorati se la famiglia non ha fase
+ const srcN=(capPh&&(obj.src==='final'||obj.src==='stripe'||obj.src==='mean'))?obj.src:'iter';
+ const alphaN=(srcN!=='iter'&&obj.alpha!=null)?clamp(obj.alpha,0,1):1;
+ const stripeN=(srcN==='stripe'&&obj.stripeS!=null)?Math.round(clamp(obj.stripeS,1,32)):5;
+ const levelsN=(srcN==='final'&&(obj.levels===2||obj.levels==='2'))?2:0;
  // applica
  pushHist();fvSave();
  S.P[fam]=P; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
  S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
  S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid; S.grid=grid;
+ S.src=srcN; S.alpha=alphaN; S.stripeS=stripeN; S.levels=levelsN;
  setViews(specs,actId);
  setFam(fam,true); // viste già impostate
  if(fam==='ifs')setViews(specs,actId); // non lasciare che fitIFS sovrascriva le viste serializzate
  $('fam').value=fam; $('qual').value=qual; $('auto').checked=auto;
 
- $('style').value=''; $('preset').value='-1';
+ $('style').value=''; $('preset').value='-1'; showPresetDesc('');
  // aggiorna color inputs custom
  if(pal==='custom'){const inps=$('custom').querySelectorAll('input[type=color]');PALS.custom.c.forEach((c,i)=>{if(inps[i])inps[i].value=c;});}
  syncColorUI(); buildLUT();
@@ -2458,6 +2598,7 @@ function legendModel(){
  try{N=Math.max(1,curIter())|0;}catch(e){N=Math.max(1,S.iterBase[S.fam]|0);}
  if(c.escape===false)return {kind:'none',N,nr:1,F};
  if(c.newtonThresholds){const pp=POLYS[S.P.newton.poly];return {kind:'newton',N,nr:pp&&pp.c?pp.c.length-1:8,F};}
+ if(c.phase&&S.src&&S.src!=='iter')return {kind:'phase',src:S.src,N,nr:1,F}; // 1.10.0
  return {kind:S.mode==='equal'?'pct':'mu',N,nr:1,F};
 }
 function legendLUT(t){let li=((t%1)+1)%1*LUTN|0;if(li>=LUTN)li=LUTN-1;return li*3;}
@@ -2472,6 +2613,7 @@ function legendDraw(m){
   if(m.kind==='mu'){t=off+dens*0.12*Math.sqrt(u*m.N);}
   else if(m.kind==='pct'){t=off+dens*u;}
   else if(m.kind==='newton'){const mu=u*m.N;t=off+r/nr+dens*0.03*mu;br=0.3+0.7*Math.exp(-0.06*mu);}
+  else if(m.kind==='phase'){t=off+phasePos(u,dens);}
   else{t=off+dens*(S.fam==='buddha'?0.75:1)*u;}
   const k=legendLUT(t);
   for(let y=r*sh;y<(r+1)*sh;y++){const q=(y*W+x)*4;D[q]=LUT[k]*br*255;D[q+1]=LUT[k+1]*br*255;D[q+2]=LUT[k+2]*br*255;D[q+3]=255;}
@@ -2483,6 +2625,11 @@ function legendTicks(m){
  if(m.kind==='none')return;
  const dens=+S.dens||1,N=m.N,T=[];
  const add=(pos,txt,cls,title)=>{const e=document.createElement('span');e.className='lgt'+(cls?' '+cls:'');e.style.left=(pos*100)+'%';if(txt)e.textContent=txt;if(title)e.title=title;box.appendChild(e);};
+ if(m.kind==='phase'){ // 1.10.0: asse della fonte di fase, angolo 0–2π oppure [0, 1] per lo stripe average
+  if(m.src==='stripe'){add(0,'0','l','Media delle strisce A = 0');add(0.5,'0,5','','A = 0,5');add(1,'1','r','A = 1');}
+  else{add(0,'0','l','θ = 0');add(0.25,'π/2','m','θ = π/2');add(0.5,'π','','θ = π');add(0.75,'3π/2','m','θ = 3π/2');add(1,'2π','r','θ = 2π (uguale a 0)');}
+  return;
+ }
  add(0,m.kind==='pct'?'0 %':'0','l','Inizio della scala');
  // periodo del ciclo colore: t torna a un multiplo di 1 quando dens·g(μ) = 1
  let w=[];
@@ -2512,6 +2659,12 @@ function legendCaption(m){
  if(m.kind==='none')t=f==='buddha'?'Colore secondo la lunghezza delle orbite, luminosità secondo la densità dei punti. Nessuna scala numerica.':'Colore secondo la densità dei punti e le trasformazioni usate. Nessuna scala numerica.';
  else if(m.kind==='pct')t='Asse: percentile di μ tra i punti che escono nella vista (modo equalizzato), con densità e fase correnti.';
  else if(m.kind==='newton')t='Asse: μ, iterazioni continue (0 → maxIt); una fascia per radice. Luminosità calante con μ.';
+ else if(m.kind==='phase'){
+  if(m.src==='stripe')t='Asse: media delle strisce A da 0 a 1 (stripe average, s = '+S.stripeS+'), interpolata con la parte frazionaria dell\'iterazione.';
+  else if(m.src==='mean')t='Asse: fase media θ̄ da 0 a 2π (media circolare degli angoli dell\'orbita, sperimentale).';
+  else t='Asse: angolo finale θ = arg zₙ da 0 a 2π, posizione ciclica nella palette.'+(S.levels===2?' Livelli 2: due colori secondo il segno di Im zₙ.':'');
+  if(+S.alpha<1)t+=' Con peso α = '+fmt(+S.alpha,2)+' il colore mescola questa fonte con le iterazioni (OKLab): la barra mostra solo la fonte di fase.';
+ }
  else t='Asse: μ, iterazioni continue (0 → maxIt), con densità, fase e ciclicità correnti.'+((S.mode==='neon'||S.mode==='stalk')?' Mostra la rampa di base.':'');
  if(m.kind!=='none')t+=' Senza luce e rilievo.';
  return t;
@@ -2520,7 +2673,8 @@ function legendTextHtml(m){
  if(m.kind==='none')return '';
  const N=m.N,c=m.F.caps||{},f=S.fam,conv=m.kind==='newton'||f==='nova';
  let h='<p><b>Perché il calcolo si ferma.</b> Ogni punto viene iterato al massimo '+N+' volte (maxIt) per limitare il tempo di elaborazione, non perché sia davvero «stabile». Un punto colorato come interno è soltanto «'+(conv?'non converge':'non diverge')+' entro '+N+' iterazioni»: vicino al bordo potrebbe '+(conv?'convergere':'divergere')+' aumentando N (Iterazioni base).</p>';
- if(c.newtonThresholds)h+='<p><b>Come leggere i colori.</b> I bacini sono tutti colorati, una tinta per radice. Il colore interno (di norma nero) indica solo il timeout: nessuna convergenza entro '+N+' iterazioni. Tinte più cupe dentro un bacino sono convergenze lente, non timeout. Rosso e magenta, dove compaiono, segnano divergenza e singolarità.</p>';
+ if(m.kind==='phase')h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) rappresenta i punti che non divergono entro '+N+' iterazioni. All\'esterno le sfumature non indicano più la velocità di fuga ma la fonte di fase scelta (angolo o media delle strisce); i punti vicini nella palette hanno fase simile. Il rilievo resta calcolato dalle iterazioni.</p>';
+ else if(c.newtonThresholds)h+='<p><b>Come leggere i colori.</b> I bacini sono tutti colorati, una tinta per radice. Il colore interno (di norma nero) indica solo il timeout: nessuna convergenza entro '+N+' iterazioni. Tinte più cupe dentro un bacino sono convergenze lente, non timeout. Rosso e magenta, dove compaiono, segnano divergenza e singolarità.</p>';
  else if(f==='nova')h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) segna i punti che non convergono entro '+N+' iterazioni; fuori, le sfumature indicano la velocità di convergenza.</p>';
  else if(f==='mandel'||f==='julia')h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) rappresenta l\'interno: i punti che non divergono. La parte colorata esterna è il bacino di attrazione dell\'infinito e le sfumature indicano la velocità di fuga (μ più basso = fuga più rapida).</p>';
  else h+='<p><b>Come leggere i colori.</b> Il colore interno (di norma nero) rappresenta i punti che non escono entro '+N+' iterazioni; la parte colorata esterna è formata dai punti che escono e le sfumature indicano la velocità di fuga (μ più basso = fuga più rapida).</p>';
@@ -2556,7 +2710,7 @@ function legendFeed(r,vp,isMarker){
  if(!LG.cv)return;
  if(isMarker&&(vp!==AV||AV.hvC))return;
  const k=r.kind,hasMu=k===0||(k>=2&&k<253);
- if(hasMu){const m=legendModel();LG.last={mu:r.mu,inside:false,pct:m.kind==='pct'?legendPct(vp,r.mu):null};}
+ if(hasMu){const m=legendModel();LG.last={mu:r.mu,inside:false,pct:m.kind==='pct'?legendPct(vp,r.mu):null,ph:r.ph};}
  else if(k===1)LG.last={inside:true};
  else LG.last=null;
  legendPlace();
@@ -2570,7 +2724,8 @@ function legendPlace(){
  if(inn)inn.classList.toggle('hit',!!(L&&L.inside));
  if(!L||L.inside||LG.kind==='none'){mk.hidden=true;return;}
  let pos,txt;
- if(LG.kind==='pct'){if(L.pct==null){mk.hidden=true;return;}pos=L.pct;txt=fmt(100*L.pct,1)+' % (μ '+fmt(L.mu,2)+')';}
+ if(LG.kind==='phase'){if(L.ph==null||!isFinite(L.ph)){mk.hidden=true;return;}pos=L.ph;txt=S.src==='stripe'?'A '+fmt(L.ph,3):'θ '+fmt(L.ph*2*Math.PI,2)+' rad';}
+ else if(LG.kind==='pct'){if(L.pct==null){mk.hidden=true;return;}pos=L.pct;txt=fmt(100*L.pct,1)+' % (μ '+fmt(L.mu,2)+')';}
  else{pos=L.mu/LG.N;txt='μ '+fmt(L.mu,2);}
  pos=Math.max(0,Math.min(1,pos));
  mk.hidden=false;mk.style.left=(pos*100)+'%';v.textContent=txt;
