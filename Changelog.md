@@ -16,6 +16,26 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.11.0 — 2026-11-23
+
+### Novità
+- **1.11.0 — Profilo B: pannello grafici 75/25.** Sotto le viste (desktop) o come bottom sheet (~40% altezza, mobile) compare un pannello dedicato ai grafici del segmento profilo sezionale (1.10.5). Non è una Viewport: non conta nel limite di viste e non usa buffer di calcolo frattale.
+- Due canvas 2D ridimensionati con `ResizeObserver`: superiore 75% (grandezza selezionabile), inferiore 25% (fase `arg zₙ`), stesso asse `t ∈ [0,1]` con estremi A/B e distanza `|z_B−z_A|`.
+- Campionamento `N = min(1024, larghezza px del pannello)` con `evalPlane`/`evalPoint` a blocchi via `requestAnimationFrame`; durante il trascinamento degli handle throttle ~30 ms e annullamento del job precedente.
+- Grandezza superiore (menu): **Iterazioni continue μ** (default), **Potenziale log|zₙ|/dⁿ**, **log₁₀|z_N|**, **Stima di distanza** (campo `de` di `evalPoint`). Traccia colorata con la stessa LUT/mapping di base della vista (offset, densità, colore interno).
+- Grafico fase: linea in (−π, π] interrotta ai salti > π (niente segmenti verticali spuri).
+- Transizioni interno↔esterno: bisezione (~12 passi) sul cambio di `kind`; linee tratteggiate gialle su entrambi i grafici e segni sul segmento nella vista, con etichette «ingresso nella regione che non diverge» / «uscita».
+- Hover/tocco sui grafici: cursore sul segmento nella vista e lettura numerica in `pmeta`.
+- Pulsante **Grafici** (accanto a Centra sul segmento) e **Copia CSV** (`t,Re,Im,mu,arg,kind,n,mod,de`) con lo stesso fallback clipboard di Condividi. Apertura automatica del pannello al primo segmento tracciato; chiusura alla cancellazione del profilo.
+
+### Correzioni
+- Nessuna regressione intenzionale sul tracciamento profilo 1.10.5 (handle, pan con Spazio/tasto centrale/due dita, serializzazione JSON `profile`).
+
+### Limiti noti
+- Il potenziale e la DE sono definiti in modo coerente solo per le famiglie con fuga e, per la DE, dove `evalPoint` fornisce `de ≥ 0` (Mandelbrot/Julia/Phoenix/Magnet I/exp/sin). Altrimenti i campioni risultano vuoti su quel canale.
+- Su dispositivi lenti, con N alto e molte transizioni, il campionamento resta asincrono ma può richiedere qualche frame; il pan della vista non è bloccato.
+- Il pannello grafici non è incluso nello stato JSON/URL (solo il segmento profilo lo è, come in 1.10.5).
+
 ## 1.10.5 — 2026-11-23
 
 ### Novità

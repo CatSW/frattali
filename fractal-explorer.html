@@ -166,15 +166,35 @@ a{color:inherit}
 .vp>canvas.prof{cursor:crosshair}
 .vp>canvas.prof-h{cursor:grab}
 .vp>canvas.prof-hd{cursor:grabbing}
+
+/* 1.11.0 — pannello grafici profilo (75/25) */
+.profpanel{display:none;margin:10px 0 0;background:var(--card);border-radius:18px;padding:10px 12px 12px;gap:8px}
+.profpanel.open{display:grid}
+.profpanel .phead{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between}
+.profpanel .phead h3{font:600 15px/1.3 var(--sans);margin:0}
+.profpanel .pctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.profpanel .pctrls select{font:13px var(--sans);padding:6px 8px;border:1px solid var(--rule);border-radius:8px;background:var(--ground);color:var(--ink);min-height:36px}
+.profpanel .pbody{display:grid;grid-template-rows:3fr 1fr;gap:4px;min-height:200px;height:min(42vh,420px)}
+.profpanel .pchart{position:relative;min-height:0;background:#0a0a0a;border-radius:12px;overflow:hidden;border:1px solid var(--rule)}
+.profpanel .pchart canvas{display:block;width:100%;height:100%;cursor:crosshair}
+.profpanel .plab{position:absolute;left:8px;top:6px;font:11px/1.3 var(--mono);color:#ccc;text-shadow:0 0 3px #000;pointer-events:none;max-width:92%}
+.profpanel .pmeta{font:12px/1.35 var(--mono);color:var(--muted);min-height:1.3em}
+.profpanel .pclose{min-width:36px;min-height:36px}
+@media (max-width:899px){
+ .profpanel.open{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;border-radius:18px 18px 0 0;max-height:42vh;box-shadow:0 -8px 28px rgba(0,0,0,.35);padding-bottom:max(12px,env(safe-area-inset-bottom))}
+ .profpanel .pbody{height:calc(42vh - 88px);min-height:160px}
+}
+.vpr .ptrn{stroke:#ffd166;stroke-width:1.5;stroke-dasharray:4 3}
+
 </style>
 </head>
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.10.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.11.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.10.5 · 23 novembre 2026</p>
+<p class="updated">Versione 1.11.0 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -190,6 +210,29 @@ a{color:inherit}
    </div>
    <div class="lgcaprow"><p class="lgcap" id="lgcap"></p><div id="lgtxt"></div></div>
   </div>
+  
+  <div class="profpanel" id="profpanel" aria-label="Grafici del profilo sezionale">
+   <div class="phead">
+    <h3>Grafici profilo</h3>
+    <div class="pctrls">
+     <label class="seglab" for="profqty">Grandezza</label>
+     <select id="profqty" title="Grandezza del grafico superiore">
+      <option value="mu" selected>Iterazioni continue μ</option>
+      <option value="pot">Potenziale log|zₙ|/dⁿ</option>
+      <option value="logmod">log₁₀|z_N|</option>
+      <option value="de">Stima di distanza</option>
+     </select>
+     <button class="tbtn" id="profcsv" type="button" title="Copia i campioni in CSV">Copia CSV</button>
+     <button class="tbtn pclose" id="profpanelclose" type="button" title="Chiudi pannello grafici" aria-label="Chiudi pannello grafici">✕</button>
+    </div>
+   </div>
+   <div class="pbody">
+    <div class="pchart" id="pchart0"><canvas id="pcv0"></canvas><div class="plab" id="plab0"></div></div>
+    <div class="pchart" id="pchart1"><canvas id="pcv1"></canvas><div class="plab" id="plab1">arg zₙ ∈ (−π, π]</div></div>
+   </div>
+   <p class="pmeta" id="pmeta" role="status"></p>
+  </div>
+
   <div class="bar">
    <button class="tbtn" id="reset" type="button" title="Vista iniziale" aria-label="Vista iniziale" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg><span>Vista iniziale</span></button>
    <button class="tbtn" id="back" type="button" title="Indietro" aria-label="Indietro" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/></svg><span>Indietro</span></button>
@@ -200,6 +243,7 @@ a{color:inherit}
    <button class="tbtn" id="profile" data-cap="profile" type="button" aria-pressed="false" aria-keyshortcuts="O" title="Traccia un segmento profilo sul piano complesso (O)">Profilo</button>
    <button class="tbtn" id="profclear" data-cap="profile" type="button" title="Rimuovi il segmento profilo dalla vista attiva">Cancella profilo</button>
    <button class="tbtn" id="profcenter" data-cap="profile" type="button" title="Inquadra il segmento profilo nella vista attiva">Centra sul segmento</button>
+   <button class="tbtn" id="profgraf" data-cap="profile" type="button" aria-pressed="false" title="Mostra o nascondi i grafici del profilo sezionale">Grafici</button>
    <button class="tbtn" id="tojulia" data-cap="juliaPick">Julia da qui</button>
    <button class="tbtn" id="pick" data-cap="juliaPick">Tocca per scegliere c</button>
    <button class="tbtn" id="anim">Anima colori</button>
@@ -955,6 +999,7 @@ function buildLUT(){
  $('palprev').style.background=`linear-gradient(90deg,${st.join(',')})`;
  try{buildLAB();}catch(e){}
  try{legendSync();}catch(e){}
+ try{if(PROF&&PROF.open)profChartsDraw();}catch(e){}
 }
 
 /* ---------- 1.10.0: fonte di fase (helper di colore) ---------- */
@@ -1846,11 +1891,12 @@ class Viewport{
  setMarkerAt(px,py){const c=this.pxToC(px,py);this.marker={x:c[0],y:c[1]};this.placeMarker();this.markerHud();}
  clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';legendRefresh();}
  /* 1.10.5 — profilo sezionale */
- clearProfile(){this.profile=null;this.profDrag=null;this.profDraw=null;this.drawProfile();this.syncProfCursor();}
+ clearProfile(){this.profile=null;this.profDrag=null;this.profDraw=null;this.profTrans=null;this.drawProfile();this.syncProfCursor();try{profChartsOnChange(this);}catch(e){}}
  setProfileFromScreen(ax,ay,bx,by){
   const a=this.pxToC(ax,ay),b=this.pxToC(bx,by);
   this.profile={ax:a[0],ay:a[1],bx:b[0],by:b[1]};
-  this.profDraw=null;this.drawProfile();
+  this.profDraw=null;this.profTrans=null;this.drawProfile();
+  try{profChartsOnChange(this);}catch(e){}
  }
  hitProfileHandle(px,py,isTouch){
   const p=this.profile;if(!p)return null;
@@ -1912,6 +1958,30 @@ class Viewport{
    ctx.textAlign='center';ctx.textBaseline='bottom';
    ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineWidth=3*dpr;ctx.strokeText(lab,x,y-hr-2*dpr);
    ctx.fillStyle='#fff';ctx.fillText(lab,x,y-hr-2*dpr);
+  }
+  // 1.11.0: segni di transizione e cursore t sul segmento
+  const tr=this.profTrans, ht=this.profHoverT;
+  if((tr&&tr.length)||(ht!=null&&isFinite(ht))){
+   const mapT=(tt)=>{
+    if(dr){return [ax+(bx-ax)*tt, ay+(by-ay)*tt];}
+    const xx=p.ax+(p.bx-p.ax)*tt, yy=p.ay+(p.by-p.ay)*tt;
+    const S=worldToScreen(this.view,this.cv.width,this.cv.height,xx,yy);
+    return [S[0]*sx,S[1]*sy];
+   };
+   if(tr)for(const u of tr){
+    const [mx,my]=mapT(u.t);
+    if(!isFinite(mx+my))continue;
+    ctx.save();ctx.setLineDash([5*dpr,4*dpr]);ctx.strokeStyle='#ffd166';ctx.lineWidth=1.5*dpr;
+    ctx.beginPath();ctx.moveTo(mx,my-10*dpr);ctx.lineTo(mx,my+10*dpr);ctx.stroke();
+    ctx.setLineDash([]);ctx.beginPath();ctx.arc(mx,my,3*dpr,0,Math.PI*2);ctx.fillStyle='#ffd166';ctx.fill();ctx.restore();
+   }
+   if(ht!=null&&isFinite(ht)){
+    const [mx,my]=mapT(Math.max(0,Math.min(1,ht)));
+    if(isFinite(mx+my)){
+     ctx.save();ctx.strokeStyle='#fff';ctx.fillStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.5*dpr;
+     ctx.beginPath();ctx.arc(mx,my,5*dpr,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#000';ctx.stroke();ctx.restore();
+    }
+   }
   }
   ctx.restore();
  }
@@ -2005,7 +2075,7 @@ class Viewport{
    const now=this.toPx(e),c=this.pxToC(now[0],now[1]);
    if(this.profDrag==='a'){this.profile.ax=c[0];this.profile.ay=c[1];}
    else{this.profile.bx=c[0];this.profile.by=c[1];}
-   this.ptrs.set(e.pointerId,now);this.drawProfile();return;
+   this.ptrs.set(e.pointerId,now);this.drawProfile();try{profChartsOnChange(this,true);}catch(e){}return;
   }
   if(this.profDraw&&this.ptrs.has(e.pointerId)){
    const now=this.toPx(e);this.profDraw.b=now;this.ptrs.set(e.pointerId,now);this.drawProfile();return;
@@ -2047,7 +2117,7 @@ class Viewport{
   if(this.sel){if(e.pointerId===this.sel.id){if(e.type==='pointerup')this.moveSel(e);this.endSel(e.type==='pointerup');}return;}
   // 1.10.5: fine drag handle o tracciamento segmento
   if(this.profDrag&&this.ptrs.has(e.pointerId)){
-   this.ptrs.delete(e.pointerId);this.profDrag=null;this.syncProfCursor();this.drawProfile();return;
+   this.ptrs.delete(e.pointerId);this.profDrag=null;this.syncProfCursor();this.drawProfile();try{profChartsOnChange(this);}catch(e){}return;
   }
   if(this.profDraw&&this.ptrs.has(e.pointerId)){
    const dr=this.profDraw;this.ptrs.delete(e.pointerId);
@@ -2508,7 +2578,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.10.5',APP_VERSION_SHORT='1.10.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.11.0',APP_VERSION_SHORT='1.11.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -2671,6 +2741,7 @@ function applyState(obj){
  if(mode==='equal'){VPS.forEach(v=>{if(v.cur.pre)buildCDF(v.cur.pre);if(v.cur.full)buildCDF(v.cur.full);});}
  render();
  VPS.forEach(v=>v.drawProfile());
+ try{const pv=VPS.find(v=>v.profile);if(pv)profChartsOnChange(pv);else setProfPanelOpen(false);}catch(e){}
  const m='Stato applicato';$('headmsg').textContent=m;
  viewNote=cut.length?'schermo stretto: max '+specs.length+' viste, '+(cut.length>1?'chiuse le viste ':'chiusa la vista ')+cut.join(', '):'';
  setStatus(m+(viewNote?' · '+viewNote:''));
@@ -2934,6 +3005,340 @@ function legendPlace(){
  v.style.transform=pos<0.12?'none':pos>0.88?'translateX(-100%)':'translateX(-50%)';
 }
 (function(){try{LG.cv=$('lgbar');}catch(e){LG.cv=null;}})();
+
+
+/* ---------- 1.11.0 — grafici del profilo sezionale ---------- */
+const PROF={
+ open:false,qty:'mu',samples:null,trans:[],vp:null,
+ raf:0,token:0,throttleT:0,hoverT:null,
+ cv0:null,cv1:null,ro:null
+};
+function profPanelEl(){return $('profpanel');}
+function setProfPanelOpen(on){
+ on=!!on;PROF.open=on;
+ const el=profPanelEl();if(el)el.classList.toggle('open',on);
+ const b=$('profgraf');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}
+ if(on){try{profChartsResize();profChartsSchedule(false);}catch(e){}}
+ else{PROF.hoverT=null;if(PROF.vp){PROF.vp.profHoverT=null;try{PROF.vp.drawProfile();}catch(e){}}}
+}
+function toggleProfPanel(){
+ const F=FAM[S.fam];
+ if(!(F&&F.caps&&F.caps.profile)){setStatus('Grafici profilo non disponibili per questa famiglia');return;}
+ const has=VPS.some(v=>v.profile);
+ if(!PROF.open&&!has){setStatus('Traccia prima un segmento con «Profilo»');return;}
+ setProfPanelOpen(!PROF.open);
+}
+function activeProfileVp(){
+ if(AV&&AV.profile)return AV;
+ for(const v of VPS)if(v.profile)return v;
+ return null;
+}
+function profChartsOnChange(vp,throttled){
+ if(vp&&vp.profile)PROF.vp=vp;
+ else PROF.vp=activeProfileVp();
+ if(PROF.vp&&PROF.vp.profile&&!PROF.open){
+  // apri automaticamente al primo segmento utile
+  setProfPanelOpen(true);
+ }
+ if(!PROF.vp||!PROF.vp.profile){
+  PROF.samples=null;PROF.trans=[];
+  VPS.forEach(v=>{v.profTrans=null;v.profHoverT=null;});
+  const m=$('pmeta');if(m)m.textContent='Nessun segmento profilo';
+  try{profChartsDrawEmpty();}catch(e){}
+  if(PROF.open)setProfPanelOpen(false);
+  return;
+ }
+ if(throttled){
+  clearTimeout(PROF.throttleT);
+  PROF.throttleT=setTimeout(()=>profChartsSchedule(true),30);
+ }else profChartsSchedule(false);
+}
+function profChartsSchedule(quick){
+ if(!PROF.open)return;
+ const tok=++PROF.token;
+ if(PROF.raf)cancelAnimationFrame(PROF.raf);
+ PROF.raf=requestAnimationFrame(()=>{PROF.raf=0;if(tok!==PROF.token)return;profChartsSample(tok,quick);});
+}
+function profChartsSample(tok,quick){
+ const vp=PROF.vp||activeProfileVp();
+ if(!vp||!vp.profile)return;
+ const p=vp.profile,ax=+p.ax,ay=+p.ay,bx=+p.bx,by=+p.by;
+ if(![ax,ay,bx,by].every(isFinite))return;
+ const el=$('pchart0');
+ let Wpx=320;try{Wpx=Math.max(64,Math.round((el&&el.clientWidth)||320));}catch(e){}
+ const N=Math.min(1024,Math.max(32,Wpx));
+ const maxIt=curIter(vp.view);
+ const key=S.fam,P=S.P[key],nw=S.nw;
+ const samples=new Array(N);
+ const block=quick?Math.max(16,Math.floor(N/8)):Math.max(24,Math.floor(N/6));
+ let i=0;
+ function step(){
+  if(tok!==PROF.token)return;
+  const end=Math.min(N,i+block);
+  for(;i<end;i++){
+   const t=i/(N-1||1);
+   const x=ax+(bx-ax)*t,y=ay+(by-ay)*t;
+   let r=null;
+   try{r=evalPlane(key,P,x,y,maxIt,nw);}catch(e){r=null;}
+   samples[i]={t,x,y,r};
+  }
+  if(i<N){requestAnimationFrame(step);return;}
+  if(tok!==PROF.token)return;
+  PROF.samples=samples;
+  PROF.trans=profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by);
+  vp.profTrans=PROF.trans.slice();
+  try{vp.drawProfile();}catch(e){}
+  profChartsDraw();
+  const len=Math.hypot(bx-ax,by-ay);
+  const m=$('pmeta');
+  if(m)m.textContent=N+' campioni · |z_B−z_A| = '+fmt(len,6)+' · transizioni '+PROF.trans.length+(quick?' · (trascinamento)':'');
+ }
+ step();
+}
+function isInsideKind(k){return k===1;}
+function isOutsideKind(k){return k===0||(k>=2&&k<253);}
+function profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by){
+ const out=[];
+ for(let i=1;i<samples.length;i++){
+  const a=samples[i-1],b=samples[i];
+  if(!a.r||!b.r)continue;
+  const ka=a.r.kind,kb=b.r.kind;
+  const ain=isInsideKind(ka),bin=isInsideKind(kb);
+  const aout=isOutsideKind(ka),bout=isOutsideKind(kb);
+  if(ain===bin)continue;
+  if(!(ain||bin)||!(aout||bout||ain||bin))continue;
+  // bisezione ~12 passi
+  let lo=a.t,hi=b.t,lox=a.x,loy=a.y,hix=b.x,hiy=b.y,lok=ka;
+  for(let s=0;s<12;s++){
+   const mt=(lo+hi)/2,mx=ax+(bx-ax)*mt,my=ay+(by-ay)*mt;
+   let r=null;try{r=evalPlane(key,P,mx,my,maxIt,nw);}catch(e){}
+   if(!r)break;
+   const kin=isInsideKind(r.kind);
+   if(kin===(isInsideKind(lok))){lo=mt;lox=mx;loy=my;lok=r.kind;}
+   else{hi=mt;hix=mx;hiy=my;}
+  }
+  const t=(lo+hi)/2;
+  const intoIn=isOutsideKind(ka)&&isInsideKind(kb);
+  out.push({t,label:intoIn?'ingresso nella regione che non diverge':'uscita',intoIn});
+ }
+ return out;
+}
+function sampleQty(s){
+ const r=s.r;if(!r)return {v:NaN,inside:true};
+ const k=r.kind;
+ const inside=isInsideKind(k)||k===253||k===254;
+ if(PROF.qty==='mu'){
+  if(isOutsideKind(k)||(k>=2&&k<253))return {v:r.mu,inside:false};
+  return {v:NaN,inside:true};
+ }
+ if(PROF.qty==='logmod'){
+  const m=r.mod;if(!(m>0)||!isFinite(m))return {v:NaN,inside};
+  return {v:Math.log10(m),inside:false};
+ }
+ if(PROF.qty==='de'){
+  const d=r.de;if(!(d>=0)||!isFinite(d))return {v:NaN,inside};
+  return {v:d,inside:false};
+ }
+ // potenziale: log|z|/d^n  (solo esterni)
+ if(!(r.mod>0)||!isFinite(r.mod)||!isOutsideKind(k))return {v:NaN,inside:true};
+ const dd=(S.fam==='ship'||S.fam==='tricorn'||S.fam==='phoenix'||S.fam==='magnet')?2:(S.P[S.fam].d||2);
+ const n=Math.max(1,r.n||1);
+ const pot=Math.log(Math.max(r.mod,1e-300))/Math.pow(dd,n);
+ return {v:pot,inside:false};
+}
+function colorForSample(s){
+ // stessa rampa di base di colorize (senza luce): t = off + dens·0.12·√μ  per esterni; interno = incol o trappola
+ const r=s.r,off=+S.off||0,dens=+S.dens||1;
+ if(!r)return [0.15,0.15,0.15];
+ const k=r.kind;
+ if(isInsideKind(k)){
+  if(S.inmode==='flat'){const c=hex(S.incol);return c;}
+  const sv=S.inmode==='tp'?0.2:0.15;
+  const t=off+0.5+dens*sv;return lutRGB(t);
+ }
+ if(k===254)return [220/255,30/255,30/255];
+ if(k===253)return [220/255,40/255,200/255];
+ if(k>=2){
+  const nroots=8;const t=off+((k-2)%nroots)/nroots+dens*0.03*(r.mu||0);return lutRGB(t);
+ }
+ const sm=0.12*Math.sqrt(Math.max(0,r.mu||0));
+ const t=off+dens*sm;return lutRGB(t);
+}
+function lutRGB(t){
+ let li=((t%1)+1)%1*LUTN|0;if(li>=LUTN)li=LUTN-1;
+ return [LUT[li*3],LUT[li*3+1],LUT[li*3+2]];
+}
+function profChartsDrawEmpty(){
+ for(const id of ['pcv0','pcv1']){
+  const cv=$(id);if(!cv)continue;const ctx=cv.getContext('2d');if(!ctx)continue;
+  ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,cv.width,cv.height);
+ }
+ const l0=$('plab0');if(l0)l0.textContent='';
+}
+function profChartsResize(){
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ for(const [cid,pid] of [['pcv0','pchart0'],['pcv1','pchart1']]){
+  const cv=$(cid),box=$(pid);if(!cv||!box)continue;
+  const r=box.getBoundingClientRect();
+  const W=Math.max(32,Math.round(r.width*dpr)),H=Math.max(24,Math.round(r.height*dpr));
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
+ }
+ PROF.cv0=$('pcv0');PROF.cv1=$('pcv1');
+}
+function profChartsDraw(){
+ if(!PROF.open)return;
+ profChartsResize();
+ const samples=PROF.samples;if(!samples||!samples.length){profChartsDrawEmpty();return;}
+ const cv0=PROF.cv0||$('pcv0'),cv1=PROF.cv1||$('pcv1');
+ if(!cv0||!cv1)return;
+ const ctx0=cv0.getContext('2d'),ctx1=cv1.getContext('2d');
+ const W0=cv0.width,H0=cv0.height,W1=cv1.width,H1=cv1.height;
+ const padL=44,padR=10,padT=16,padB=22;
+ // --- top chart values ---
+ const vals=samples.map(sampleQty);
+ let vmin=Infinity,vmax=-Infinity;
+ for(const q of vals){if(isFinite(q.v)&&!q.inside){if(q.v<vmin)vmin=q.v;if(q.v>vmax)vmax=q.v;}}
+ if(!(vmax>vmin)){vmin=0;vmax=1;}
+ const yspan=vmax-vmin||1;
+ const y0=v=>padT+(H0-padT-padB)*(1-(v-vmin)/yspan);
+ const x0=t=>padL+(W0-padL-padR)*t;
+ ctx0.fillStyle='#0a0a0a';ctx0.fillRect(0,0,W0,H0);
+ // grid
+ ctx0.strokeStyle='rgba(255,255,255,.12)';ctx0.lineWidth=1;
+ for(let g=0;g<=4;g++){const yy=padT+(H0-padT-padB)*g/4;ctx0.beginPath();ctx0.moveTo(padL,yy);ctx0.lineTo(W0-padR,yy);ctx0.stroke();}
+ // colored polyline
+ for(let i=1;i<samples.length;i++){
+  const a=vals[i-1],b=vals[i];
+  if(!isFinite(a.v)||!isFinite(b.v)||a.inside||b.inside)continue;
+  const col=colorForSample(samples[i]);
+  ctx0.strokeStyle='rgb('+(col[0]*255|0)+','+(col[1]*255|0)+','+(col[2]*255|0)+')';
+  ctx0.lineWidth=2;ctx0.beginPath();
+  ctx0.moveTo(x0(samples[i-1].t),y0(a.v));ctx0.lineTo(x0(samples[i].t),y0(b.v));ctx0.stroke();
+ }
+ // interior bands (flat tint)
+ for(let i=0;i<samples.length;i++){
+  if(!vals[i].inside)continue;
+  const col=colorForSample(samples[i]);
+  ctx0.fillStyle='rgba('+(col[0]*255|0)+','+(col[1]*255|0)+','+(col[2]*255|0)+',0.55)';
+  const x=x0(samples[i].t),w=Math.max(1,(W0-padL-padR)/(samples.length-1||1));
+  ctx0.fillRect(x-w/2,padT,w,H0-padT-padB);
+ }
+ // transitions
+ for(const u of PROF.trans){
+  const x=x0(u.t);
+  ctx0.save();ctx0.setLineDash([5,4]);ctx0.strokeStyle='#ffd166';ctx0.lineWidth=1.5;
+  ctx0.beginPath();ctx0.moveTo(x,padT);ctx0.lineTo(x,H0-padB);ctx0.stroke();ctx0.restore();
+ }
+ // axes labels
+ ctx0.fillStyle='#aaa';ctx0.font='11px ui-monospace,Menlo,Consolas,monospace';
+ ctx0.textAlign='right';ctx0.fillText(fmt(vmax,vmax>100?0:3),padL-4,padT+8);
+ ctx0.fillText(fmt(vmin,vmin<-1||vmin>100?0:3),padL-4,H0-padB);
+ ctx0.textAlign='left';ctx0.fillText('A',padL,H0-6);
+ ctx0.textAlign='right';ctx0.fillText('B',W0-padR,H0-6);
+ // hover
+ if(PROF.hoverT!=null){const x=x0(PROF.hoverT);ctx0.strokeStyle='#fff';ctx0.lineWidth=1;ctx0.beginPath();ctx0.moveTo(x,padT);ctx0.lineTo(x,H0-padB);ctx0.stroke();}
+ const lab0=$('plab0');
+ if(lab0){
+  const names={mu:'μ (iterazioni continue)',pot:'potenziale log|zₙ|/dⁿ',logmod:'log₁₀|z_N|',de:'stima di distanza DE'};
+  lab0.textContent=names[PROF.qty]||PROF.qty;
+ }
+
+ // --- bottom: arg ---
+ const x1=t=>padL+(W1-padL-padR)*t;
+ const y1=a=>padT+(H1-padT-padB)*(1-(a+Math.PI)/(2*Math.PI));
+ ctx1.fillStyle='#0a0a0a';ctx1.fillRect(0,0,W1,H1);
+ ctx1.strokeStyle='rgba(255,255,255,.12)';ctx1.lineWidth=1;
+ for(const a of [-Math.PI,0,Math.PI]){const yy=y1(a);ctx1.beginPath();ctx1.moveTo(padL,yy);ctx1.lineTo(W1-padR,yy);ctx1.stroke();}
+ ctx1.strokeStyle='#7ec8e3';ctx1.lineWidth=1.5;
+ let prev=null;
+ for(let i=0;i<samples.length;i++){
+  const r=samples[i].r;
+  if(!r||!isFinite(r.arg)||!(r.mod>0)){prev=null;continue;}
+  let a=r.arg;while(a<=-Math.PI)a+=2*Math.PI;while(a>Math.PI)a-=2*Math.PI;
+  const xx=x1(samples[i].t),yy=y1(a);
+  if(prev&&Math.abs(a-prev.a)<=Math.PI){
+   ctx1.beginPath();ctx1.moveTo(prev.x,prev.y);ctx1.lineTo(xx,yy);ctx1.stroke();
+  }
+  prev={x:xx,y:yy,a:a};
+ }
+ for(const u of PROF.trans){
+  const x=x1(u.t);
+  ctx1.save();ctx1.setLineDash([5,4]);ctx1.strokeStyle='#ffd166';ctx1.lineWidth=1.5;
+  ctx1.beginPath();ctx1.moveTo(x,padT);ctx1.lineTo(x,H1-padB);ctx1.stroke();ctx1.restore();
+ }
+ ctx1.fillStyle='#aaa';ctx1.font='11px ui-monospace,Menlo,Consolas,monospace';
+ ctx1.textAlign='right';ctx1.fillText('π',padL-4,y1(Math.PI)+3);ctx1.fillText('0',padL-4,y1(0)+3);ctx1.fillText('−π',padL-4,y1(-Math.PI)+3);
+ if(PROF.hoverT!=null){const x=x1(PROF.hoverT);ctx1.strokeStyle='#fff';ctx1.lineWidth=1;ctx1.beginPath();ctx1.moveTo(x,padT);ctx1.lineTo(x,H1-padB);ctx1.stroke();}
+}
+function profChartsHover(clientX,clientY,cv){
+ if(!PROF.samples||!PROF.samples.length)return;
+ const r=cv.getBoundingClientRect();
+ const t=Math.max(0,Math.min(1,(clientX-r.left)/Math.max(1,r.width)));
+ PROF.hoverT=t;
+ const vp=PROF.vp||activeProfileVp();
+ if(vp){vp.profHoverT=t;try{vp.drawProfile();}catch(e){}}
+ // value readout
+ const N=PROF.samples.length;const i=Math.round(t*(N-1));
+ const s=PROF.samples[i];
+ const q=sampleQty(s);
+ const m=$('pmeta');
+ if(m&&s){
+  let msg='t = '+fmt(t,3)+' · Re '+fmt(s.x,5)+' · Im '+fmt(s.y,5);
+  if(s.r){
+   msg+=' · kind '+s.r.kind;
+   if(isFinite(q.v))msg+=' · val '+fmt(q.v,4);
+   if(isFinite(s.r.arg))msg+=' · arg '+fmt(s.r.arg,3);
+  }
+  for(const u of PROF.trans){if(Math.abs(u.t-t)<0.02){msg+=' · '+u.label;break;}}
+  m.textContent=msg;
+ }
+ profChartsDraw();
+}
+function profChartsLeave(){
+ PROF.hoverT=null;
+ const vp=PROF.vp||activeProfileVp();
+ if(vp){vp.profHoverT=null;try{vp.drawProfile();}catch(e){}}
+ const m=$('pmeta');
+ if(m&&PROF.samples){
+  const vp2=PROF.vp,p=vp2&&vp2.profile;
+  const len=p?Math.hypot(p.bx-p.ax,p.by-p.ay):0;
+  m.textContent=PROF.samples.length+' campioni · |z_B−z_A| = '+fmt(len,6)+' · transizioni '+PROF.trans.length;
+ }
+ profChartsDraw();
+}
+function profCopyCSV(){
+ const samples=PROF.samples;if(!samples||!samples.length){showMsg('Nessun campione da esportare');return;}
+ const lines=['t,Re,Im,mu,arg,kind,n,mod,de'];
+ for(const s of samples){
+  const r=s.r;
+  lines.push([s.t,s.x,s.y,r?r.mu:'',r?r.arg:'',r?r.kind:'',r?r.n:'',r?r.mod:'',r?r.de:''].join(','));
+ }
+ const txt=lines.join('\n');
+ copyText(txt).then(ok=>{if(ok)showMsg('CSV copiato ('+samples.length+' righe)');else showMsg('Copia fallita');});
+}
+(function initProfCharts(){
+ try{
+  const panel=$('profpanel');if(!panel)return;
+  $('profgraf')&&$('profgraf').addEventListener('click',toggleProfPanel);
+  $('profpanelclose')&&$('profpanelclose').addEventListener('click',()=>setProfPanelOpen(false));
+  $('profqty')&&$('profqty').addEventListener('change',e=>{PROF.qty=e.target.value||'mu';profChartsDraw();});
+  $('profcsv')&&$('profcsv').addEventListener('click',profCopyCSV);
+  for(const id of ['pcv0','pcv1']){
+   const cv=$(id);if(!cv)continue;
+   cv.addEventListener('pointermove',e=>{if(e.buttons===0||e.pointerType==='mouse')profChartsHover(e.clientX,e.clientY,cv);});
+   cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId);}catch(_){ }profChartsHover(e.clientX,e.clientY,cv);});
+   cv.addEventListener('pointerup',e=>profChartsLeave());
+   cv.addEventListener('pointerleave',()=>profChartsLeave());
+  }
+  if(typeof ResizeObserver!=='undefined'){
+   try{
+    PROF.ro=new ResizeObserver(()=>{if(PROF.open){profChartsResize();profChartsDraw();}});
+    const b0=$('pchart0'),b1=$('pchart1');
+    if(b0)PROF.ro.observe(b0);if(b1)PROF.ro.observe(b1);
+   }catch(e){PROF.ro=null;}
+  }
+ }catch(e){/* degradazione elegante */}
+})();
 
 /* ---------- avvio ---------- */
 (function(){ // didascalie «i»: introduzione aperta solo su desktop; famiglia e luce chiuse
