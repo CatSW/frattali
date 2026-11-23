@@ -192,9 +192,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.11.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.12.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.11.0 · 23 novembre 2026</p>
+<p class="updated">Versione 1.12.0 · 23 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -320,11 +320,12 @@ a{color:inherit}
 <details class="more"><summary><b>Interno ed equalizzato</b><span>Colorare anche i punti che non scappano mai.</span></summary><ul>
 <li>Trappola punto e croce colorano l'interno con la distanza minima dell'orbita da 0 o dagli assi.</li>
 <li>Equalizzato distribuisce i colori in base all'istogramma dell'immagine, così nessuna tinta domina.</li></ul></details>
-<details class="more"><summary><b>Famiglie aggiunte</b><span>Varianti con valore assoluto, Magnet, esponenziale, seno e Buddhabrot.</span></summary><ul>
+<details class="more"><summary><b>Famiglie aggiunte</b><span>Varianti con valore assoluto, Magnet, esponenziale, seno, Buddhabrot e attrattori strani.</span></summary><ul>
 <li>Burning Ship e varianti: nel passo z² si inseriscono valori assoluti. Celtic usa |Re z²|; Heart (|x|+iy)²; Perpendicolare (|x|−iy)²; Nave perpendicolare cambia il segno di y dentro il prodotto. L'interruttore Julia fissa c e fa variare z.</li>
 <li>Magnet I e II: mappe razionali dalla fisica statistica dei magneti. Magnet I: ((z²+c−1)/(2z+c−2))²; Magnet II di grado 3. Orbite che scappano o convergono; confini a petali. DE analitico solo su Magnet I.</li>
 <li>Esponenziale: z → c·e^z (fuga su Re z > 50). Biforcazione parabolica a c=1/e; bouquet di Cantor per c≈0,3. Seno: z → c·sin(z) (fuga su |Im z| > 50), partenza dal punto critico π/2 in modalità parametro.</li>
-<li>Buddhabrot: non colora il punto di partenza ma disegna le traiettorie dei punti che scappano, accumulandole. L'immagine si affina man mano che arrivano campioni; il colore segue la lunghezza delle orbite.</li></ul></details>
+<li>Buddhabrot: non colora il punto di partenza ma disegna le traiettorie dei punti che scappano, accumulandole. L'immagine si affina man mano che arrivano campioni; il colore segue la lunghezza delle orbite.</li>
+<li>Attrattori strani (Clifford, de Jong, Hénon): mappe discrete dissipative. L'insieme attrattore ha misura nulla; la dinamica è espansiva in almeno una direzione e sensibile alle condizioni iniziali. Si scartano ~100 passi di transitorio; i punti si accumulano in densità. Una stima di λ (esponente di Lyapunov massimo, metodo di Benettin) compare nell'HUD.</li></ul></details>
 <details class="more"><summary><b>Limiti</b><span>Precisione, tempi e cosa non fa.</span></summary><ul>
 <li>Il calcolo è in doppia precisione: oltre uno zoom di circa 10¹³ i dettagli si sgranano, e la pagina lo segnala.</li>
 <li>La qualità Ultra e le molte iterazioni richiedono qualche secondo su telefono.</li></ul></details>
@@ -727,10 +728,51 @@ function computeBuddha(J){
   }
   return {cnt:cnt,col:col,seed:seed};
 }
+// 1.12.0 — Attrattori strani (Clifford / de Jong / Hénon): accumulo densità come IFS/Buddha
+function computeAttractor(J){
+  var W=J.W,H=J.H,cnt=new Float32Array(W*H),col=new Float32Array(W*H);
+  var a=J.a,b=J.b,c=J.c,d=J.d,v=J.v|0; // 0 Clifford, 1 de Jong, 2 Hénon
+  var x0=J.x0,y0=J.y0,inv=1/J.s,N=J.n|0,seed=J.seed>>>0||1;
+  var x=0.1,y=0.1,nx,ny,i,j,it,tr=100,lim=1e6;
+  var doLy=!!J.lyap,lx=x+1e-8,ly=y,d0=1e-8,lsum=0,lcnt=0;
+  function step(xx,yy){
+    if(v===0){nx=Math.sin(a*yy)+c*Math.cos(a*xx);ny=Math.sin(b*xx)+d*Math.cos(b*yy);}
+    else if(v===1){nx=Math.sin(a*yy)-Math.cos(b*xx);ny=Math.sin(c*xx)-Math.cos(d*yy);}
+    else{nx=1-a*xx*xx+yy;ny=b*xx;}
+    return;
+  }
+  for(it=0;it<N;it++){
+    step(x,y);
+    if(!isFinite(nx)||!isFinite(ny)||Math.abs(nx)>lim||Math.abs(ny)>lim){
+      seed^=seed<<13;seed>>>=0;seed^=seed>>>17;seed^=seed<<5;seed>>>=0;
+      x=(seed/4294967296)*0.2-0.1;y=((seed^0x9e3779b9)>>>0)/4294967296*0.2-0.1;
+      if(doLy){lx=x+1e-8;ly=y;}
+      continue;
+    }
+    if(doLy){
+      var sx=nx,sy=ny;step(lx,ly);
+      if(isFinite(nx)&&isFinite(ny)){
+        var dx=nx-sx,dy=ny-sy,dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist>0&&it>=tr){lsum+=Math.log(dist/d0);lcnt++;}
+        if(dist>0){lx=sx+dx*(d0/dist);ly=sy+dy*(d0/dist);}else{lx=sx+1e-8;ly=sy;}
+      }
+      nx=sx;ny=sy;
+    }
+    x=nx;y=ny;
+    if(it<tr)continue;
+    i=Math.floor((x-x0)*inv);j=Math.floor((y0-y)*inv);
+    if(i>=0&&i<W&&j>=0&&j<H){var p=j*W+i;cnt[p]+=1;col[p]+=0.5;}
+  }
+  var lyap=0;if(doLy&&lcnt>0)lyap=lsum/lcnt;
+  return {cnt:cnt,col:col,seed:seed,lyap:lyap};
+}
 if(typeof importScripts==='function'){
   self.onmessage=function(e){
     var J=e.data;
-    if(J.type==='ifs'||J.type==='buddha'){var R=J.type==='ifs'?computeIFS(J):computeBuddha(J); self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col},[R.cnt.buffer,R.col.buffer]);}
+    if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'){
+      var R=J.type==='ifs'?computeIFS(J):(J.type==='buddha'?computeBuddha(J):computeAttractor(J));
+      self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col,lyap:R.lyap},[R.cnt.buffer,R.col.buffer]);
+    }
     else {
       var B=J.ms?computeMS(J):computeBand(J);
       self.postMessage({id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,mu:B.mu,de:B.de,tp:B.tp,tx:B.tx,kind:B.kind,ph:B.ph},[B.mu.buffer,B.de.buffer,B.tp.buffer,B.tx.buffer,B.kind.buffer,B.ph.buffer]);
@@ -743,7 +785,7 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor};')();
 
 /* ---------- definizioni ---------- */
 const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
@@ -885,7 +927,14 @@ const FAM={
    {name:'Oro su verde',view:{cx:0,cy:-0.5,span:3.1},style:'oro'}]},
  ifs:{name:'IFS e chaos game (felce, draghi)',code:-1,caps:CAP({escape:false,phase:false,point:false,profile:false,grid:'none',newtonThresholds:false,juliaPick:false}),axes:'none',de:false,view:{cx:0,cy:5,span:11},iter:0,params:['ifs'],
   txt:'Un sistema di funzioni iterate: poche trasformazioni affini, scelte a caso migliaia di volte. I punti si addensano su un\'unica figura autosimile. La felce di Barnsley ne usa solo quattro; il colore segue la densità dei punti e le trasformazioni usate.',
-  presets:IFSS.map((f,i)=>({name:f.name,p:{ifs:i},style:i===0?'smeraldo':'oro'}))}
+  presets:IFSS.map((f,i)=>({name:f.name,p:{ifs:i},style:i===0?'smeraldo':'oro'}))},
+ strange:{name:'Attrattori strani',code:-3,caps:CAP({escape:false,phase:false,point:false,profile:false,grid:'xy',newtonThresholds:false,juliaPick:false}),axes:'xy',de:false,view:{cx:0,cy:0,span:4},iter:0,noauto:true,params:['var','a','b','c','d'],
+  txt:'Mappe discrete dissipative: l\'attrattore ha misura di Lebesgue nulla e la dinamica è espansiva in almeno una direzione, con sensibilità alle condizioni iniziali. Clifford e de Jong usano combinazioni di seni e coseni; Hénon è un polinomio quadratico classico. Il colore segue la densità dei punti visitati (dopo un transitorio iniziale). Una stima dell\'esponente di Lyapunov massimo compare nell\'HUD quando disponibile.',
+  presets:[
+   {name:'Clifford (a=−1,4 · b=1,6 · c=1 · d=0,7)',view:{cx:0,cy:0,span:3.6},p:{var:0,a:-1.4,b:1.6,c:1,d:0.7},style:'pavone'},
+   {name:'de Jong (a=1,641 · b=1,902 · c=0,316 · d=1,525)',view:{cx:0,cy:0,span:3.2},p:{var:1,a:1.641,b:1.902,c:0.316,d:1.525},style:'scarabeo'},
+   {name:'Hénon (a=1,4 · b=0,3)',view:{cx:0.1,cy:0,span:2.8},p:{var:2,a:1.4,b:0.3,c:0,d:0},style:'fuoco'}
+  ]}
 };
 const PARAMDEF={
  d:{label:'Potenza d',min:2,max:8,step:1},
@@ -902,7 +951,12 @@ const PARAMDEF={
  a0:{label:'Parametro Re a',min:-2,max:2,step:0.01},
  a1:{label:'Parametro Im a',min:-2,max:2,step:0.01},
 
- ifs:{label:'Figura',options:IFSS.map(p=>p.name)}
+ ifs:{label:'Figura',options:IFSS.map(p=>p.name)},
+ var:{label:'Variante',options:['Clifford','de Jong','Hénon']},
+ a:{label:'Parametro a',min:-3,max:3,step:0.001},
+ b:{label:'Parametro b',min:-3,max:3,step:0.001},
+ c:{label:'Parametro c',min:-3,max:3,step:0.001},
+ d:{label:'Parametro d',min:-3,max:3,step:0.001}
 };
 const PALS={
  pavone:{name:'Pavone metallico',c:['#06281f','#0f6e4a','#3fcf96','#0e5a8a','#1d2f8f','#5b2a9e','#a8306e','#d9503a','#f0b341','#7a5a12']},
@@ -936,7 +990,8 @@ const S={fam:'mandel',P:{},iterBase:{},auto:true,qual:'normale',
  light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false,grid:false,
  src:'iter',alpha:1,stripeS:5,levels:0}; // 1.10.0: fonte colore ('iter'|'final'|'stripe'|'mean'), peso alpha (1 = solo fase), frequenza stripe s, livelli (0 = continuo, 2 = binario)
 const PHM={final:1,stripe:2,mean:3};
-for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0};S.iterBase[f]=FAM[f].iter;}
+for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0,var:0,a:-1.4,b:1.6,c:1,d:0.7};S.iterBase[f]=FAM[f].iter;}
+S.P.strange={var:0,a:-1.4,b:1.6,c:1,d:0.7};
 
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
 S.nw={}; // override soglie Newton (solo campi diversi dal default, già validati)
@@ -1047,7 +1102,7 @@ function buildCDF(B){
  B.cdf={cdf,lo,hi,NB};
 }
 function colorize(B){
- const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha',hasDE=FAM[fam].de;
+ const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha'||fam==='strange',hasDE=FAM[fam].de;
  const dens=S.dens,off=S.off,res=H/700,glowW=3*S.glow*Math.max(0.5,res),stw=0.04*S.glow;
  const inc=hex(S.incol); let nroots=1; if(isNewton){const pp=POLYS[S.P.newton.poly];nroots=pp.c?pp.c.length-1:8;}
  const mu=B.mu,de=B.de,tp=B.tp,tx=B.tx,kind=B.kind,h=B.h,t=B.t,b=B.b,fl=B.fl;
@@ -1173,7 +1228,7 @@ function pump(){
  if(useWorkers){
   for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'){const X=J.type==='ifs'?LIB.computeIFS(J):LIB.computeBuddha(J);R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'){const X=J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):LIB.computeAttractor(J));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
  }
 }
 
@@ -1406,6 +1461,33 @@ function fitIFS(vp){
  });
  const a=list.indexOf(AV)>=0?AV:list[0];
  if(a)FAM.ifs.view={cx:a.view.cx,cy:a.view.cy,span:a.view.span};
+}
+// 1.12.0: bounding box empirico dell'attrattore (scarta transitorio, gestisce divergenza)
+function fitStrange(vp){
+ const P=S.P.strange,v=P.var|0,a=+P.a,b=+P.b,c=+P.c,d=+P.d;
+ const list=vp?[vp]:VPS;
+ let x=0.1,y=0.1,lo=[1e9,1e9],hi=[-1e9,-1e9],ok=0;
+ for(let i=0;i<25000;i++){
+  let nx,ny;
+  if(v===0){nx=Math.sin(a*y)+c*Math.cos(a*x);ny=Math.sin(b*x)+d*Math.cos(b*y);}
+  else if(v===1){nx=Math.sin(a*y)-Math.cos(b*x);ny=Math.sin(c*x)-Math.cos(d*y);}
+  else{nx=1-a*x*x+y;ny=b*x;}
+  if(!isFinite(nx)||!isFinite(ny)||Math.abs(nx)>1e6||Math.abs(ny)>1e6){x=0.1;y=0.1;continue;}
+  x=nx;y=ny;
+  if(i<200)continue;
+  lo[0]=Math.min(lo[0],x);lo[1]=Math.min(lo[1],y);hi[0]=Math.max(hi[0],x);hi[1]=Math.max(hi[1],y);ok++;
+ }
+ if(ok<100){ // fallback se non si stabilizza
+  list.forEach(vp2=>{vp2.view={...(FAM.strange.view),rot:0};});
+  return;
+ }
+ const sw=hi[0]-lo[0],sh=hi[1]-lo[1];
+ list.forEach(vp2=>{
+  const r=vp2.cv.getBoundingClientRect(),asp=r.width/r.height||1;
+  vp2.view={cx:(lo[0]+hi[0])/2,cy:(lo[1]+hi[1])/2,span:Math.max(sh,sw/asp)*1.12,rot:0};
+ });
+ const a0=list.indexOf(AV)>=0?AV:list[0];
+ if(a0)FAM.strange.view={cx:a0.view.cx,cy:a0.view.cy,span:a0.view.span};
 }
 
 /* ---------- coordinate (funzioni pure, nessun accesso a globali) ---------- */
@@ -1762,7 +1844,7 @@ class Viewport{
   this.cancel();
   const {W,H}=this.dims();
   this.cv.width=W;this.cv.height=H;this.t0=performance.now();{const rr=this.cv.getBoundingClientRect();this.lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
-  if(S.fam==='ifs'||S.fam==='buddha'){this.renderIFS(W,H);return null;}
+  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'){this.renderIFS(W,H);return null;}
   const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
   const pre=newBuf(pw,ph),full=newBuf(W,H),cur=this.cur={pre,full,id:this.jobId,W,H,left:0};
   const j1=makeTileJobs(pre,0,this.jobId,this),j2=makeTileJobs(full,1,this.jobId,this);
@@ -1811,26 +1893,41 @@ class Viewport{
  }
  recolor(){
   const cur=this.cur;
-  if(S.fam==='ifs'||S.fam==='buddha'){if(cur.full&&cur.full.cv){colorize(cur.full);this.draw();}return;}
+  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'){if(cur.full&&cur.full.cv){colorize(cur.full);this.draw();}return;}
   if(cur.pre&&cur.pre.img)colorize(cur.pre);
   if(cur.full&&cur.full.img)colorize(cur.full);
   this.draw();
  }
  updateHud(){
-  const v=this.view,z=FAM[S.fam].view.span/v.span;
-  this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
+  const v=this.view,z=FAM[S.fam].view.span/v.span,ax=famAxes(S.fam);
+  if(ax==='xy'||ax==='rx')this.hud.l.textContent='Centro x '+fmt(v.cx,6)+' · y '+fmt(v.cy,6);
+  else this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
   this.hud.r.textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
+  if(S.fam==='strange'&&this.lyapEst!=null&&isFinite(this.lyapEst)){
+   const L=this.lyapEst;this.hud.m.textContent='λ≈'+(L>=0?'+':'')+fmt(L,4)+(L>0?' (espansivo)':'');
+  }
   this.placeMarker();
   this.drawProfile(); // 1.10.5: il segmento resta ancorato al piano
   scheduleFrames(); // le cornici seguono ogni cambio di vista (pan/zoom/render) senza toccare l'immagine
  }
- /* IFS / Buddhabrot */
+ /* IFS / Buddhabrot / Attrattori strani */
  renderIFS(W,H){
   const id=this.jobId,full=newBuf(W,H);full.done.fill(1);full.kind.fill(1);
   const cur=this.cur={pre:null,full,id,W,H,left1:0,n1:1}; // done già 1 per tutti i pixel
-  const bd=S.fam==='buddha',{maps,cum}=bd?{}:ifsMaps(),s=this.view.span/H;
-  const target=bd?Math.min(5e7,W*H*30):W*H*14,nw=useWorkers?workers.length:1,per=bd?4e5:Math.ceil(Math.min(1.5e6,target/(nw*6)));
-  cur.ifsLeft=target;cur.ifsPer=per;cur.ifsBase={type:bd?'buddha':'ifs',id,target:this.id,W,H,maps,cum,maxIt:curIter(this.view),n:per,x0:this.view.cx-W/2*s,y0:this.view.cy+H/2*s,s};cur.seed=1;cur.inflight=0;
+  const bd=S.fam==='buddha',at=S.fam==='strange',s=this.view.span/H;
+  const {maps,cum}=(!bd&&!at)?ifsMaps():{};
+  // densità: più campioni con qualità alta e zoom maggiore (span più piccolo)
+  const qMul={veloce:0.45,normale:1,alta:1.8,ultra:3.2}[S.qual]||1;
+  const zMul=at?Math.min(8,Math.max(1,Math.sqrt((FAM.strange.view.span||4)/Math.max(1e-9,this.view.span)))):1;
+  let target;
+  if(bd)target=Math.min(5e7,W*H*30);
+  else if(at)target=Math.min(4e7,Math.round(W*H*18*qMul*zMul));
+  else target=W*H*14;
+  const nw=useWorkers?workers.length:1;
+  const per=bd?4e5:Math.ceil(Math.min(1.5e6,target/(nw*6)));
+  const base={type:bd?'buddha':(at?'attr':'ifs'),id,target:this.id,W,H,maps,cum,maxIt:curIter(this.view),n:per,x0:this.view.cx-W/2*s,y0:this.view.cy+H/2*s,s};
+  if(at){const P=S.P.strange;base.v=P.var|0;base.a=+P.a;base.b=+P.b;base.c=+P.c;base.d=+P.d;base.lyap=true;}
+  cur.ifsLeft=target;cur.ifsPer=per;cur.ifsBase=base;cur.seed=1;cur.inflight=0;cur.lyapSum=0;cur.lyapN=0;
   for(let i=0;i<nw*2;i++)this.queueIFS();
   this.setSt('Calcolo punti…');this.updateHud();
  }
@@ -1838,8 +1935,9 @@ class Viewport{
  onIFS(R){
   const cur=this.cur,B=cur.full,n=B.W*B.H;for(let i=0;i<n;i++){B.mu[i]+=R.cnt[i];B.de[i]+=R.col[i];}
   let mx=0;for(let i=0;i<n;i++)if(B.mu[i]>mx)mx=B.mu[i];B.max=mx;
+  if(R.lyap!=null&&isFinite(R.lyap)){cur.lyapSum=(cur.lyapSum||0)+R.lyap;cur.lyapN=(cur.lyapN||0)+1;this.lyapEst=cur.lyapSum/cur.lyapN;}
   cur.inflight--;this.queueIFS();
-  if(cur.inflight===0){colorize(B);this.draw();this.setSt('Pronto in '+((performance.now()-this.t0)/1000).toFixed(2).replace('.',',')+' s · '+B.W+'×'+B.H+' px');}
+  if(cur.inflight===0){colorize(B);this.draw();this.setSt('Pronto in '+((performance.now()-this.t0)/1000).toFixed(2).replace('.',',')+' s · '+B.W+'×'+B.H+' px');this.updateHud();}
   else if(!this.progT){this.progT=setTimeout(()=>{this.progT=0;if(!this.dead){colorize(B);this.draw();}},Math.max(150,B.W*B.H/8000));}
  }
  /* gesti */
@@ -2279,7 +2377,7 @@ function reflow(){
  VPS.forEach(v=>{
   if(v.dead)return;
   const r=v.cv.getBoundingClientRect();if(Math.round(r.width)+'x'+Math.round(r.height)===v.lastRS)return;
-  if(S.fam==='ifs')fitIFS(v);
+  if(S.fam==='ifs')fitIFS(v);else if(S.fam==='strange')fitStrange(v);
   list.push(v);
  });
  if(list.length)render(list);
@@ -2449,11 +2547,15 @@ let paramRows=[];
 function buildParams(){
  const box=$('params');box.innerHTML='';paramRows=[];const P=S.P[S.fam];
  const needsA = S.fam==='newton' && (P.poly===11 || P.poly===12);
+ const henon = S.fam==='strange' && (P.var|0)===2;
  for(const k of FAM[S.fam].params){
   if((k==='a0'||k==='a1') && !needsA) continue;
+  if(henon && (k==='c'||k==='d')) continue; // Hénon non usa c,d
   const d=PARAMDEF[k];
   if(d.options){
-   const onPoly = k==='poly' ? (v=>{pushHist();P[k]=v;buildParams();render();}) : (v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();}render();});
+   const onPoly = k==='poly' ? (v=>{pushHist();P[k]=v;buildParams();render();})
+    : k==='var' ? (v=>{pushHist();P[k]=v;buildParams();fitStrange();render();})
+    : (v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();}render();});
    selRow(box,d.label,d.options,()=>P[k],onPoly);continue;
   }
   let label=d.label;
@@ -2462,8 +2564,8 @@ function buildParams(){
   paramRows.push(ctlRow(box,{label,min:d.min,max:d.max,step:d.step,int:d.step===1,dec:d.step===1?0:4,get:()=>P[k],set:v=>{P[k]=v;},live:()=>{if(d.step!==1)scheduleRender(90);},done:()=>render()}));
  }
  const ib=$('iterbox');ib.innerHTML='';
- if(S.fam!=='ifs'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
- $('autobox').style.display=(S.fam==='ifs'||FAM[S.fam].noauto)?'none':'';
+ if(S.fam!=='ifs'&&S.fam!=='strange'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
+ $('autobox').style.display=(S.fam==='ifs'||S.fam==='strange'||FAM[S.fam].noauto)?'none':'';
  applyCaps();
  $('famtxt').textContent=FAM[S.fam].txt;
  syncGridUI();
@@ -2494,6 +2596,7 @@ function setFam(f,keepView){
  if(!ok){if(profileMode)setProfileMode(false);VPS.forEach(v=>{if(v.profile)v.clearProfile();});}
  buildParams();
  if(f==='ifs')fitIFS();
+ if(f==='strange')fitStrange();
 }
 function applyStyle(k){
  const st=STYLES[k];if(!st)return;
@@ -2506,6 +2609,7 @@ function applyPreset(i){
  if(p.src){S.src=p.src;S.alpha=p.alpha!=null?p.alpha:1;S.stripeS=p.stripeS||5;S.levels=p.levels===2?2:0;} // 1.10.0: solo i preset di fase toccano la fonte colore
  if(p.p)Object.assign(S.P[S.fam],p.p);
  if(S.fam==='ifs'){buildParams();fitIFS();}
+ else if(S.fam==='strange'){buildParams();const pv=p.view;if(pv)VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});else fitStrange();}
  else {const pv=p.view||FAM[S.fam].view;VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});buildParams();} // il preset vale per tutte le viste
  $('preset').value=i;
  if(p.style)applyStyle(p.style);
@@ -2578,7 +2682,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.11.0',APP_VERSION_SHORT='1.11.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.12.0',APP_VERSION_SHORT='1.12.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -2808,7 +2912,7 @@ function buildShareLink(){
 })();
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
-function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
+function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else if(S.fam==='strange')fitStrange(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
 $('reset').addEventListener('click',()=>resetView(AV));
 function layoutClick(n){
  n=Math.min(n,maxViewsNow());

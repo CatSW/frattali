@@ -16,6 +16,26 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.12.0 — 2026-11-23
+
+### Novità
+- Nuova famiglia **Attrattori strani** (motore a densità, stesso schema di accumulo di IFS/Buddhabrot):
+  - varianti Clifford, de Jong, Hénon con parametri a, b, c, d (c e d nascosti per Hénon);
+  - scarto del transitorio (~100 iterazioni) e ripartenza su divergenza numerica;
+  - inquadratura iniziale da bounding box empirico (`fitStrange`);
+  - numero di campioni scalato con qualità e zoom;
+  - preset rappresentativi per le tre varianti;
+  - `caps`: escape/phase/point/profile/juliaPick falsi, griglia `xy`;
+  - stima dell’esponente di Lyapunov massimo (Benettin) nell’HUD quando disponibile;
+  - nota didattica in testo famiglia e sezione «Famiglie aggiunte».
+
+### Correzioni
+- Nessuna: i motori a bande e le altre famiglie non sono stati modificati nel comportamento.
+
+### Limiti noti
+- La stima di λ è una media grezza su batch di campioni; a zoom molto spinti o parametri al limite della stabilità può oscillare o risultare poco significativa.
+- Come per IFS/Buddhabrot, a qualità Ultra e molti campioni il calcolo può richiedere alcuni secondi su dispositivi mobili.
+
 ## 1.11.0 — 2026-11-23
 
 ### Novità
