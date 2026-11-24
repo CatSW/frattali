@@ -211,9 +211,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.14.8</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.14.9</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.14.8 · 24 novembre 2026</p>
+<p class="updated">Versione 1.14.9 · 24 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -583,7 +583,7 @@ function computeBand(J){
     }
   } else {
     var co=J.co, nc=co?co.length/2:0, rt=J.roots, nr=rt?rt.length/2:0;
-    var ar=J.ar, ai=J.ai, tol=(J.tol>0&&J.tol<1)?J.tol:1e-12, nova=(fam===6), trans=J.trans|0, a0=J.a0||0, a1=J.a1||0;
+    var ar=J.ar, ai=J.ai, tol=(J.tol>0&&J.tol<1)?J.tol:1e-12, nova=(fam===6), trans=(J.trans===undefined?-1:J.trans|0), a0=J.a0||0, a1=J.a1||0;
     var Rmax=(J.Rmax>0)?J.Rmax:1e6, dmin=(J.dmin>0)?J.dmin:1e-14, ddmin=(J.ddmin>0)?J.ddmin:1e-30, rootTol=Math.max(1e-6,16*tol), DIVK=254, SINGK=253;
     for(var j2=r0;j2<r1;j2++){
       var py2=y0-j2*s;
@@ -594,7 +594,7 @@ function computeBand(J){
         var prev=1e30, it2=0, conv=false, mtp2=1e30, mtx2=1e30, lastd=0, exitk=1;
         for(it2=0;it2<maxIt;it2++){
           var nzx, nzy, dlt, den;
-          if(trans>=0){
+          if(!nova && trans>=0){ // 1.14.9: Nova esegue sempre il ramo polinomiale con + cx, + cy
             // funzioni trascendenti: passo di Newton in forma chiusa o f/f'
             var xr=zx2, xi=zy2, fr, fi, dfr, dfi;
             if(trans===0){ // sin: z - tan z
@@ -1507,6 +1507,7 @@ const ROOTS_CACHE={};
 function famJobParams(key,P,nw){
  const f=FAM[key],J={fam:f.code,d:P.d,cr:P.cr,ci:P.ci,qr:P.qr,qi:P.qi,ar:P.ar,ai:P.ai,v:P.v,jul:P.jul};
  if(key==='mandel'){J.cr=0;J.ci=0;}
+ J.trans=-1; // 1.14.9: default polinomiale (Nova non deve finire nel ramo trascendente)
  if(f.caps&&f.caps.phase&&S.src&&S.src!=='iter'){J.phm=PHM[S.src]|0;J.phs=S.stripeS>0?S.stripeS|0:5;} // 1.10.0: fonte di fase (bailout invariato: R=1000, gia' >= 100)
  if(key==='newton'){
   const pp=POLYS[P.poly];
@@ -3037,7 +3038,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.14.8',APP_VERSION_SHORT='1.14.8',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.14.9',APP_VERSION_SHORT='1.14.9',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};

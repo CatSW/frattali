@@ -16,6 +16,12 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.14.9 2026-11-24
+
+### Correzioni
+
+- Famiglia Nova ripristinata (rotta diverse versioni fa)
+
 ## 1.14.8 2026-11-24
 
 ### Novità
