@@ -5,7 +5,7 @@ author: IK0VCK
 type: changelog
 product: fractal-explorer
 license: MIT
-updated: 2026-11-21
+updated: 2026-11-24
 ---
 # Changelog — Esploratore di Frattali
 
@@ -15,6 +15,28 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 - `1.x.0` = incrementi funzionali successivi (una release per ogni blocco di lavoro concluso).
 
 Le date sono nel formato `AAAA-MM-GG`.
+
+## 1.15.0 — 2026-11-24
+
+### Novità
+- **Colorazione WebGL2 (parte A).** Un canvas WebGL2 (`.vgl`, stesse dimensioni del canvas di vista, `pointer-events: none`, contesto con `preserveDrawingBuffer: true`) si sovrappone al canvas di vista e colora i buffer già calcolati dai worker. Il calcolo non cambia.
+- Texture `R32F` per `mu`, `de`, `tp`, `tx`, `ph` e `R8UI` per `kind`, aggiornate tile per tile con `texSubImage2D`; LUT `1024×1` `RGBA8` (`LINEAR`, ripetizione sull'asse della palette). Dati letti con `texelFetch` (campionamento `NEAREST`).
+- Fragment shader GLSL ES 3.00 per esterno **liscio** e **neon**, interno **tinta unita**, e stati di uscita di Newton: convergenza per radice (`kind` 2…), timeout (`kind` 1), singolarità (253), divergenza (254), con i colori e le soglie del blocco `newton`. Uniform collegati a Densità, Fase, Spessore, colore interno e colori di divergenza/singolarità.
+- `recolor()` e il ciclo di animazione (`animLoop`) sul percorso GPU aggiornano solo gli uniform ed eseguono la draw call: nessuna ricolorazione CPU, nessun ricalcolo.
+- Un contesto WebGL2 per vista (fino a 4): `GpuColor` è istanziato da ogni `Viewport` e liberato alla chiusura della vista.
+- HUD: «Colore: GPU» / «Colore: CPU» accanto allo zoom di ogni vista.
+- Debug: `gpuParityTest()` da console (vista attiva; `gpuParityTest(1)` per la vista 2) confronta GPU e CPU, in `smooth` e `neon`, con tolleranza ±2/255 per canale. `?gpu=0` nell'URL forza il percorso CPU.
+
+### Correzioni
+- «Salva PNG» e lo snapshot dei gesti (pan, zoom con rotella) usano l'immagine visibile (anteprima 2D + strato GPU): identici su backend GPU e CPU.
+
+### Limiti noti
+- La GPU colora solo con: famiglia a bande, modo esterno `smooth` o `neon`, interno `flat`, **luce 0**, **cangiante 0**, fonte colore «Iterazioni». Altrimenti ripiega sulla CPU senza errori (`equal`, `stalk`, interni `tp`/`tx`, luce/rilievo, iridescenza, fonti di fase `final`/`stripe`/`mean` e peso α). Gli stili pronti con luce > 0 (compreso quello iniziale) restano quindi su CPU fino alla parte B.
+- Famiglie a densità (IFS, Buddhabrot, attrattori strani, biforcazione, geometrici): restano su CPU; il worker accumula conteggi in `mu` e colore medio in `de`, e `colorize()` ne ricava luminosità `(log1p(c)/log1p(max))^0,45` e tinta `off + dens·colore medio`.
+- Parità: differenza massima 2/255 su tutte le famiglie e su tutte le funzioni Newton provate; su Phoenix e su una funzione Newton 1 pixel (circa 0,001 %) arriva a 3–4/255 per un indice di LUT diverso di una voce (float32 GPU contro double CPU). La GPU campiona la LUT al centro del texel per replicare l'indice discreto della CPU; non replica il dithering ±0,5 della CPU.
+- L'anteprima a bassa risoluzione durante il calcolo è ancora colorata dalla CPU.
+- Memoria: circa 21 byte per pixel di texture (6 texture), anche se `tp`, `tx`, `ph` non sono ancora letti dallo shader; `GPU_TEX_ALL=false` le esclude.
+- Con contesto WebGL perso la vista resta su CPU fino a un nuovo caricamento o a una nuova vista.
 
 ## 1.14.9 2026-11-24
 
