@@ -16,6 +16,24 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.14.5 — 24/11/2026 
+
+### Novità
+- Guida didattica, scheda **D · Laboratorio**: cinque esperimenti «Prova tu», ciascuno con consegna (3 righe), pulsanti e domanda di riflessione: 1 «Perché Newton a volte fallisce?» (z³ − 2z + 2 con a = 1 e con a = 1 + 0,5i), 2 «Dentro o fuori il Mandelbrot» (Julia per c in cardioide, bulbo di periodo 3 / coniglio di Douady, esterno), 3 «La strada verso il caos» (cascata dei raddoppi, zoom sui raddoppi, finestra di periodo 3), 4 «Olomorfo vs non olomorfo» (Mandelbrot, Burning Ship, Tricorno in sequenza), 5 «Leggere il profilo» (Mandelbrot con fase finale e segmento A→B preimpostato).
+- Gli stati sono costanti JSON (schema `v:1`) nell'oggetto `LAB`, facilmente modificabile; ogni pulsante li applica con `applyState` (con cronologia: B torna indietro) e scorre con scroll fluido fino alla vista attiva (senza animazione se il sistema richiede meno movimento).
+- Pulsanti con bersaglio tattile ≥ 44 px, testo a capo, nessun overflow orizzontale su telefono.
+- Etichetta «Guida - Ver. 1.14.5» e `APP_VERSION` / `APP_VERSION_SHORT` aggiornate.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Le viste affiancate mostrano una sola famiglia alla volta: l'esperimento 4 applica i tre stati uno dopo l'altro, non in tre viste contemporanee.
+- Ogni pulsante sostituisce le viste correnti con una sola e riporta palette, modo e tinta interna a valori fissi (nero); le altre regolazioni (luce, rilievo, qualità) restano quelle correnti.
+- Il «coniglio di Douady» (c = −0,123 + 0,745i) è nel bulbo di periodo 3, non sul bordo del Mandelbrot.
+- Se `applyState` o lo scroll non sono disponibili nel browser, i pulsanti non fanno nulla o non scorrono, senza errori.
+- Esistono due chiavi `d` duplicate (in `S.P` e in `PARAMDEF`): la seconda prevale sulla prima. Non toccato in questa release.
+
 ## 1.14.0 — 23/11/2026
 
 ### Novità
