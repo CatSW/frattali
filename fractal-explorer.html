@@ -211,9 +211,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.14.7</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.14.8</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.14.7 · 24 novembre 2026</p>
+<p class="updated">Versione 1.14.8 · 24 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -860,12 +860,135 @@ function computeBif(J){
   }
   return {cnt:cnt,col:col};
 }
+// 1.14.8 - Geometrici (curva di Koch, fiocco di Koch, albero pitagorico): geometria per ricorsione rasterizzata sul buffer di densita' (cnt/col come IFS e attrattori).
+// Antialiasing analitico: i segmenti sono campionati ogni 0,5 px con splat bilineare (peso = lunghezza in pixel), i quadrati con copertura esatta in x e 4 sotto-scanline in y.
+// Culling: un sottoalbero il cui cerchio di contenimento esce dal viewport non viene visitato. Taglio: segmenti/quadrati sotto GEO_MINPX pixel non si suddividono piu'.
+var GEO_MINPX=0.5,GEO_S3=0.8660254037844386;
+function geoKochPts(ax,ay,bx,by,lev,out){
+  if(lev<=0){out.push(bx,by);return;}
+  var ux=(bx-ax)/3,uy=(by-ay)/3,p1x=ax+ux,p1y=ay+uy,p3x=ax+2*ux,p3y=ay+2*uy;
+  var p2x=p1x+ux*0.5-uy*GEO_S3,p2y=p1y+ux*GEO_S3+uy*0.5;
+  geoKochPts(ax,ay,p1x,p1y,lev-1,out);geoKochPts(p1x,p1y,p2x,p2y,lev-1,out);geoKochPts(p2x,p2y,p3x,p3y,lev-1,out);geoKochPts(p3x,p3y,bx,by,lev-1,out);
+}
+// riquadro della figura in coordinate del piano (per la vista iniziale); l'albero dipende da angolo e livello
+function geoBBox(fig,ang,n){
+  var x0=1e30,y0=1e30,x1=-1e30,y1=-1e30,out=[],i;
+  function add(x,y){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(fig===0){out.push(-1.5,0);geoKochPts(-1.5,0,1.5,0,6,out);}
+  else if(fig===1){
+    out.push(-1.5,-GEO_S3);
+    geoKochPts(-1.5,-GEO_S3,0,2*GEO_S3,5,out);geoKochPts(0,2*GEO_S3,1.5,-GEO_S3,5,out);geoKochPts(1.5,-GEO_S3,-1.5,-GEO_S3,5,out);
+  } else {
+    var th=(+ang||45)*Math.PI/180,cs=Math.cos(th),sn=Math.sin(th),N=Math.max(1,Math.min(12,n|0));
+    (function tr(ox,oy,ex,ey,d){
+      var fx=-ey,fy=ex;add(ox,oy);add(ox+ex,oy+ey);add(ox+ex+fx,oy+ey+fy);add(ox+fx,oy+fy);
+      if(d>=N)return;
+      var lx=ox+fx,ly=oy+fy,cx=lx+cs*(cs*ex+sn*fx),cy=ly+cs*(cs*ey+sn*fy);
+      tr(lx,ly,cx-lx,cy-ly,d+1);tr(cx,cy,ox+ex+fx-cx,oy+ey+fy-cy,d+1);
+    })(-0.5,0,1,0,0);
+  }
+  for(i=0;i<out.length;i+=2)add(out[i],out[i+1]);
+  return {x0:x0,x1:x1,y0:y0,y1:y1};
+}
+function computeGeo(J){
+  var W=J.W|0,H=J.H|0,cnt=new Float32Array(Math.max(0,W*H)),col=new Float32Array(Math.max(0,W*H));
+  var s=+J.s,X0=+J.x0,Y0=+J.y0,fig=J.fig|0,N=Math.max(1,Math.min(12,J.niter|0));
+  var st={fig:fig,n:N,segs:0,sq:0,cut:0,cutD:0};
+  if(!(s>0)||!isFinite(s)||!isFinite(X0)||!isFinite(Y0)||W<1||H<1)return {cnt:cnt,col:col,geo:st};
+  var inv=1/s,i,t0=0,t1=1,QX=new Float64Array(4),QY=new Float64Array(4);
+  // cerchio (piano) contro viewport (pixel), margine 2 px
+  function vis(mx,my,r){var cx=(mx-X0)*inv,cy=(Y0-my)*inv,rr=r*inv+2;return !(cx+rr<0||cx-rr>W||cy+rr<0||cy-rr>H);}
+  function put(ii,jj,w,c){if(ii<0||jj<0||ii>=W||jj>=H||w<=0)return;var p=jj*W+ii;cnt[p]+=w;col[p]+=w*c;}
+  function lb(p,q){if(p===0)return q>=0;var r=q/p;if(p<0){if(r>t1)return false;if(r>t0)t0=r;}else{if(r<t0)return false;if(r<t1)t1=r;}return true;}
+  // segmento: clipping Liang-Barsky sul viewport (+1 px), poi campionamento ogni 0,5 px
+  function seg(ax,ay,bx,by,c){
+    var u0=(ax-X0)*inv,v0=(Y0-ay)*inv,u1=(bx-X0)*inv,v1=(Y0-by)*inv,dx=u1-u0,dy=v1-v0;
+    t0=0;t1=1;
+    if(!lb(-dx,u0+1)||!lb(dx,W+1-u0)||!lb(-dy,v0+1)||!lb(dy,H+1-v0))return;
+    var L=Math.sqrt(dx*dx+dy*dy)*(t1-t0);if(!(L>0))return;
+    var m=Math.max(1,Math.ceil(L*2)),w=L/m,k;
+    for(k=0;k<m;k++){
+      var t=t0+(t1-t0)*(k+0.5)/m,fx=u0+dx*t-0.5,fy=v0+dy*t-0.5,ix=Math.floor(fx),iy=Math.floor(fy),a=fx-ix,b=fy-iy;
+      put(ix,iy,w*(1-a)*(1-b),c);put(ix+1,iy,w*a*(1-b),c);put(ix,iy+1,w*(1-a)*b,c);put(ix+1,iy+1,w*a*b,c);
+    }
+    st.segs++;
+  }
+  // quadrato pieno (O, e1; e2 = e1 ruotato di 90 gradi): copertura esatta in x, 4 sotto-scanline in y
+  function quad(ox,oy,ex,ey,c){
+    var fx=-ey,fy=ex,k;
+    QX[0]=(ox-X0)*inv;QY[0]=(Y0-oy)*inv;
+    QX[1]=(ox+ex-X0)*inv;QY[1]=(Y0-oy-ey)*inv;
+    QX[2]=(ox+ex+fx-X0)*inv;QY[2]=(Y0-oy-ey-fy)*inv;
+    QX[3]=(ox+fx-X0)*inv;QY[3]=(Y0-oy-fy)*inv;
+    var ymin=Math.min(QY[0],QY[1],QY[2],QY[3]),ymax=Math.max(QY[0],QY[1],QY[2],QY[3]);
+    if(!(ymax>=0&&ymin<=H))return;
+    var ja=Math.max(0,Math.floor(ymin)),jb=Math.min(H-1,Math.floor(ymax));
+    for(var j=ja;j<=jb;j++){
+      var base=j*W;
+      for(var sk=0;sk<4;sk++){
+        var yy=j+(sk+0.5)/4,xl=1e300,xr=-1e300;
+        for(k=0;k<4;k++){
+          var k2=(k+1)&3,ya=QY[k],yb=QY[k2];
+          if((ya<=yy&&yb>yy)||(yb<=yy&&ya>yy)){var x=QX[k]+(yy-ya)*(QX[k2]-QX[k])/(yb-ya);if(x<xl)xl=x;if(x>xr)xr=x;}
+        }
+        if(xl>xr)continue;
+        if(xl<0)xl=0;if(xr>W)xr=W;if(xr<=xl)continue;
+        var i0=Math.floor(xl),i1=Math.min(W-1,Math.floor(xr)),p;
+        if(i0===i1){p=base+i0;cnt[p]+=(xr-xl)*0.25;col[p]+=(xr-xl)*0.25*c;}
+        else{
+          p=base+i0;cnt[p]+=(i0+1-xl)*0.25;col[p]+=(i0+1-xl)*0.25*c;
+          for(var ii=i0+1;ii<i1;ii++){p=base+ii;cnt[p]+=0.25;col[p]+=0.25*c;}
+          if(xr>i1){p=base+i1;cnt[p]+=(xr-i1)*0.25;col[p]+=(xr-i1)*0.25*c;}
+        }
+      }
+    }
+  }
+  // Koch: la sottocurva sul segmento AB sta nel cerchio di centro il punto medio e raggio |AB|/2 (il suo guscio convesso e' il triangolo di apice a 0,2887 |AB|)
+  function koch(ax,ay,bx,by,d,ta,tb){
+    var dx=bx-ax,dy=by-ay,L=Math.sqrt(dx*dx+dy*dy);
+    if(!vis((ax+bx)/2,(ay+by)/2,L*0.5))return;
+    var small=L*inv<GEO_MINPX;
+    if(d>=N||small){
+      if(small&&d<N){st.cut++;if(!st.cutD||d<st.cutD)st.cutD=d;}
+      seg(ax,ay,bx,by,(ta+tb)/2);return;
+    }
+    var ux=dx/3,uy=dy/3,p1x=ax+ux,p1y=ay+uy,p3x=ax+2*ux,p3y=ay+2*uy;
+    var p2x=p1x+ux*0.5-uy*GEO_S3,p2y=p1y+ux*GEO_S3+uy*0.5,q=(tb-ta)/4;
+    koch(ax,ay,p1x,p1y,d+1,ta,ta+q);koch(p1x,p1y,p2x,p2y,d+1,ta+q,ta+2*q);koch(p2x,p2y,p3x,p3y,d+1,ta+2*q,ta+3*q);koch(p3x,p3y,bx,by,d+1,ta+3*q,tb);
+  }
+  if(fig===0){koch(-1.5,0,1.5,0,0,0,1);}
+  else if(fig===1){
+    // triangolo percorso in senso orario: l'esterno sta a sinistra della direzione, come per la curva
+    koch(-1.5,-GEO_S3,0,2*GEO_S3,0,0,1/3);koch(0,2*GEO_S3,1.5,-GEO_S3,0,1/3,2/3);koch(1.5,-GEO_S3,-1.5,-GEO_S3,0,2/3,1);
+  } else {
+    var th=(+J.ang||45)*Math.PI/180;th=Math.max(0.0017,Math.min(Math.PI/2-0.0017,th));
+    var cs=Math.cos(th),sn=Math.sin(th),Rb=new Float64Array(N+1),r;
+    // raggio di contenimento (per unita' di lato, attorno al centro del quadrato) di un sottoalbero con r livelli ancora da generare
+    Rb[0]=0.7071067811865476;
+    for(r=1;r<=N;r++){
+      var dL=0.7071067811865476*(1+cs),dR=0.7071067811865476+cs+0.7071067811865476*sn;
+      Rb[r]=Math.max(0.7071067811865476,dL+cs*Rb[r-1],dR+sn*Rb[r-1]);
+    }
+    (function tree(ox,oy,ex,ey,d){
+      var a=Math.sqrt(ex*ex+ey*ey),fx=-ey,fy=ex;
+      if(!vis(ox+(ex+fx)/2,oy+(ey+fy)/2,a*Rb[N-d]))return;
+      quad(ox,oy,ex,ey,d/N);st.sq++;
+      if(d>=N)return;
+      if(a*inv<GEO_MINPX){st.cut++;return;}
+      var lx=ox+fx,ly=oy+fy,cx=lx+cs*(cs*ex+sn*fx),cy=ly+cs*(cs*ey+sn*fy);
+      tree(lx,ly,cx-lx,cy-ly,d+1);tree(cx,cy,ox+ex+fx-cx,oy+ey+fy-cy,d+1);
+    })(-0.5,0,1,0,0);
+    // quadrati sovrapposti: copertura massima 1, colore medio conservato
+    for(i=0;i<cnt.length;i++){var v=cnt[i];if(v>1){col[i]/=v;cnt[i]=1;}}
+  }
+  return {cnt:cnt,col:col,geo:st};
+}
 if(typeof importScripts==='function'){
   self.onmessage=function(e){
     var J=e.data;
-    if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'){
-      var R=J.type==='ifs'?computeIFS(J):(J.type==='buddha'?computeBuddha(J):(J.type==='attr'?computeAttractor(J):computeBif(J)));
-      self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col,lyap:R.lyap},[R.cnt.buffer,R.col.buffer]);
+    if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){
+      var R=J.type==='geo'?computeGeo(J):(J.type==='ifs'?computeIFS(J):(J.type==='buddha'?computeBuddha(J):(J.type==='attr'?computeAttractor(J):computeBif(J))));
+      self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col,lyap:R.lyap,geo:R.geo},[R.cnt.buffer,R.col.buffer]);
     }
     else {
       var B=J.ms?computeMS(J):computeBand(J);
@@ -879,7 +1002,7 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor,computeBif:computeBif};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor,computeBif:computeBif,computeGeo:computeGeo,geoBBox:geoBBox};')();
 
 /* ---------- definizioni ---------- */
 const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
@@ -904,11 +1027,11 @@ const IFSS=[
  {name:'Albero',m:[[0,0,0,0.5,0,0,0.05],[0.42,-0.42,0.42,0.42,0,0.2,0.4],[0.42,0.42,-0.42,0.42,0,0.2,0.4],[0.1,0,0,0.1,0,0.2,0.15]]},
  {name:'Drago di Heighway',m:[[0.5,-0.5,0.5,0.5,0,0,0.5],[-0.5,-0.5,0.5,-0.5,1,0,0.5]]},
  {name:'Curva C di Lévy',m:[[0.5,-0.5,0.5,0.5,0,0,0.5],[0.5,0.5,-0.5,0.5,0.5,0.5,0.5]]},
- {name:'Triangolo di Sierpiński',m:[[0.5,0,0,0.5,0,0,1/3],[0.5,0,0,0.5,0.5,0,1/3],[0.5,0,0,0.5,0.25,0.4330127,1/3]]}
+ {name:'Triangolo di Sierpiński',m:[[0.5,0,0,0.5,0,0,1/3],[0.5,0,0,0.5,0.5,0,1/3],[0.5,0,0,0.5,0.25,0.4330127,1/3]],D:Math.log(3)/Math.log(2)}
 ];
 /* 1.9.0 - capacita' per famiglia. escape: concetto di fuga/divergenza; phase: modi di fase pertinenti; point: evalPoint supportato;
-   profile: profilo lungo un segmento (famiglie a bande con point); grid: asse della griglia ('complex'|'xy'|'rx'|'none'); newtonThresholds: soglie Newton; juliaPick: «Julia dal marker». */
-const CAP=o=>Object.assign({escape:true,phase:false,point:true,profile:true,grid:'complex',newtonThresholds:false,juliaPick:false},o);
+   profile: profilo lungo un segmento (famiglie a bande con point); grid: asse della griglia ('complex'|'xy'|'rx'|'none'); newtonThresholds: soglie Newton; juliaPick: «Julia dal marker»; geo (1.14.8): controlli e misure della famiglia Geometrici. */
+const CAP=o=>Object.assign({escape:true,phase:false,point:true,profile:true,grid:'complex',newtonThresholds:false,juliaPick:false,geo:false},o);
 const FAM={
  mandel:{name:'Mandelbrot e Multibrot',code:0,caps:CAP({phase:true,juliaPick:true}),axes:'complex',de:true,view:{cx:-0.6,cy:0,span:2.7},iter:300,params:['d'],
   txt:'Per ogni punto c si itera z → z^d + c partendo da z = 0: il punto appartiene all\'insieme se l\'orbita resta limitata. Con d = 2 è il Mandelbrot classico; con d più alto (Multibrot) la simmetria diventa di ordine d − 1.',
@@ -1036,6 +1159,21 @@ const FAM={
    {name:'Cascata (3,4–3,6)',view:{cx:3.5,cy:0.5,span:0.22},p:{axis:0,guides:1},style:'fuoco'},
    {name:'Finestra periodo 3',view:{cx:3.8284,cy:0.5,span:0.06},p:{axis:0,guides:1},style:'scarabeo'},
    {name:'Vista intera (c)',view:{cx:-0.875,cy:0.5,span:2.3},p:{axis:1,guides:1},style:'fuoco'}
+  ]},
+ geo:{name:'Geometrici (Koch, albero pitagorico)',code:-5,caps:CAP({escape:false,phase:false,point:false,profile:false,grid:'xy',newtonThresholds:false,juliaPick:false,geo:true}),axes:'xy',de:false,view:{cx:0,cy:0.433,span:2},iter:20,noauto:true,params:['fig','ang','niter'],
+  txt:'Figure geometriche costruite per ricorsione e disegnate sullo stesso buffer di densità di IFS e attrattori. Sotto circa mezzo pixel la ricorsione si ferma e fuori dalla vista non si calcola nulla: ingrandendo, compaiono i livelli successivi, fino a quello scelto.',
+  figtxt:[
+   'Curva di Koch. Si parte da un segmento e si sostituisce il terzo centrale con due lati di un triangolo equilatero: ogni segmento diventa quattro segmenti lunghi un terzo. A ogni livello i lati si moltiplicano per 4 e la lunghezza per 4/3, quindi nel limite è infinita pur restando in una regione limitata. Ogni parte è una copia della curva ridotta a un terzo (quattro copie), da cui D = ln 4 / ln 3 ≈ 1,2619: più di una linea (1), meno di una superficie (2). L è la lunghezza iniziale. Il colore segue la posizione lungo la curva.',
+   'Fiocco di Koch. Tre curve di Koch su un triangolo equilatero. Il perimetro cresce di 4/3 a ogni livello e diverge, ma l\'area resta limitata: al livello n vale A₀·(8/5 − 3/5·(4/9)ⁿ) e tende a 8/5 dell\'area A₀ del triangolo iniziale. Perimetro infinito, area finita. Il bordo ha la dimensione della curva, D = ln 4 / ln 3 ≈ 1,2619. L è il perimetro iniziale. Il colore segue la posizione lungo il bordo.',
+   'Albero pitagorico. Si parte da un quadrato; sul suo lato superiore si costruisce un triangolo rettangolo con ipotenusa uguale a quel lato e sui due cateti altri due quadrati, e si ripete. L\'angolo θ è quello alla base sinistra: i quadrati figli hanno lato cos θ e sen θ rispetto al padre e, per il teorema di Pitagora, le loro aree sommano quella del padre. A 45° l\'albero è simmetrico. Non ha una dimensione frattale fissa come Koch: quella di similarità presuppone copie dello stesso rapporto e senza sovrapposizioni (Koch: quattro copie a un terzo). Qui le due copie hanno rapporti diversi (cos θ e sen θ, uguali solo a 45°), i quadrati sono pieni e a un certo livello si sovrappongono, quindi la somma delle loro aree non è l\'area della figura. Per questo non viene mostrata alcuna D. Il colore segue il livello di ramificazione.'
+  ],
+  presets:[
+   {name:'Curva di Koch · livello 5',p:{fig:0,niter:5},style:'oro'},
+   {name:'Fiocco di Koch · livello 5',p:{fig:1,niter:5},style:'neon'},
+   {name:'Fiocco di Koch · livello 12, zoom sul vertice',p:{fig:1,niter:12},view:{cx:0,cy:1.62,span:0.22},style:'oro',desc:'Il vertice del triangolo iniziale, con tutti i livelli fino al 12.\nIl taglio sotto 0,5 px evita di tracciare dettagli non visibili: la scritta nell\'HUD lo segnala.'},
+   {name:'Albero pitagorico · 45° · livello 10',p:{fig:2,ang:45,niter:10},style:'smeraldo'},
+   {name:'Albero pitagorico · 30° · livello 11',p:{fig:2,ang:30,niter:11},style:'bronzo'},
+   {name:'Albero pitagorico · 60° · livello 11',p:{fig:2,ang:60,niter:11},style:'scarabeo'}
   ]}
 };
 const PARAMDEF={
@@ -1060,7 +1198,10 @@ const PARAMDEF={
  c:{label:'Parametro c',min:-3,max:3,step:0.001},
  d:{label:'Parametro d',min:-3,max:3,step:0.001},
  axis:{label:'Asse',options:['r (logistica)','c (quadratica)']},
- guides:{label:'Linee guida',options:['Nascoste','Visibili']}
+ guides:{label:'Linee guida',options:['Nascoste','Visibili']},
+ fig:{label:'Figura',options:['Curva di Koch','Fiocco di Koch','Albero pitagorico']},
+ ang:{label:'Angolo θ dell\'albero (°)',min:5,max:85,step:0.5},
+ niter:{label:'Iterazioni',min:1,max:12,step:1}
 };
 const PALS={
  pavone:{name:'Pavone metallico',c:['#06281f','#0f6e4a','#3fcf96','#0e5a8a','#1d2f8f','#5b2a9e','#a8306e','#d9503a','#f0b341','#7a5a12']},
@@ -1097,6 +1238,7 @@ const PHM={final:1,stripe:2,mean:3};
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0,var:0,a:-1.4,b:1.6,c:1,d:0.7};S.iterBase[f]=FAM[f].iter;}
 S.P.strange={var:0,a:-1.4,b:1.6,c:1,d:0.7};
 S.P.bif={axis:0,guides:1};
+S.P.geo={fig:0,ang:45,niter:5};
 
 S.P.phoenix.cr=0.56667;S.P.phoenix.ci=0;
 S.nw={}; // override soglie Newton (solo campi diversi dal default, già validati)
@@ -1207,7 +1349,7 @@ function buildCDF(B){
  B.cdf={cdf,lo,hi,NB};
 }
 function colorize(B){
- const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha'||fam==='strange'||fam==='bif',hasDE=FAM[fam].de;
+ const W=B.W,H=B.H,fam=S.fam,isNewton=fam==='newton',isIFS=fam==='ifs'||fam==='buddha'||fam==='strange'||fam==='bif'||fam==='geo',hasDE=FAM[fam].de;
  const dens=S.dens,off=S.off,res=H/700,glowW=3*S.glow*Math.max(0.5,res),stw=0.04*S.glow;
  const inc=hex(S.incol); let nroots=1; if(isNewton){const pp=POLYS[S.P.newton.poly];nroots=pp.c?pp.c.length-1:8;}
  const mu=B.mu,de=B.de,tp=B.tp,tx=B.tx,kind=B.kind,h=B.h,t=B.t,b=B.b,fl=B.fl;
@@ -1333,7 +1475,7 @@ function pump(){
  if(useWorkers){
   for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'){const X=J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J)));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){const X=J.type==='geo'?LIB.computeGeo(J):(J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J))));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap,geo:X.geo};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
  }
 }
 
@@ -1593,6 +1735,39 @@ function fitStrange(vp){
  });
  const a0=list.indexOf(AV)>=0?AV:list[0];
  if(a0)FAM.strange.view={cx:a0.view.cx,cy:a0.view.cy,span:a0.view.span};
+}
+
+/* 1.14.8 - Geometrici: vista iniziale dal riquadro della figura (come fitIFS/fitStrange), testo dell'HUD, nota didattica della famiglia */
+function fitGeo(vp){
+ const P=S.P.geo,list=vp?[vp]:VPS,bb=LIB.geoBBox(P.fig|0,+P.ang,P.niter|0),sw=bb.x1-bb.x0,sh=bb.y1-bb.y0;
+ if(!(sw>0&&sh>0))return;
+ list.forEach(v=>{
+  const r=v.cv.getBoundingClientRect(),asp=r.width/r.height||1;
+  v.view={cx:(bb.x0+bb.x1)/2,cy:(bb.y0+bb.y1)/2,span:Math.max(sh,sw/asp)*1.12,rot:0};
+ });
+ const a=list.indexOf(AV)>=0?AV:list[0];
+ if(a)FAM.geo.view={cx:a.view.cx,cy:a.view.cy,span:a.view.span};
+}
+function geoInt(v){return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+function geoHudText(vp){
+ try{
+  const P=S.P.geo,fig=P.fig|0,n=Math.max(1,Math.min(12,P.niter|0)),st=vp&&vp.geoStat,g=(v,d)=>(+v).toFixed(d).replace('.',','),D=g(Math.log(4)/Math.log(3),4);
+  const L=['Livello n = '+n+(fig===2?' · θ = '+g(+P.ang,1).replace(/,0$/,'')+'°':'')];
+  if(fig===0){L.push('Lati 4^n = '+geoInt(Math.pow(4,n))+' · lunghezza (4/3)^n·L = '+g(Math.pow(4/3,n),3)+'·L');L.push('D = ln 4 / ln 3 ≈ '+D);}
+  else if(fig===1){L.push('Lati 3·4^n = '+geoInt(3*Math.pow(4,n))+' · perimetro (4/3)^n·L = '+g(Math.pow(4/3,n),3)+'·L');L.push('Area = '+g(8/5-3/5*Math.pow(4/9,n),4)+'·A₀ (limite 8/5 = 1,6·A₀) · D = ln 4 / ln 3 ≈ '+D);}
+  else L.push('Quadrati 2^(n+1) − 1 = '+geoInt(Math.pow(2,n+1)-1));
+  if(st&&st.cut)L.push(fig===2?'rami sotto 0,5 px non suddivisi':'taglio sotto 0,5 px: tracciato fino al livello '+st.cutD);
+  return L.join('\n');
+ }catch(e){return '';}
+}
+function famNoteSync(){
+ const F=FAM[S.fam],el=$('famtxt');if(!F||!el)return;
+ let t=F.txt;
+ try{
+  if(S.fam==='geo'){const ft=F.figtxt&&F.figtxt[S.P.geo.fig|0];if(ft)t=ft+' '+F.txt;}
+  else if(S.fam==='ifs'){const f=IFSS[S.P.ifs.ifs|0];if(f&&f.D)t+=' Dimensione di similarità: D = ln 3 / ln 2 ≈ '+fmt(f.D,3)+' (tre copie a scala ½).';}
+ }catch(e){}
+ el.textContent=t;
 }
 
 /* ---------- coordinate (funzioni pure, nessun accesso a globali) ---------- */
@@ -1914,7 +2089,7 @@ class Viewport{
   cv.addEventListener('pointerdown',e=>this.onDown(e));
   cv.addEventListener('pointermove',e=>this.onMove(e));
   cv.addEventListener('pointerup',e=>this.onEnd(e));cv.addEventListener('pointercancel',e=>this.onEnd(e));
-  cv.addEventListener('pointerleave',()=>{clearTimeout(this.hvT);this.hvT=0;this.hvC=null;if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():'';legendRefresh();});
+  cv.addEventListener('pointerleave',()=>{clearTimeout(this.hvT);this.hvT=0;this.hvC=null;if(this.hud.m)this.hud.m.textContent=this.marker?this.markerText():this.hudIdle();legendRefresh();});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(this.sel)return;setActive(this);this.startGesture();const [px,py]=this.toPx(e);this.zoomAt(px,py,Math.exp(-e.deltaY*0.0015));requestAnimationFrame(()=>this.drawGesture());clearTimeout(this.wheelT);this.wheelT=setTimeout(()=>this.endGesture(),250);},{passive:false});
  }
  observe(){
@@ -1949,7 +2124,7 @@ class Viewport{
   this.cancel();
   const {W,H}=this.dims();
   this.cv.width=W;this.cv.height=H;this.t0=performance.now();{const rr=this.cv.getBoundingClientRect();this.lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
-  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'){this.renderIFS(W,H);return null;}
+  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'||S.fam==='geo'){this.renderIFS(W,H);return null;}
   const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
   const pre=newBuf(pw,ph),full=newBuf(W,H),cur=this.cur={pre,full,id:this.jobId,W,H,left:0};
   const j1=makeTileJobs(pre,0,this.jobId,this),j2=makeTileJobs(full,1,this.jobId,this);
@@ -2022,11 +2197,12 @@ class Viewport{
  }
  recolor(){
   const cur=this.cur;
-  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'){if(cur.full&&cur.full.cv){colorize(cur.full);this.draw();}return;}
+  if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'||S.fam==='geo'){if(cur.full&&cur.full.cv){colorize(cur.full);this.draw();}return;}
   if(cur.pre&&cur.pre.img)colorize(cur.pre);
   if(cur.full&&cur.full.img)colorize(cur.full);
   this.draw();
  }
+ hudIdle(){return S.fam==='geo'?geoHudText(this):'';} // 1.14.8: testo dell'HUD a riposo (senza cursore e senza marker)
  updateHud(){
   const v=this.view,z=FAM[S.fam].view.span/v.span,ax=famAxes(S.fam);
   if(ax==='rx'){const axn=(S.P.bif&&(S.P.bif.axis|0))?'c':'r';this.hud.l.textContent='Centro '+axn+' '+fmt(v.cx,6)+' · x '+fmt(v.cy,6);}
@@ -2035,7 +2211,7 @@ class Viewport{
   this.hud.r.textContent='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
   if(S.fam==='strange'&&this.lyapEst!=null&&isFinite(this.lyapEst)){
    const L=this.lyapEst;this.hud.m.textContent='λ≈'+(L>=0?'+':'')+fmt(L,4)+(L>0?' (espansivo)':'');
-  }
+  } else if(S.fam==='geo'&&this.hud.m&&!this.marker){this.hud.m.textContent=geoHudText(this);} // 1.14.8
   this.placeMarker();
   this.drawProfile(); // 1.10.5: il segmento resta ancorato al piano
   scheduleFrames(); // le cornici seguono ogni cambio di vista (pan/zoom/render) senza toccare l'immagine
@@ -2045,6 +2221,15 @@ class Viewport{
   const id=this.jobId,full=newBuf(W,H);full.done.fill(1);full.kind.fill(1);
   const cur=this.cur={pre:null,full,id,W,H,left1:0,n1:1}; // done già 1 per tutti i pixel
   const bd=S.fam==='buddha',at=S.fam==='strange',bf=S.fam==='bif',s=this.view.span/H;
+  if(S.fam==='geo'){
+   // 1.14.8: geometria per ricorsione, un solo job deterministico (come la biforcazione); il culling usa la vista corrente
+   const P=S.P.geo;this.geoStat=null;
+   const base={type:'geo',id,target:this.id,W,H,fig:P.fig|0,ang:+P.ang,niter:P.niter|0,x0:this.view.cx-W/2*s,y0:this.view.cy+H/2*s,s};
+   cur.ifsLeft=1;cur.ifsPer=1;cur.ifsBase=base;cur.seed=1;cur.inflight=0;cur.lyapSum=0;cur.lyapN=0;
+   this.queueIFS();
+   this.setSt('Calcolo geometria…');this.updateHud();
+   return;
+  }
   if(bf){
    // motore a colonne deterministico: un solo job
    const P=S.P.bif,axis=P.axis|0;
@@ -2077,7 +2262,7 @@ class Viewport{
  }
  queueIFS(){const cur=this.cur;if(cur.ifsLeft<=0)return;cur.ifsLeft-=cur.ifsPer;cur.inflight++;cur.seed=(cur.seed*1664525+1013904223)>>>0;queue.push({...cur.ifsBase,seed:cur.seed||7});}
  onIFS(R){
-  const cur=this.cur,B=cur.full,n=B.W*B.H;for(let i=0;i<n;i++){B.mu[i]+=R.cnt[i];B.de[i]+=R.col[i];}
+  const cur=this.cur,B=cur.full,n=B.W*B.H;if(R.geo)this.geoStat=R.geo;for(let i=0;i<n;i++){B.mu[i]+=R.cnt[i];B.de[i]+=R.col[i];}
   let mx=0;for(let i=0;i<n;i++)if(B.mu[i]>mx)mx=B.mu[i];B.max=mx;
   if(R.lyap!=null&&isFinite(R.lyap)){cur.lyapSum=(cur.lyapSum||0)+R.lyap;cur.lyapN=(cur.lyapN||0)+1;this.lyapEst=cur.lyapSum/cur.lyapN;}
   cur.inflight--;this.queueIFS();
@@ -2131,7 +2316,7 @@ class Viewport{
  }
  markerHud(){if(this.hud.m)this.hud.m.textContent=this.markerText();}
  setMarkerAt(px,py){const c=this.pxToC(px,py);this.marker={x:c[0],y:c[1]};this.placeMarker();this.markerHud();}
- clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';legendRefresh();}
+ clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent=this.hudIdle();legendRefresh();}
  /* 1.10.5 — profilo sezionale */
  clearProfile(){this.profile=null;this.profDrag=null;this.profDraw=null;this.profTrans=null;this.drawProfile();this.syncProfCursor();try{profChartsOnChange(this);}catch(e){}}
  setProfileFromScreen(ax,ay,bx,by){
@@ -2234,14 +2419,14 @@ class Viewport{
   const tp=this.tapPrev;
   if(tp&&now-tp.t<350&&Math.hypot(p[0]-tp.p[0],p[1]-tp.p[1])*k<32){
    this.tapPrev=null;this.marker=tp.before;this.placeMarker();
-   if(this.marker)this.markerHud();else if(this.hud.m)this.hud.m.textContent='';
+   if(this.marker)this.markerHud();else if(this.hud.m)this.hud.m.textContent=this.hudIdle();
    legendRefresh();pushHist();this.zoomAt(p[0],p[1],2);render([this]);return;
   }
   const before=this.marker?{x:this.marker.x,y:this.marker.y}:null;
   this.tapPrev={t:now,p:p.slice(),before};
   let hit=false;
   if(this.marker){const s=worldToScreen(this.view,cv.width,cv.height,this.marker.x,this.marker.y);hit=Math.hypot(s[0]-p[0],s[1]-p[1])*k<24;}
-  if(hit){this.marker=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent='';legendRefresh();}
+  if(hit){this.marker=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent=this.hudIdle();legendRefresh();}
   else this.setMarkerAt(p[0],p[1]);
  }
  touchLong(cx,cy){
@@ -2310,7 +2495,8 @@ class Viewport{
    const p=this.toPx(e),c=this.pxToC(p[0],p[1]),F=FAM[S.fam];
    if(F.caps&&F.caps.point)this.hoverHud(c); // 1.9.0: informazioni sul punto, con throttling
    else if(this.hud.m){
-    if(S.fam==='bif'){
+    if(S.fam==='geo'){const gt=this.marker?this.markerText():geoHudText(this);if(this.hud.m.textContent!==gt)this.hud.m.textContent=gt;}
+    else if(S.fam==='bif'){
      const ax=(S.P.bif.axis|0)===0;
      this.hud.m.textContent=(ax?'r ':'c ')+fmt(c[0],5)+' · x '+fmt(c[1],5);
     } else this.hud.m.textContent=fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
@@ -2710,23 +2896,24 @@ function buildParams(){
  for(const k of FAM[S.fam].params){
   if((k==='a0'||k==='a1') && !needsA) continue;
   if(henon && (k==='c'||k==='d')) continue; // Hénon non usa c,d
+  if(k==='ang' && (P.fig|0)!==2) continue; // 1.14.8: l'angolo serve solo all'albero pitagorico
   const d=PARAMDEF[k];
   if(d.options){
    const onPoly = k==='poly' ? (v=>{pushHist();P[k]=v;buildParams();render();})
     : k==='var' ? (v=>{pushHist();P[k]=v;buildParams();fitStrange();render();})
-    : (v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();}render();});
+    : (v=>{pushHist();P[k]=v;if(k==='ifs'){fitIFS();famNoteSync();}else if(k==='fig'){buildParams();fitGeo();}render();});
    selRow(box,d.label,d.options,()=>P[k],onPoly);continue;
   }
   let label=d.label;
   const jl=S.fam==='julia'||S.fam==='ship'||S.fam==='magnet';if(jl&&k==='cr')label='Re c';if(jl&&k==='ci')label='Im c';
   if(S.fam==='phoenix'&&k==='cr')label='Re p';if(S.fam==='phoenix'&&k==='ci')label='Im p';
-  paramRows.push(ctlRow(box,{label,min:d.min,max:d.max,step:d.step,int:d.step===1,dec:d.step===1?0:4,get:()=>P[k],set:v=>{P[k]=v;},live:()=>{if(d.step!==1)scheduleRender(90);},done:()=>render()}));
+  paramRows.push(ctlRow(box,{label,min:d.min,max:d.max,step:d.step,int:d.step===1,dec:d.step===1?0:4,get:()=>P[k],set:v=>{P[k]=v;},live:()=>{if(d.step!==1||k==='niter')scheduleRender(90);},done:()=>render()}));
  }
  const ib=$('iterbox');ib.innerHTML='';
- if(S.fam!=='ifs'&&S.fam!=='strange'&&S.fam!=='bif'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
+ if(S.fam!=='ifs'&&S.fam!=='strange'&&S.fam!=='bif'&&S.fam!=='geo'){ctlRow(ib,{label:'Iterazioni base',min:20,max:20000,log:true,int:true,get:()=>S.iterBase[S.fam],set:v=>{S.iterBase[S.fam]=Math.round(v);},done:()=>render()});}
  $('autobox').style.display=(S.fam==='ifs'||S.fam==='strange'||S.fam==='bif'||FAM[S.fam].noauto)?'none':'';
  applyCaps();
- $('famtxt').textContent=FAM[S.fam].txt;
+ famNoteSync();
  syncGridUI();
  const ps=$('preset');ps.innerHTML='<option value="-1">— scegli un preset —</option>';
  FAM[S.fam].presets.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;ps.appendChild(o);});
@@ -2756,6 +2943,7 @@ function setFam(f,keepView){
  buildParams();
  if(f==='ifs')fitIFS();
  if(f==='strange')fitStrange();
+ if(f==='geo'&&!keepView)VPS.forEach(vp=>{if(!vp.fv.geo)fitGeo(vp);}); // 1.14.8: vista iniziale adattata solo se non ricordata
  // bif: nessuna fit speciale, vista già in FAM
 }
 function applyStyle(k){
@@ -2770,6 +2958,7 @@ function applyPreset(i){
  if(p.p)Object.assign(S.P[S.fam],p.p);
  if(S.fam==='ifs'){buildParams();fitIFS();}
  else if(S.fam==='strange'){buildParams();const pv=p.view;if(pv)VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});else fitStrange();}
+ else if(S.fam==='geo'){buildParams();const pv=p.view;if(pv)VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});else fitGeo();}
  else {const pv=p.view||FAM[S.fam].view;VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});buildParams();} // il preset vale per tutte le viste
  $('preset').value=i;
  if(p.style)applyStyle(p.style);
@@ -2848,7 +3037,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.14.7',APP_VERSION_SHORT='1.14.7',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.14.8',APP_VERSION_SHORT='1.14.8',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3078,7 +3267,7 @@ function buildShareLink(){
 })();
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
-function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else if(S.fam==='strange')fitStrange(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
+function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else if(S.fam==='strange')fitStrange(vp);else if(S.fam==='geo')fitGeo(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
 $('reset').addEventListener('click',()=>resetView(AV));
 function layoutClick(n){
  n=Math.min(n,maxViewsNow());
@@ -3207,7 +3396,7 @@ function legendInterior(m){
 }
 function legendCaption(m){
  const f=S.fam;let t;
- if(m.kind==='none')t=f==='buddha'?'Colore secondo la lunghezza delle orbite, luminosità secondo la densità dei punti. Nessuna scala numerica.':(f==='bif'?'Colore e luminosità secondo la densità dei punti visitati sull\'attrattore per ciascun parametro. Nessuna scala numerica.':'Colore secondo la densità dei punti e le trasformazioni usate. Nessuna scala numerica.');
+ if(m.kind==='none')t=f==='buddha'?'Colore secondo la lunghezza delle orbite, luminosità secondo la densità dei punti. Nessuna scala numerica.':(f==='bif'?'Colore e luminosità secondo la densità dei punti visitati sull\'attrattore per ciascun parametro. Nessuna scala numerica.':(f==='geo'?'Colore secondo la posizione lungo la curva (Koch) o il livello di ramificazione (albero), luminosità secondo la copertura per pixel. Nessuna scala numerica.':'Colore secondo la densità dei punti e le trasformazioni usate. Nessuna scala numerica.'));
  else if(m.kind==='pct')t='Asse: percentile di μ tra i punti che escono nella vista (modo equalizzato), con densità e fase correnti.';
  else if(m.kind==='newton')t='Asse: μ, iterazioni continue (0 → maxIt); una fascia per radice. Luminosità calante con μ.';
  else if(m.kind==='phase'){

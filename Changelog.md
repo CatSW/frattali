@@ -16,6 +16,31 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.14.8 2026-11-24
+
+### Novità
+- Nuova famiglia **Geometrici (Koch, albero pitagorico)** con selettore «Figura»: Curva di Koch, Fiocco di Koch e Albero pitagorico (Sierpiński, Heighway e Lévy restano negli IFS).
+- Le figure sono generate per ricorsione e rasterizzate sullo stesso buffer di densità di IFS e attrattori: palette, luce e rilievo, qualità ed esportazione PNG funzionano come nelle altre famiglie. Antialiasing analitico (segmenti campionati ogni 0,5 px con splat bilineare, quadrati con copertura esatta); la qualità Alta/Ultra aggiunge il supercampionamento già esistente.
+- Slider «Iterazioni» da 1 a 12 e slider «Angolo θ» (5°–85°, visibile solo per l'albero pitagorico); anteprima viva durante il trascinamento.
+- Taglio della ricorsione: segmenti e quadrati sotto 0,5 px sullo schermo non vengono suddivisi; l'HUD segnala il taglio e il livello effettivamente tracciato.
+- Culling spaziale: ogni sottoalbero fuori dalla vista corrente non viene visitato; pan e zoom ricalcolano solo ciò che si vede.
+- Vista iniziale adattata al riquadro della figura e al formato della vista (come per IFS e attrattori); «R» la ripristina. 6 preset (Koch, fiocco, zoom sul vertice a livello 12, albero a 45°, 30° e 60°).
+- `caps` come per le famiglie a densità: `escape`, `phase`, `point`, `profile`, `juliaPick` falsi, `grid: 'xy'`; nuova chiave `geo` (solo per questa famiglia) per i controlli propri. I controlli non pertinenti si nascondono con `applyCaps()`.
+- HUD: livello n; Curva di Koch: lati 4ⁿ, lunghezza (4/3)ⁿ·L, D = ln 4 / ln 3 ≈ 1,2619; Fiocco di Koch: lati 3·4ⁿ, perimetro (4/3)ⁿ·L, area Aₙ = A₀·(8/5 − 3/5·(4/9)ⁿ) con limite 8/5·A₀, D; Albero pitagorico: quadrati 2ⁿ⁺¹ − 1 e θ, senza alcuna dimensione frattale (il testo didattico spiega perché non è definita come per Koch).
+- Triangolo di Sierpiński (IFS): la nota della famiglia riporta D = ln 3 / ln 2 ≈ 1,585.
+- Stato JSON (`v:1`): famiglia `geo` con `P: {fig, ang, niter}`; nessun campo nuovo a livello superiore.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- Le linee di Koch hanno spessore fisso di circa 1 px.
+- Albero pitagorico: n conta le generazioni sopra il tronco (n = 1 → 3 quadrati); dove i quadrati si sovrappongono la copertura è limitata a 1, quindi la densità non cresce.
+- Con il taglio attivo il tracciato si ferma al livello indicato nell'HUD; i valori di lati e lunghezza restano quelli teorici del livello n.
+- Cambiando figura la vista viene adattata; cambiando angolo o livello resta quella corrente (con angoli piccoli l'albero può uscire dalla vista: «R»).
+- Gli stati con `fam: "geo"` non vengono letti dalle release precedenti (famiglia sconosciuta).
+- Preesistente, non toccato: `applyState` per gli attrattori strani rifà il fit della vista e ignora la vista salvata nello stato.
+
 ## 1.14.7 — 2026-11-24
 
 ### Novità
