@@ -16,7 +16,24 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
-## 1.14.5 — 24/11/2026 
+## 1.14.7 — 2026-11-24
+
+### Novità
+- **Marker con il mouse.** Un clic sinistro singolo senza trascinamento (come il tap su touch) piazza o sposta il marker sul punto cliccato; se il clic cade entro 24 px dal marker presente, lo rimuove. Un secondo clic entro 350 ms (e 32 px) attiva lo zoom ×2 e ripristina lo stato precedente del marker, quindi il doppio clic non lascia marker indesiderati. Il trascinamento col tasto sinistro continua ad aprire la finestra di zoom; il pan resta su tasto destro/centrale, Spazio + trascinamento, pressione prolungata senza movimento.
+- **Pulsante unico «Julia dal marker»** (ID DOM `pick` conservato) al posto di «Julia da qui» e «Tocca per scegliere c». Con un marker sulla vista attiva apre subito il Julia con c = marker. Senza marker il pulsante si accende (etichetta «Scegli il punto sulla vista…», messaggio di stato, `aria-pressed`) e il prossimo clic o tocco sulla vista fissa c; premuto di nuovo annulla l'attesa.
+- Testi di intestazione e guida (scheda A) aggiornati a marker con clic e a «Julia dal marker».
+
+### Correzioni
+- L'attesa del punto per il Julia si azzera con «Zoom area», con la modalità Profilo (e entrando nell'attesa si esce da Profilo, perché lì il clic traccia il segmento), con il cambio di famiglia, con `applyState` e con «Indietro» verso un'altra famiglia. Prima poteva restare accesa e nascosta, e riapparire tornando al Mandelbrot.
+- «Julia da qui» usava il centro della vista: ora c è sempre il marker. La voce «Julia da qui» del menu di pressione prolungata su touch resta invariata.
+
+### Limiti noti
+- Con il mouse sopra la vista il cursore informativo (hover) sovrascrive la riga del marker nell'HUD; il testo del marker ricompare all'uscita del puntatore.
+- Il marker è per vista: il pulsante legge solo quello della vista attiva.
+- In «Zoom area» esplicito e in modalità Profilo il clic singolo non piazza marker (le modalità hanno la precedenza). La penna resta invariata.
+- Come su touch, il marker col clic vale per tutte le famiglie, anche quelle senza cursore informativo.
+
+## 1.14.5 — 2026-11-24 
 
 ### Novità
 - Guida didattica, scheda **D · Laboratorio**: cinque esperimenti «Prova tu», ciascuno con consegna (3 righe), pulsanti e domanda di riflessione: 1 «Perché Newton a volte fallisce?» (z³ − 2z + 2 con a = 1 e con a = 1 + 0,5i), 2 «Dentro o fuori il Mandelbrot» (Julia per c in cardioide, bulbo di periodo 3 / coniglio di Douady, esterno), 3 «La strada verso il caos» (cascata dei raddoppi, zoom sui raddoppi, finestra di periodo 3), 4 «Olomorfo vs non olomorfo» (Mandelbrot, Burning Ship, Tricorno in sequenza), 5 «Leggere il profilo» (Mandelbrot con fase finale e segmento A→B preimpostato).
@@ -34,7 +51,7 @@ Le date sono nel formato `AAAA-MM-GG`.
 - Se `applyState` o lo scroll non sono disponibili nel browser, i pulsanti non fanno nulla o non scorrono, senza errori.
 - Esistono due chiavi `d` duplicate (in `S.P` e in `PARAMDEF`): la seconda prevale sulla prima. Non toccato in questa release.
 
-## 1.14.0 — 23/11/2026
+## 1.14.0 — 2026-11-23
 
 ### Novità
 - Guida in-app, scheda **B «Storia e riferimenti»**: dodici mini-schede (chi, quando, cosa) su Fatou e Julia, Mandelbrot, Newton e Cayley, Burning Ship, Tricorno/Mandelbar, Phoenix, Magnet, Hénon/Clifford/de Jong, mappa logistica e Feigenbaum, Koch, IFS e Barnsley, Buddhabrot. Ogni scheda ha almeno un link di approfondimento (`target="_blank" rel="noopener"`).

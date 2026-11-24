@@ -211,10 +211,10 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.14.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.14.7</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.14.5 · 24 novembre 2026</p>
-<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area».<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
+<p class="updated">Versione 1.14.7 · 24 novembre 2026</p>
+<p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
  <div>
@@ -263,8 +263,7 @@ a{color:inherit}
    <button class="tbtn" id="profclear" data-cap="profile" type="button" title="Rimuovi il segmento profilo dalla vista attiva">Cancella profilo</button>
    <button class="tbtn" id="profcenter" data-cap="profile" type="button" title="Inquadra il segmento profilo nella vista attiva">Centra sul segmento</button>
    <button class="tbtn" id="profgraf" data-cap="profile" type="button" aria-pressed="false" title="Mostra o nascondi i grafici del profilo sezionale">Grafici</button>
-   <button class="tbtn" id="tojulia" data-cap="juliaPick">Julia da qui</button>
-   <button class="tbtn" id="pick" data-cap="juliaPick">Tocca per scegliere c</button>
+   <button class="tbtn" id="pick" data-cap="juliaPick" type="button" aria-pressed="false" title="Apre il Julia con c uguale al marker della vista attiva. Senza marker resta acceso in attesa del prossimo clic o tocco sulla vista.">Julia dal marker</button>
    <button class="tbtn" id="anim">Anima colori</button>
    <button class="tbtn" id="save">Salva PNG</button>
    <button class="tbtn" id="ptog">Nascondi pannello</button>
@@ -326,8 +325,8 @@ a{color:inherit}
 <section class="gitem" data-g="A">
 <h3 class="gh" data-t="Manuale breve" data-s="Come muoversi e come leggere ciò che si vede.">A · Manuale breve</h3>
 <div class="gbody" id="guida-A">
-<p><b>Navigazione.</b> Mouse: la rotella ingrandisce sul cursore, il doppio clic raddoppia lo zoom, trascinando disegni un rettangolo da ingrandire (Esc annulla). Per spostare la vista: tasto destro o centrale, Spazio premuto, oppure pressione lunga. Touch: un dito sposta, due dita pizzicano per ingrandire, un tocco breve mette un marker (un tocco sul marker lo toglie), un doppio tocco raddoppia lo zoom, la pressione prolungata apre un menu; per il rettangolo usa «Zoom area». Tastiera: + − zoom, R vista iniziale, B indietro, F schermo intero, P pannello, G griglia, O Profilo.</p>
-<p><b>«Julia da qui» e «Tocca per scegliere c».</b> Solo con Mandelbrot: ogni c definisce un insieme di Julia. Per z² + c vale la dicotomia di Fatou–Julia: se l'orbita di 0 non diverge (c dentro il Mandelbrot) l'insieme di Julia è connesso, altrimenti è una polvere di punti disconnessi. «Julia da qui» usa il centro della vista attiva; «Tocca per scegliere c»: il prossimo clic o tocco fissa c.</p>
+<p><b>Navigazione.</b> Mouse: la rotella ingrandisce sul cursore, il doppio clic raddoppia lo zoom, un clic singolo mette un marker (un clic sul marker lo toglie), trascinando disegni un rettangolo da ingrandire (Esc annulla). Per spostare la vista: tasto destro o centrale, Spazio premuto, oppure pressione lunga. Touch: un dito sposta, due dita pizzicano per ingrandire, un tocco breve mette un marker (un tocco sul marker lo toglie), un doppio tocco raddoppia lo zoom, la pressione prolungata apre un menu; per il rettangolo usa «Zoom area». Tastiera: + − zoom, R vista iniziale, B indietro, F schermo intero, P pannello, G griglia, O Profilo.</p>
+<p><b>«Julia dal marker».</b> Solo con Mandelbrot: ogni c definisce un insieme di Julia. Per z² + c vale la dicotomia di Fatou–Julia: se l'orbita di 0 non diverge (c dentro il Mandelbrot) l'insieme di Julia è connesso, altrimenti è una polvere di punti disconnessi. «Julia dal marker» apre subito il Julia con il c del marker della vista attiva; se manca il marker, il pulsante resta acceso e il prossimo clic o tocco sulla vista fissa c (premendolo di nuovo si annulla).</p>
 <p><b>Iterazioni e precisione.</b> «Iterazioni base» è il massimo di passi per punto; con «Iterazioni automatiche con lo zoom» cresce quando ingrandisci. In doppia precisione, oltre circa 10¹³ ingrandimenti i dettagli si sgranano e lo stato segnala «limite di precisione raggiunto».</p>
 <p><b>Perché il nero.</b> Il nero (la tinta interna) non indica un punto «stabile»: dice solo «non diverge entro N iterazioni». Il calcolo si ferma a maxIt per limitare il tempo: vicino al bordo, con N più grande, il punto può divergere. In Mandelbrot e Julia il nero è l'interno non divergente, la parte colorata è il bacino dell'infinito e le sfumature misurano la velocità di fuga (μ minore = fuga più rapida). In Newton i bacini sono tutti colorati, uno per radice: il nero indica solo il timeout.</p>
 <p><b>Colori, legenda, rilievo.</b> La legenda riporta la scala di μ (0 → maxIt) e il colore interno; la sua «i» spiega i criteri di arresto. «Luce e rilievo» tratta il campo colore come un'altitudine illuminata: evidenzia le pendenze, senza nuova informazione. «Fonte colore» (Mandelbrot, Julia e affini) usa Iterazioni, Fase finale, Stripe average o Fase media (sperimentale); il peso α le mescola con le iterazioni.</p>
@@ -908,7 +907,7 @@ const IFSS=[
  {name:'Triangolo di Sierpiński',m:[[0.5,0,0,0.5,0,0,1/3],[0.5,0,0,0.5,0.5,0,1/3],[0.5,0,0,0.5,0.25,0.4330127,1/3]]}
 ];
 /* 1.9.0 - capacita' per famiglia. escape: concetto di fuga/divergenza; phase: modi di fase pertinenti; point: evalPoint supportato;
-   profile: profilo lungo un segmento (famiglie a bande con point); grid: asse della griglia ('complex'|'xy'|'rx'|'none'); newtonThresholds: soglie Newton; juliaPick: «Julia da qui» / «Tocca per scegliere c». */
+   profile: profilo lungo un segmento (famiglie a bande con point); grid: asse della griglia ('complex'|'xy'|'rx'|'none'); newtonThresholds: soglie Newton; juliaPick: «Julia dal marker». */
 const CAP=o=>Object.assign({escape:true,phase:false,point:true,profile:true,grid:'complex',newtonThresholds:false,juliaPick:false},o);
 const FAM={
  mandel:{name:'Mandelbrot e Multibrot',code:0,caps:CAP({phase:true,juliaPick:true}),axes:'complex',de:true,view:{cx:-0.6,cy:0,span:2.7},iter:300,params:['d'],
@@ -2228,7 +2227,7 @@ class Viewport{
   }
   ctx.restore();
  }
- // tocco breve (solo touch): «Tocca per scegliere c» ha la precedenza; doppio tocco = zoom ×2 come prima
+ // tocco breve (touch) o, dalla 1.14.7, clic sinistro singolo senza trascinamento (mouse): con «Julia dal marker» in attesa il punto ha la precedenza; doppio tocco/clic = zoom ×2 e marker precedente ripristinato
  onTap(p){
   const cv=this.cv,k=cv.getBoundingClientRect().width/(cv.width||1),now=performance.now();
   if(S.pick&&S.fam==='mandel'){const c=this.pxToC(p[0],p[1]);juliaFrom(c[0],c[1]);return;}
@@ -2383,6 +2382,7 @@ class Viewport{
    else if(ts&&!ts.moved&&!wasPan&&performance.now()-ts.t<450){
     const [px,py]=ts.p;
     if(S.pick&&S.fam==='mandel'){const [x,y]=this.pxToC(px,py);juliaFrom(x,y);}
+    else if(ts.mouse&&e.type==='pointerup')this.onTap(ts.p); // 1.14.7: clic sinistro senza trascinamento = tap (marker; secondo clic entro 350 ms = zoom ×2 e marker ripristinato)
     else {const now=performance.now();if(now-this.lastTap<350){this.lastTap=0;pushHist();this.zoomAt(px,py,2);render([this]);}else this.lastTap=now;}
    }
    this.tapStart=null;
@@ -2578,7 +2578,7 @@ function fvSave(){VPS.forEach(vp=>{vp.fv[S.fam]={...vp.view};});}
 /* ---------- zoom rettangolare (modalità) ---------- */
 function setZoomMode(on,auto){
  zoomMode=!!on;const b=$('zoomarea');b.classList.toggle('on',zoomMode);b.setAttribute('aria-pressed',zoomMode?'true':'false');VPS.forEach(v=>v.cv.classList.toggle('zsel',zoomMode));
- if(zoomMode){if(!auto){S.pick=false;$('pick').classList.remove('on');if(profileMode)setProfileMode(false);setStatus('Zoom area: trascina un rettangolo (Esc annulla). Pan con tasto destro o pressione lunga.');}}
+ if(zoomMode){if(!auto){setPick(false);if(profileMode)setProfileMode(false);setStatus('Zoom area: trascina un rettangolo (Esc annulla). Pan con tasto destro o pressione lunga.');}}
  else{VPS.forEach(v=>{if(v.sel)v.endSel(false);});if(!auto)setStatus('');}
 }
 // 1.10.5 — modalità Profilo
@@ -2590,7 +2590,7 @@ function setProfileMode(on){
  const b=$('profile');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');}
  if(on){
   if(zoomMode)setZoomMode(false,true);
-  S.pick=false;const pb=$('pick');if(pb)pb.classList.remove('on');
+  setPick(false);
   setStatus('Profilo: trascina A→B. Esc esce (segmento resta). Spazio+trascina / tasto centrale / due dita = pan.');
  }else{
   VPS.forEach(v=>{if(v.profDraw){v.profDraw=null;v.drawProfile();}});
@@ -2746,7 +2746,7 @@ function applyCaps(){
 }
 function scheduleRender(ms){clearTimeout(renderPending);renderPending=setTimeout(render,ms);}
 function setFam(f,keepView){
- VPS.forEach(v=>v.clearMarker());
+ VPS.forEach(v=>v.clearMarker());setPick(false); // 1.14.7: cambio famiglia/stato = niente attesa residua del punto
  if(!keepView)fvSave(); // ogni vista ricorda la propria vista per famiglia
  S.fam=f;$('fam').value=f;
  if(!keepView){VPS.forEach(vp=>{vp.view={...(vp.fv[f]||FAM[f].view),rot:0};});S.nw={};}
@@ -2777,8 +2777,14 @@ function applyPreset(i){
  showPresetDesc(p.desc||'');
  render();
 }
+// 1.14.7 - «Julia dal marker»: S.pick = in attesa del punto (clic o tocco sulla vista); il pulsante è #pick (stesso ID di «Tocca per scegliere c»)
+function setPick(on){
+ on=!!on&&S.fam==='mandel';S.pick=on;
+ const b=$('pick');
+ if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');b.textContent=on?'Scegli il punto sulla vista…':'Julia dal marker';}
+}
 function juliaFrom(x,y){
- pushHist();S.pick=false;$('pick').classList.remove('on');const d=S.P.mandel.d;Object.assign(S.P.julia,{cr:+x.toFixed(10),ci:+y.toFixed(10),d});
+ pushHist();setPick(false);const d=S.P.mandel.d;Object.assign(S.P.julia,{cr:+x.toFixed(10),ci:+y.toFixed(10),d});
  VPS.forEach(vp=>{delete vp.fv.julia;});setFam('julia');render();
  setStatus('Julia con c = '+fmt(x,6)+(y<0?' − ':' + ')+fmt(Math.abs(y),6)+'i');
 }
@@ -2842,7 +2848,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.14.5',APP_VERSION_SHORT='1.14.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.14.7',APP_VERSION_SHORT='1.14.7',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3091,7 +3097,7 @@ $('back').addEventListener('click',()=>{
  viewNote='';
  fvSave();
  const sameP=h.fam===S.fam&&JSON.stringify(h.P)===JSON.stringify(S.P[h.fam])&&JSON.stringify(h.nw||{})===JSON.stringify(S.nw||{});
- if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;}
+ if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;setPick(false);}
  S.P[h.fam]=h.P;S.nw=h.nw?{...h.nw}:{};
  const specs=(h.views||[]).filter(v=>v&&isFinite(+v.cx)&&isFinite(+v.cy)&&+v.span>0).map((v,k)=>({id:(v.id!=null&&isFinite(+v.id)?+v.id:k),cx:+v.cx,cy:+v.cy,span:+v.span}));
  if(!specs.length)specs.push({id:AV?AV.id:0,cx:AV.view.cx,cy:AV.view.cy,span:AV.view.span});
@@ -3107,8 +3113,17 @@ $('profclear').addEventListener('click',clearActiveProfile);
 $('profcenter').addEventListener('click',()=>centerOnProfile(AV));
 $('frames').addEventListener('click',()=>{FRAMES_ON=!FRAMES_ON;const b=$('frames');b.classList.toggle('on',FRAMES_ON);b.setAttribute('aria-pressed',FRAMES_ON?'true':'false');scheduleFrames();});
 $('grid').addEventListener('click',toggleGrid);
-$('tojulia').addEventListener('click',()=>{const c=screenToWorld(AV.view,AV.cv.width,AV.cv.height,AV.cv.width/2,AV.cv.height/2);juliaFrom(c[0],c[1]);});
-$('pick').addEventListener('click',()=>{S.pick=!S.pick;$('pick').classList.toggle('on',S.pick);if(S.pick&&zoomMode)setZoomMode(false);setStatus(S.pick?'Tocca un punto del Mandelbrot: diventa il c del Julia':'');});
+// 1.14.7 - «Julia dal marker»: marker attivo sulla vista attiva = Julia subito; altrimenti il pulsante resta acceso in attesa del prossimo clic/tocco (di nuovo il pulsante annulla)
+$('pick').addEventListener('click',()=>{
+ if(S.fam!=='mandel')return;
+ const m=AV&&AV.marker;
+ if(m){juliaFrom(m.x,m.y);return;}
+ if(S.pick){setPick(false);setStatus('');return;}
+ if(zoomMode)setZoomMode(false); // le modalità si escludono a vicenda
+ if(profileMode)setProfileMode(false);
+ setPick(true);
+ setStatus('Julia dal marker: clic o tocco su un punto del Mandelbrot, diventa il c del Julia (il pulsante annulla)');
+});
 $('anim').addEventListener('click',()=>{S.anim=!S.anim;$('anim').classList.toggle('on',S.anim);if(S.anim)animLoop();});
 function animLoop(){if(!S.anim)return;S.off=(S.off+0.0025)%1;colRows[1]&&colRows[1]._show();recolor();requestAnimationFrame(animLoop);}
 $('save').addEventListener('click',()=>{
