@@ -212,9 +212,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.15.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.15.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.15.0 · 24 novembre 2026</p>
+<p class="updated">Versione 1.15.5 · 25 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -1460,32 +1460,33 @@ function colorize(B){
  B.cv.getContext('2d').putImageData(B.img,0,0);
 }
 
-/* ---------- 1.15.0: backend WebGL2 per la SOLA colorazione (parte A) ----------
+/* ---------- 1.15.0: backend WebGL2 per la SOLA colorazione (parte A, completata nella 1.15.5 con la parte B) ----------
    Scelta architetturale: UN CONTESTO WebGL2 PER VISTA (max 4, MAX_VIEWS). Ogni Viewport crea il proprio GpuColor: canvas .vgl sovrapposto
    al canvas di vista (stesse dimensioni, pointer-events:none), texture e LUT propri, nessuno stato da commutare tra una vista e l'altra.
    Un contesto condiviso richiederebbe di renderizzare su un canvas fuori schermo e poi copiare ogni risultato con drawImage nelle viste
    (una copia in più per frame, e animLoop la farebbe a ogni fotogramma); con al massimo 4 viste il costo di 4 contesti è trascurabile
    (il tetto di pixel totale è già diviso fra le viste, quindi anche le texture non crescono).
    I worker calcolano gli stessi buffer di prima; le texture ricevono ogni tile con texSubImage2D e i buffer CPU restano la fonte di verità:
-   qualunque ripiego (stato non supportato, contesto perso, errore GL) torna al colorize() esistente senza ricalcolare nulla.
+   qualunque ripiego (contesto perso, errore GL, famiglia a densità, ?gpu=0) torna al colorize() esistente senza ricalcolare nulla.
+   1.15.5 (parte B): lo shader replica per intero colorize() per le famiglie a bande: modi esterni smooth/equal/neon/stalk, interni flat/tp/tx,
+   stati di uscita di Newton, campo altezza dai 4 vicini → normali → luce Blinn-Phong, iridescenza (anche a luce spenta), fonti di fase
+   (final continuo/binario, stripe, mean) con miscela OKLab di peso alpha, dithering IGN. Nessuno stato di colore delle famiglie a bande
+   ricade più sulla CPU; restano CPU soltanto le famiglie a densità e l'anteprima a bassa risoluzione (1/16 dei pixel) durante il calcolo.
    Debug: dalla console, gpuParityTest() (vedi più sotto); ?gpu=0 nell'URL forza il percorso CPU. */
 const GPU_ENABLE=!(typeof location!=='undefined'&&/[?&]gpu=0(&|$)/.test(location.search));
-const GPU_TEX_ALL=true; // true: aggiorna anche tp, tx, ph (pronte per la parte B, non lette dallo shader A); false: solo mu, de, kind
+const GPU_TEX_ALL=true; // 1.15.5: deve restare true: lo shader legge anche tp, tx, ph (con false la GPU si disattiva: vedi gpuColorReason)
 const DENS_FAMS={ifs:1,buddha:1,strange:1,bif:1,geo:1}; // famiglie a densità: restano sulla CPU (colorize ramo isIFS: log1p(conteggio) normalizzato, t = off + dens·colore medio)
 // null = la GPU può colorare con lo stato attuale; altrimenti il motivo del ripiego su CPU
 function gpuColorReason(fam){
  const F=FAM[fam];
  if(!F)return 'famiglia';
  if(DENS_FAMS[fam])return 'famiglia a densità';
- if(S.mode!=='smooth'&&S.mode!=='neon')return 'modo esterno '+S.mode;
- if(S.inmode!=='flat')return 'interno '+S.inmode;
- if(+S.light>0)return 'luce/rilievo';
- if(+S.irid>0)return 'iridescenza';
- if(F.caps&&F.caps.phase&&S.src&&S.src!=='iter')return 'fonte di fase';
+ if(!GPU_TEX_ALL)return 'texture parziali';
  return null;
 }
 const GPU_VS='#version 300 es\nvoid main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);}';
 // kind: 0 fuga/convergenza (Nova), 1 interno/timeout, 2.. radice (Newton), 253 singolarità, 254 divergenza, 255 = non ancora calcolato (alpha 0, come done=0 sulla CPU)
+// Unità texture: 0 mu, 1 de, 2 LUT, 3 kind, 4 tp, 5 tx, 6 ph, 7 CDF (R32F 2048×1: il texel i contiene cdf[i+1]; cdf[0] vale sempre 0)
 const GPU_FS=`#version 300 es
 precision highp float;
 precision highp int;
@@ -1495,60 +1496,168 @@ uniform sampler2D uMu;
 uniform sampler2D uDe;
 uniform sampler2D uLut;
 uniform usampler2D uKind;
+uniform sampler2D uTp;
+uniform sampler2D uTx;
+uniform sampler2D uPh;
+uniform sampler2D uCdf;
 uniform int uH;
 uniform int uMode;
+uniform int uInMode;
 uniform int uHasDE;
+uniform int uHasCdf;
 uniform int uNroots;
+uniform int uPhMode;
 uniform float uOff;
 uniform float uDens;
 uniform float uGlowW;
+uniform float uStw;
+uniform float uCdfLo;
+uniform float uCdfHi;
+uniform float uLight;
+uniform float uShin;
+uniform float uIrid;
+uniform float uBump;
+uniform float uRa;
+uniform float uAlpha;
+uniform float uPhK;
 uniform vec3 uInc;
 uniform vec3 uDiv;
 uniform vec3 uSing;
+uniform vec3 uLd;
+uniform vec3 uHv;
 out vec4 oColor;
+// stessa indicizzazione di LUT sulla CPU: parte frazionaria * 1024, troncata, limitata a 1023
 vec3 lutAt(float t){
  float f=t-floor(t);
  int i=clamp(int(f*1024.0),0,1023);
- return texture(uLut,vec2((float(i)+0.5)/1024.0,0.5)).rgb; // centro del texel: stesso indice discreto della CPU
+ return texelFetch(uLut,ivec2(i,0),0).rgb;
 }
-void main(){
- ivec2 p=ivec2(int(gl_FragCoord.x),uH-1-int(gl_FragCoord.y));
+float cbrt0(float x){return x<=0.0?0.0:pow(x,1.0/3.0);}
+vec3 toLab(vec3 c){
+ vec3 q=mix(pow((c+0.055)/1.055,vec3(2.4)),c/12.92,lessThanEqual(c,vec3(0.04045)));
+ float l=cbrt0(0.4122214708*q.r+0.5363325363*q.g+0.0514459929*q.b);
+ float m=cbrt0(0.2119034982*q.r+0.6806995451*q.g+0.1073969566*q.b);
+ float s=cbrt0(0.0883024619*q.r+0.2817188376*q.g+0.6299787005*q.b);
+ return vec3(0.2104542553*l+0.7936177850*m-0.0040720468*s,1.9779984951*l-2.4285922050*m+0.4505937099*s,0.0259040371*l+0.7827717662*m-0.8086757660*s);
+}
+vec3 fromLab(vec3 v){
+ float l=v.x+0.3963377774*v.y+0.2158037573*v.z;
+ float m=v.x-0.1055613458*v.y-0.0638541728*v.z;
+ float s=v.x-0.0894841775*v.y-1.2914855480*v.z;
+ l=l*l*l;m=m*m*m;s=s*s*s;
+ vec3 r=clamp(vec3(4.0767416621*l-3.3077115913*m+0.2309699292*s,-1.2684380046*l+2.6097574011*m-0.3413193965*s,-0.0041960863*l-0.7034186147*m+1.7076147010*s),0.0,1.0);
+ return mix(1.055*pow(r,vec3(1.0/2.4))-0.055,12.92*r,lessThanEqual(r,vec3(0.0031308)));
+}
+// miscela in OKLab due posizioni della stessa palette: tIt (iterazioni) e tPh (fase), peso al su tPh
+vec3 phaseColor(float tIt,float tPh,float al){
+ vec3 ca=lutAt(tIt),cb=lutAt(tPh);
+ if(al>=1.0)return cb;
+ if(al<=0.0)return ca;
+ return fromLab(mix(toLab(ca),toLab(cb),al));
+}
+float muAt(ivec2 q){return texelFetch(uMu,q,0).r;}
+// campo colore di un pixel: fl = -1 non calcolato, 0 normale, 1 interno piatto, 2 divergenza, 3 singolarità; t = posizione palette, b = luminosità, h = altezza per il rilievo
+void fld(ivec2 p,out int fl,out float t,out float b,out float h){
+ fl=0;t=0.0;b=1.0;h=0.0;
  uint k=texelFetch(uKind,p,0).r;
- if(k==255u){oColor=vec4(0.0);return;}
- if(k==1u){oColor=vec4(uInc,1.0);return;}
- if(k==254u){oColor=vec4(uDiv,1.0);return;}
- if(k==253u){oColor=vec4(uSing,1.0);return;}
- float m=texelFetch(uMu,p,0).r;
- float t;float b;
+ if(k==255u){fl=-1;return;}
+ if(k==1u){
+  if(uInMode==0){fl=1;return;}
+  float sv=uInMode==1?-log(texelFetch(uTp,p,0).r+1e-9)*0.35:-log(texelFetch(uTx,p,0).r+1e-9)*0.25;
+  t=uOff+0.5+uDens*sv;h=sv;return;
+ }
+ if(k==254u){fl=2;return;}
+ if(k==253u){fl=3;return;}
+ float m=muAt(p);
  if(k>=2u){
   int r=(int(k)-2)%uNroots;
   t=uOff+float(r)/float(uNroots)+uDens*0.03*m;
-  b=0.3+0.7*exp(-0.06*m);
- }else{
-  float sm=0.12*sqrt(m);
-  t=uOff+uDens*sm;b=1.0;
-  if(uMode==1){
-   float dpx;
-   float de=texelFetch(uDe,p,0).r;
-   if(uHasDE==1&&de>=0.0)dpx=de;
-   else{
-    ivec2 sz=ivec2(textureSize(uMu,0));
-    float pl=p.x>0?texelFetch(uMu,p-ivec2(1,0),0).r:m;
-    float pr=p.x<sz.x-1?texelFetch(uMu,p+ivec2(1,0),0).r:m;
-    float pu=p.y>0?texelFetch(uMu,p-ivec2(0,1),0).r:m;
-    float pd=p.y<sz.y-1?texelFetch(uMu,p+ivec2(0,1),0).r:m;
-    float g=length(vec2((pr-pl)*0.5,(pd-pu)*0.5));
-    dpx=g>1e-9?1.44/g:1e9;
-   }
-   float gl=exp(-dpx/uGlowW);
-   b=0.07+0.93*pow(gl,0.7);
-  }
+  b=0.3+0.7*exp(-0.06*m);h=sqrt(m)*0.6;return;
  }
- oColor=vec4(lutAt(t)*b,1.0);
+ float sm=0.12*sqrt(m);
+ if(uMode==0){t=uOff+uDens*sm;h=sm;}
+ else if(uMode==2){
+  float e=0.0;
+  if(uHasCdf==1){
+   float v=(log(1.0+m)-uCdfLo)/(uCdfHi-uCdfLo)*2048.0;
+   float af=clamp(floor(v),0.0,2047.0);
+   int a=int(af);
+   float f=clamp(v-af,0.0,1.0);
+   float c0=a==0?0.0:texelFetch(uCdf,ivec2(a-1,0),0).r;
+   float c1=texelFetch(uCdf,ivec2(a,0),0).r;
+   e=c0*(1.0-f)+c1*f;
+  }
+  t=uOff+uDens*e;h=e*4.0;
+ }else if(uMode==1){
+  float dpx;
+  float de=texelFetch(uDe,p,0).r;
+  if(uHasDE==1&&de>=0.0)dpx=de;
+  else{
+   ivec2 sz=textureSize(uMu,0);
+   float pl=p.x>0?muAt(p-ivec2(1,0)):m;
+   float pr=p.x<sz.x-1?muAt(p+ivec2(1,0)):m;
+   float pu=p.y>0?muAt(p-ivec2(0,1)):m;
+   float pd=p.y<sz.y-1?muAt(p+ivec2(0,1)):m;
+   float g=length(vec2((pr-pl)*0.5,(pd-pu)*0.5));
+   dpx=g>1e-9?1.44/g:1e9;
+  }
+  float gl=exp(-dpx/uGlowW);
+  t=uOff+uDens*sm;b=0.07+0.93*pow(gl,0.7);h=gl*3.0;
+ }else{
+  float st=exp(-texelFetch(uTx,p,0).r/uStw);
+  t=uOff+uDens*(sm+0.35*st);b=0.28+0.72*st;h=st*2.5+sm*0.3;
+ }
+}
+void main(){
+ ivec2 p=ivec2(int(gl_FragCoord.x),uH-1-int(gl_FragCoord.y));
+ int fl;float t,b,h;
+ fld(p,fl,t,b,h);
+ if(fl<0){oColor=vec4(0.0);return;}
+ if(fl==1){oColor=vec4(uInc,1.0);return;}
+ if(fl==2){oColor=vec4(uDiv,1.0);return;}
+ if(fl==3){oColor=vec4(uSing,1.0);return;}
+ float tt=t,nz=1.0,nx=0.0,ny=0.0;
+ if(uLight>0.0||uIrid>0.0){
+  // campo altezza dai 4 vicini (texelFetch con controllo dei bordi): un vicino non calcolato o piatto non conta (come sulla CPU)
+  ivec2 sz=textureSize(uMu,0);
+  float hl=h,hr=h,hu=h,hd=h,cx=0.0,cy=0.0;
+  int fa;float ta,ba,ha;
+  if(p.x>0){fld(p-ivec2(1,0),fa,ta,ba,ha);if(fa==0){hl=ha;cx+=1.0;}}
+  if(p.x<sz.x-1){fld(p+ivec2(1,0),fa,ta,ba,ha);if(fa==0){hr=ha;cx+=1.0;}}
+  if(p.y>0){fld(p-ivec2(0,1),fa,ta,ba,ha);if(fa==0){hu=ha;cy+=1.0;}}
+  if(p.y<sz.y-1){fld(p+ivec2(0,1),fa,ta,ba,ha);if(fa==0){hd=ha;cy+=1.0;}}
+  float gx=(hr-hl)/max(cx,1.0),gy=(hd-hu)/max(cy,1.0);
+  float gm=length(vec2(gx,gy));
+  if(gm>0.0){
+   float mm=uRa*log(1.0+gm*uBump/0.004);
+   nx=-gx/gm*mm;ny=-gy/gm*mm;
+   float nn=sqrt(nx*nx+ny*ny+1.0);
+   nx/=nn;ny/=nn;nz=1.0/nn;
+  }
+  tt+=uIrid*(1.0-nz);
+ }
+ vec3 c0=lutAt(tt)*b;
+ if(uPhMode>0&&texelFetch(uKind,p,0).r==0u){ // fonte di fase (solo esterno)
+  float u=texelFetch(uPh,p,0).r;
+  float pp=uPhMode==2?(u<0.5?0.25:0.75):(uPhMode==3?uDens*u:uPhK*u);
+  c0=phaseColor(tt,uOff+pp+uIrid*(1.0-nz),uAlpha)*b;
+ }
+ vec3 col=c0;
+ if(uLight>0.0){ // Blinn-Phong: componente diffusa + speculare tinta
+  float dif=max(0.0,nx*uLd.x+ny*uLd.y+nz*uLd.z);
+  float sp=pow(max(0.0,nx*uHv.x+ny*uHv.y+nz*uHv.z),uShin);
+  float shade=0.22+0.95*dif,sk=1.1*sp;
+  vec3 sr=min(vec3(1.0),c0*1.3+0.35);
+  col=c0*(1.0-uLight)+uLight*(c0*shade+sr*sk);
+ }
+ // dithering Interleaved Gradient Noise (stessa formula della CPU), poi arrotondamento a 8 bit
+ float dn=fract(52.9829189*fract(0.06711056*float(p.x)+0.00583715*float(p.y)))-0.5;
+ vec3 c8=clamp(col*255.0+dn,0.0,255.0);
+ oColor=vec4(floor(c8+0.5)/255.0,1.0);
 }`;
 class GpuColor{
  constructor(vp){
-  this.vp=vp;this.ok=false;this.shown=false;this.W=0;this.H=0;this.lutVer=0;this.t=null;this.ff=null;this.err='';this.nUp=0;this.U={};this.gl=null;this.cv=null;this.prog=null;this.lut=null;
+  this.vp=vp;this.ok=false;this.shown=false;this.W=0;this.H=0;this.lutVer=0;this.t=null;this.ff=null;this.err='';this.nUp=0;this.U={};this.gl=null;this.cv=null;this.prog=null;this.lut=null;this.lut16=false;this.cdfTex=null;this.cdfRef=null;
   if(!GPU_ENABLE){this.err='disattivato (?gpu=0)';return;}
   try{
    const cv=document.createElement('canvas');
@@ -1568,14 +1677,19 @@ class GpuColor{
   const pr=gl.createProgram();gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.linkProgram(pr);
   if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){this.err='link: '+(gl.getProgramInfoLog(pr)||'errore');return false;}
   this.prog=pr;gl.useProgram(pr);
-  ['uMu','uDe','uLut','uKind','uH','uMode','uHasDE','uNroots','uOff','uDens','uGlowW','uInc','uDiv','uSing'].forEach(n=>{this.U[n]=gl.getUniformLocation(pr,n);});
-  gl.uniform1i(this.U.uMu,0);gl.uniform1i(this.U.uDe,1);gl.uniform1i(this.U.uLut,2);gl.uniform1i(this.U.uKind,3);
+  ['uMu','uDe','uLut','uKind','uTp','uTx','uPh','uCdf','uH','uMode','uInMode','uHasDE','uHasCdf','uNroots','uPhMode','uOff','uDens','uGlowW','uStw','uCdfLo','uCdfHi','uLight','uShin','uIrid','uBump','uRa','uAlpha','uPhK','uInc','uDiv','uSing','uLd','uHv'].forEach(n=>{this.U[n]=gl.getUniformLocation(pr,n);});
+  ['uMu','uDe','uLut','uKind','uTp','uTx','uPh','uCdf'].forEach((n,i)=>gl.uniform1i(this.U[n],i)); // unità: 0 mu, 1 de, 2 LUT, 3 kind, 4 tp, 5 tx, 6 ph, 7 CDF
   gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
-  // LUT 1024×1 RGBA8, LINEAR, ripetizione sull'asse della palette (la palette è ciclica)
-  const lt=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,lt);gl.texStorage2D(gl.TEXTURE_2D,1,gl.RGBA8,LUTN,1);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  // LUT 1024×1: RGBA16F (1.15.5: la luce speculare amplifica l'errore di quantizzazione di un RGBA8; ripiego su RGBA8 se il formato manca), NEAREST: lo shader usa texelFetch.
+  // La palette è ciclica: l'indice si ricava dalla parte frazionaria nello shader, quindi niente ripetizione hardware
+  gl.getError();
+  let lt=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,lt);gl.texStorage2D(gl.TEXTURE_2D,1,gl.RGBA16F,LUTN,1);
+  this.lut16=gl.getError()===gl.NO_ERROR;
+  if(!this.lut16){gl.deleteTexture(lt);lt=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,lt);gl.texStorage2D(gl.TEXTURE_2D,1,gl.RGBA8,LUTN,1);}
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   this.lut=lt;
+  this.cdfTex=this.texF(2048,1); // CDF dell'equalizzazione: R32F 2048×1, texel i = cdf[i+1] (cdf[0] = 0 sempre)
   return gl.getError()===gl.NO_ERROR;
  }
  // verifica che i formati R32F (campionati NEAREST) e R8UI siano caricabili e leggibili: altrimenti niente GPU
@@ -1637,29 +1751,59 @@ class GpuColor{
   }catch(e){return false;}
  }
  upLut(){
-  const gl=this.gl,u=new Uint8Array(LUTN*4),q=v=>Math.round(Math.min(1,Math.max(0,v))*255);
-  for(let i=0;i<LUTN;i++){u[i*4]=q(LUT[i*3]);u[i*4+1]=q(LUT[i*3+1]);u[i*4+2]=q(LUT[i*3+2]);u[i*4+3]=255;}
-  gl.bindTexture(gl.TEXTURE_2D,this.lut);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,LUTN,1,gl.RGBA,gl.UNSIGNED_BYTE,u);
+  const gl=this.gl;
+  gl.bindTexture(gl.TEXTURE_2D,this.lut);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+  if(this.lut16){
+   const f=new Float32Array(LUTN*4);
+   for(let i=0;i<LUTN;i++){f[i*4]=LUT[i*3];f[i*4+1]=LUT[i*3+1];f[i*4+2]=LUT[i*3+2];f[i*4+3]=1;}
+   gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,LUTN,1,gl.RGBA,gl.FLOAT,f);
+  }else{
+   const u=new Uint8Array(LUTN*4),q=v=>Math.round(Math.min(1,Math.max(0,v))*255);
+   for(let i=0;i<LUTN;i++){u[i*4]=q(LUT[i*3]);u[i*4+1]=q(LUT[i*3+1]);u[i*4+2]=q(LUT[i*3+2]);u[i*4+3]=255;}
+   gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,LUTN,1,gl.RGBA,gl.UNSIGNED_BYTE,u);
+  }
   this.lutVer=LUTVER;
  }
- // solo uniform + draw call; B = buffer pieno (serve per H e risoluzione)
+ // solo uniform + draw call; B = buffer pieno (serve per H, risoluzione e CDF). Ogni parametro di colore (modo, interno, luce, rilievo, cangiante, fonte di fase, alpha, palette, fase) è un uniform
  paint(B){
   try{
    const gl=this.gl,t=this.t;
    if(!this.ok||!t||B.W!==this.W||B.H!==this.H)return false;
-   if(this.lutVer!==LUTVER)this.upLut();
-   const U=this.U,fam=S.fam,isNewton=fam==='newton';
+   if(this.lutVer!==LUTVER){this.upLut();if(gl.getError()!==gl.NO_ERROR)return false;}
+   const U=this.U,fam=S.fam,F=FAM[fam],isNewton=fam==='newton';
    let nroots=1;if(isNewton){const pp=POLYS[S.P.newton.poly];nroots=pp.c?pp.c.length-1:8;}
    const nwc=isNewton&&S.nw?S.nw:{};
    const dvc=(nwc.divergenceColor?hex(nwc.divergenceColor).map(x=>Math.round(x*255)):[220,30,30]),sgc=(nwc.singularityColor?hex(nwc.singularityColor).map(x=>Math.round(x*255)):[220,40,200]);
    const inc=hex(S.incol).map(x=>Math.round(x*255));
+   // CDF (modo equalizzato): si ricarica solo quando cambia l'oggetto B.cdf (buildCDF ne crea uno nuovo a ogni calcolo)
+   const cd=B.cdf,cdOK=!!(cd&&cd.cdf&&cd.NB===2048&&cd.cdf.length>=2049);
+   if(cd!==this.cdfRef){
+    if(cdOK){gl.bindTexture(gl.TEXTURE_2D,this.cdfTex);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,2048,1,gl.RED,gl.FLOAT,cd.cdf.subarray(1,2049));if(gl.getError()!==gl.NO_ERROR)return false;}
+    this.cdfRef=cd;
+   }
+   // luce: stessi vettori di colorize()
+   const az=S.az*Math.PI/180,el=S.el*Math.PI/180,lx=Math.cos(az)*Math.cos(el),ly=-Math.sin(az)*Math.cos(el),lz=Math.sin(el);
+   let hx=lx,hy=ly,hz=lz+1;const hn=Math.hypot(hx,hy,hz);hx/=hn;hy/=hn;hz/=hn;
+   const res=B.H/700;
+   const phOn=!!(F.caps&&F.caps.phase&&!isNewton&&S.src&&S.src!=='iter'),phMode=!phOn?0:(S.src==='final'?(S.levels===2?2:1):(S.src==='stripe'?3:4));
    gl.useProgram(this.prog);gl.viewport(0,0,this.W,this.H);
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,t.mu);
    gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,t.de);
    gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,this.lut);
    gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,t.kind);
-   gl.uniform1i(U.uH,B.H);gl.uniform1i(U.uMode,S.mode==='neon'?1:0);gl.uniform1i(U.uHasDE,FAM[fam].de?1:0);gl.uniform1i(U.uNroots,Math.max(1,nroots));
-   gl.uniform1f(U.uOff,S.off);gl.uniform1f(U.uDens,S.dens);gl.uniform1f(U.uGlowW,3*S.glow*Math.max(0.5,B.H/700));
+   gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,t.tp);
+   gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,t.tx);
+   gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,t.ph);
+   gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_2D,this.cdfTex);
+   gl.uniform1i(U.uH,B.H);
+   gl.uniform1i(U.uMode,S.mode==='smooth'?0:S.mode==='neon'?1:S.mode==='equal'?2:3); // 3 = steli (stesso ramo finale di colorize)
+   gl.uniform1i(U.uInMode,S.inmode==='flat'?0:S.inmode==='tp'?1:2);
+   gl.uniform1i(U.uHasDE,F.de?1:0);gl.uniform1i(U.uHasCdf,cdOK?1:0);gl.uniform1i(U.uNroots,Math.max(1,nroots));gl.uniform1i(U.uPhMode,phMode);
+   gl.uniform1f(U.uOff,S.off);gl.uniform1f(U.uDens,S.dens);gl.uniform1f(U.uGlowW,3*S.glow*Math.max(0.5,res));gl.uniform1f(U.uStw,0.04*S.glow);
+   gl.uniform1f(U.uCdfLo,cdOK?cd.lo:0);gl.uniform1f(U.uCdfHi,cdOK?cd.hi:1);
+   gl.uniform1f(U.uLight,+S.light);gl.uniform1f(U.uShin,+S.shin);gl.uniform1f(U.uIrid,+S.irid);gl.uniform1f(U.uBump,8*res);gl.uniform1f(U.uRa,S.relief/8*0.45);
+   gl.uniform1f(U.uAlpha,Math.min(1,Math.max(0,+S.alpha)));gl.uniform1f(U.uPhK,Math.max(1,Math.round(S.dens))); // uPhK: stessa posizione di phasePos() (final continuo, mean)
+   gl.uniform3f(U.uLd,lx,ly,lz);gl.uniform3f(U.uHv,hx,hy,hz);
    gl.uniform3f(U.uInc,inc[0]/255,inc[1]/255,inc[2]/255);gl.uniform3f(U.uDiv,dvc[0]/255,dvc[1]/255,dvc[2]/255);gl.uniform3f(U.uSing,sgc[0]/255,sgc[1]/255,sgc[2]/255);
    gl.drawArrays(gl.TRIANGLES,0,3);
    return true;
@@ -1675,16 +1819,18 @@ class GpuColor{
  }
 }
 /* Test di parità GPU vs CPU (debug). Da console, a calcolo concluso ("Pronto in…"):
-     gpuParityTest()            → vista attiva
+     gpuParityTest()            → vista attiva, matrice completa
      gpuParityTest(1)           → vista 2 (id = numero vista − 1)
-     gpuParityTest(0,{tol:2,modes:['smooth','neon']})
-   Imposta temporaneamente uno stato colorabile dalla GPU (interno piatto, luce 0, cangiante 0, fonte Iterazioni), per ciascun modo colora con
-   colorize() (CPU) e con la GPU, confronta i byte RGB e ripristina lo stato. Restituisce {ok, modi:{smooth:{max:[r,g,b],fuoriTol,...}}} e stampa una tabella.
-   ok = differenza massima per canale ≤ tol (default ±2/255; la CPU applica un dithering di ±0,5 e la LUT GPU è a 8 bit).
-   okPratico = ok, oppure al più lo 0,01 % dei pixel fuori tolleranza (indice LUT ±1 per float32 GPU vs double CPU a ridosso del confine fra due voci della LUT: pixel isolati). */
+     gpuParityTest(0,{tol:2,modes:['equal'],inmodes:['tp'],styles:['pavone'],srcs:[{src:'stripe'}],alphas:[1,0.5],righe:true})
+   Matrice (1.15.5): ogni modo esterno (smooth, neon, equal, stalk) × ogni interno (flat, tp, tx) × ciascuno dei 9 STYLES (palette, densità, luce,
+   rilievo, lucentezza e cangiante dello stile; modo e interno dal ciclo) + ogni fonte di fase (final continuo, final binario, stripe, mean) × alpha {1, 0,5}
+   × due stili (uno senza luce, uno con luce e cangiante), con fase 0,37 (solo famiglie con caps.phase). Per ciascuna riga colora con colorize() (CPU) e con la GPU
+   e confronta i byte RGBA; poi ripristina lo stato. Restituisce {ok, okPratico, righe:[…], riepilogo:{modo,interno,stile,fonte}} e stampa le tabelle in console.
+   ok = differenza massima per canale ≤ tol (default ±2/255) in ogni pixel e alpha identico; okPratico = ok, oppure al più lo 0,05 % dei pixel di ciascuna riga
+   fuori tolleranza (indice LUT ±1 per float32 GPU vs double CPU a ridosso del confine fra due voci della LUT: pixel isolati). */
 function gpuParityTest(id,opts){
  opts=opts||{};
- const vp=(id==null)?AV:vpById(id|0),out={ok:false,vista:vp?vp.id+1:null};
+ const vp=(id==null)?AV:vpById(id|0),out={ok:false,okPratico:false,vista:vp?vp.id+1:null};
  const fail=m=>{out.motivo=m;try{console.warn('[gpuParityTest] '+m);}catch(_){}return out;};
  if(!vp)return fail('vista inesistente');
  if(!vp.gpu||!vp.gpu.ok)return fail('backend GPU non disponibile'+(vp.gpuNote?': '+vp.gpuNote:''));
@@ -1692,19 +1838,24 @@ function gpuParityTest(id,opts){
  if(DENS_FAMS[S.fam])return fail('famiglia a densità: colorazione solo CPU');
  if(!cur||!cur.full||cur.left1!==0)return fail('calcolo non concluso: attendere «Pronto in…»');
  if(!cur.gpuOK)return fail('texture GPU non allineate: ricalcolare la vista');
- const tol=opts.tol!=null?+opts.tol:2,modes=opts.modes||['smooth','neon'],B=cur.full,W=B.W,H=B.H,gl=vp.gpu.gl;
- const sv={mode:S.mode,inmode:S.inmode,light:S.light,irid:S.irid,src:S.src};
- out.W=W;out.H=H;out.tol=tol;out.modi={};
- try{
-  S.inmode='flat';S.light=0;S.irid=0;S.src='iter';
-  let all=true,allP=true;
-  for(const m of modes){
-   S.mode=m;
+ const tol=opts.tol!=null?+opts.tol:2,pxTol=opts.pxTol!=null?+opts.pxTol:0.05,B=cur.full,W=B.W,H=B.H,gl=vp.gpu.gl,F=FAM[S.fam],hasPh=!!(F.caps&&F.caps.phase);
+ const modes=opts.modes||['smooth','neon','equal','stalk'],inms=opts.inmodes||['flat','tp','tx'],styles=opts.styles||Object.keys(STYLES);
+ const alphas=opts.alphas||[1,0.5],offPh=opts.offPh!=null?+opts.offPh:0.37;
+ const srcs=opts.srcs||(hasPh?[{src:'final',levels:0},{src:'final',levels:2},{src:'stripe'},{src:'mean'}]:[]);
+ const phStyles=opts.phStyles||['classico','pavone'].filter(k=>STYLES[k]);
+ const SK=['mode','inmode','light','relief','shin','irid','dens','off','pal','src','alpha','stripeS','levels'],sv={};SK.forEach(k=>{sv[k]=S[k];});
+ out.W=W;out.H=H;out.tol=tol;out.righe=[];
+ const G=new Uint8Array(W*H*4);let lastPal=S.pal;
+ const one=(lab,setup)=>{
+  const r=Object.assign({},lab);
+  try{
+   setup();
+   if(S.pal!==lastPal){buildLUT();lastPal=S.pal;}
    colorize(B);const A=B.img.data;
    vp.gpuPaint();
-   if(!vp.gpuActive()){out.modi[m]={errore:'paint GPU fallita'};all=false;allP=false;continue;}
-   const G=new Uint8Array(W*H*4);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,G);
-   const mx=[0,0,0];let over=0,alpha=0,worst=null,wd=-1;
+   if(!vp.gpuActive()){r.errore='paint GPU fallita';out.righe.push(r);return;}
+   gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,G);
+   const mx=[0,0,0];let over=0,alpha=0;
    for(let y=0;y<H;y++){
     const ra=y*W*4,rg=(H-1-y)*W*4;
     for(let x=0;x<W;x++){
@@ -1712,26 +1863,40 @@ function gpuParityTest(id,opts){
      if(A[a+3]!==G[g+3])alpha++;
      for(let c=0;c<3;c++){const d=Math.abs(A[a+c]-G[g+c]);if(d>mx[c])mx[c]=d;if(d>pd)pd=d;}
      if(pd>tol)over++;
-     if(pd>wd){wd=pd;worst={x,y,cpu:[A[a],A[a+1],A[a+2]],gpu:[G[g],G[g+1],G[g+2]]};}
     }
    }
-   const pass=Math.max(mx[0],mx[1],mx[2])<=tol&&alpha===0;
-   const perc=+(100*over/(W*H)).toFixed(4);
-   out.modi[m]={ok:pass,okPratico:(pass||(alpha===0&&perc<=0.01)),max:mx,fuoriTol:over,percFuori:perc,alphaDiversi:alpha,peggiore:worst};
-   if(!pass)all=false;
-   if(!out.modi[m].okPratico)allP=false;
-  }
-  out.ok=all;out.okPratico=allP;
- }catch(e){out.errore=String((e&&e.message)||e);}
- finally{Object.assign(S,sv);try{vp.recolor();}catch(_){}}
+   r.max=mx;r.maxCh=Math.max(mx[0],mx[1],mx[2]);r.fuoriTol=over;r.percFuori=+(100*over/(W*H)).toFixed(4);r.alphaDiversi=alpha;
+   r.ok=r.maxCh<=tol&&alpha===0;r.okPratico=r.ok||(alpha===0&&r.percFuori<=pxTol);
+  }catch(e){r.errore=String((e&&e.message)||e);}
+  out.righe.push(r);
+ };
+ const st=k=>{const s=STYLES[k];Object.assign(S,{pal:s.pal,dens:s.dens,light:s.light,relief:s.relief,shin:s.shin,irid:s.irid,off:0,src:'iter',alpha:1,levels:0});};
  try{
-  const rows={};for(const m in out.modi){const r=out.modi[m];rows[m]=r.errore?{errore:r.errore}:{ok:r.ok,pratico:r.okPratico,maxR:r.max[0],maxG:r.max[1],maxB:r.max[2],fuoriTol:r.fuoriTol,'%':r.percFuori};}
-  console.log('[gpuParityTest] vista '+out.vista+' · '+W+'×'+H+' · tolleranza ±'+tol+'/255 → '+(out.ok?'OK':(out.okPratico?'OK (pixel isolati oltre tolleranza)':'NON OK')));console.table(rows);
-  setStatus('Parità GPU/CPU vista '+out.vista+': '+(out.ok?'OK':(out.okPratico?'OK con pixel isolati oltre tolleranza':'NON OK'))+' (dettagli in console)');
+  for(const sk of styles){if(!STYLES[sk])continue;for(const m of modes)for(const im of inms){
+   one({stile:sk,modo:m,interno:im,fonte:'iter'},()=>{st(sk);S.mode=m;S.inmode=im;});
+  }}
+  for(const sk of phStyles)for(const sp of srcs)for(const al of alphas){
+   const nome=sp.src+(sp.src==='final'?(sp.levels===2?' (binario)':' (continuo)'):'');
+   one({stile:sk,modo:'smooth',interno:'flat',fonte:nome,alpha:al},()=>{st(sk);S.mode='smooth';S.inmode='flat';S.src=sp.src;S.levels=sp.levels===2?2:0;S.alpha=al;S.stripeS=sp.stripeS||5;S.off=offPh;});
+  }
+ }catch(e){out.errore=String((e&&e.message)||e);}
+ finally{Object.assign(S,sv);try{buildLUT();}catch(_){}try{vp.recolor();}catch(_){}}
+ const R=out.righe;
+ out.ok=R.length>0&&R.every(r=>r.ok);out.okPratico=R.length>0&&R.every(r=>r.okPratico);
+ const agg=(key)=>{const o={};R.forEach(r=>{const k=r[key];if(k==null)return;const a=o[k]||(o[k]={righe:0,maxR:0,maxG:0,maxB:0,fuoriTol:0,maxPerc:0,ok:true});a.righe++;if(r.errore){a.ok=false;a.errore=r.errore;return;}a.maxR=Math.max(a.maxR,r.max[0]);a.maxG=Math.max(a.maxG,r.max[1]);a.maxB=Math.max(a.maxB,r.max[2]);a.fuoriTol+=r.fuoriTol;a.maxPerc=Math.max(a.maxPerc,r.percFuori);if(!r.okPratico)a.ok=false;});return o;};
+ out.riepilogo={modo:agg('modo'),interno:agg('interno'),stile:agg('stile'),fonte:agg('fonte')};
+ try{
+  console.log('[gpuParityTest] vista '+out.vista+' · '+W+'×'+H+' · '+R.length+' combinazioni · tolleranza ±'+tol+'/255 → '+(out.ok?'OK':(out.okPratico?'OK (pixel isolati oltre tolleranza)':'NON OK')));
+  for(const k in out.riepilogo){console.log('Riepilogo per '+k+' (differenza massima per canale, righe non ok = false)');console.table(out.riepilogo[k]);}
+  const bad=R.filter(r=>!r.okPratico);
+  if(bad.length){console.log('Righe fuori tolleranza:');console.table(bad.map(r=>({stile:r.stile,modo:r.modo,interno:r.interno,fonte:r.fonte,alpha:r.alpha,max:r.max?r.max.join('/'):r.errore,fuoriTol:r.fuoriTol,'%':r.percFuori})));}
+  if(opts.righe)console.table(R.map(r=>({stile:r.stile,modo:r.modo,interno:r.interno,fonte:r.fonte,alpha:r.alpha,maxR:r.max&&r.max[0],maxG:r.max&&r.max[1],maxB:r.max&&r.max[2],fuoriTol:r.fuoriTol,'%':r.percFuori,ok:r.ok})));
+  setStatus('Parità GPU/CPU vista '+out.vista+': '+(out.ok?'OK':(out.okPratico?'OK con pixel isolati oltre tolleranza':'NON OK'))+' ('+R.length+' combinazioni, dettagli in console)');
  }catch(_){}
  return out;
 }
 try{window.gpuParityTest=gpuParityTest;}catch(_){}
+
 
 /* ---------- worker (pool condiviso fra le viste) ---------- */
 const TILE_SIZE=64, MS_ENABLE=true, MS_MIN=4, MS_FAMS={mandel:1,julia:1,tricorn:1};
@@ -3348,7 +3513,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.15.0',APP_VERSION_SHORT='1.15.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.15.5',APP_VERSION_SHORT='1.15.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};

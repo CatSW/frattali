@@ -16,6 +16,23 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.15.5 — 2026-11-25
+
+### Novità
+- WebGL2 colorazione, parte B: la GPU colora ora tutte le famiglie a bande con qualunque stato di colore. Aggiunti nello shader il modo esterno Equalizzato (CDF come texture R32F 2048×1, ricaricata solo quando la CDF cambia) e Steli, gli interni Trappola punto e Trappola croce, il rilievo con luce Blinn-Phong (altezza dai 4 vicini, normali, componente diffusa e speculare), la cangiante (attiva anche a luce spenta) e il dithering Interleaved Gradient Noise.
+- Fonti colore di fase sulla GPU: Fase finale (continuo e binario), Stripe average e Fase media, con miscela di peso α in OKLab letta dalla texture `ph`.
+- `gpuParityTest()` esteso: matrice completa modo esterno × interno × 9 stili, più ogni fonte di fase × α × due stili. Restituisce righe e riepiloghi per modo, interno, stile e fonte, e li stampa in console. Opzioni: `modes`, `inmodes`, `styles`, `srcs`, `alphas`, `phStyles`, `tol`, `pxTol`, `righe`.
+- `?gpu=0` nell'URL forza ancora il percorso CPU per confronto.
+
+### Correzioni
+- La LUT della GPU è ora RGBA16F (ripiego automatico su RGBA8): con la luce speculare la quantizzazione a 8 bit della LUT superava la tolleranza di parità.
+
+### Limiti noti
+- La parità GPU/CPU è entro ±2/255 su quasi tutti i pixel, non su tutti: pixel isolati (indice di palette che differisce di 1 per float32 contro double) arrivano a 4–12/255. Nella vista iniziale di Mandelbrot sono al più 6 pixel su 364.000 per combinazione.
+- Esponenziale e Seno con modo Equalizzato e luce: lo 0,07 % e lo 0,59 % dei pixel supera ±2/255 (max 17/255), nei plateau di μ discreto dove la CPU in double risolve differenze sotto la precisione float32 della GPU. Effetto visivo trascurabile; non corretto in questa release.
+- Restano sulla CPU le famiglie a densità (IFS, Buddhabrot, attrattori strani, biforcazione, geometrici) e l'anteprima a bassa risoluzione (1/16 dei pixel) mostrata durante il calcolo.
+- Le verifiche di parità sono state eseguite in Chromium headless con WebGL2 software (SwiftShader), non su una GPU fisica.
+
 ## 1.15.0 — 2026-11-24
 
 ### Novità
