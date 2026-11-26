@@ -16,6 +16,29 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.17.0 — 2026-11-26
+
+- UI adattiva
+
+### Novità
+- Modalità UI unica `html[data-ui]` = `wide` (≥900 px, come 1.16), `compact` (verticale <900 px), `short` (landscape con altezza <500 px, es. Pixel 8 orizzontale); impostata da uno script in `<head>` e riusata da CSS e JS (evento `uimode`).
+- `compact`: barra inferiore fissa (Vista iniziale, Indietro, Zoom area, Viste 1/2/4, Controlli) e pannello come bottom sheet non modale (45 dvh) con tab Frattale · Colore · Luce · Altro. Chiusura con ✕, Esc, swipe-down sulla maniglia o azioni che richiedono la vista libera; un tap sulla vista non lo chiude (resta il marker).
+- `short`: binario verticale di icone a sinistra e drawer da destra con gli stessi tab.
+- Tab «Altro»: Cornici, Griglia, Profilo (+ Cancella, Centra, Grafici), Julia dal marker, Anima, Salva PNG, Esporta JSON e versione. Sono gli stessi nodi DOM, con ID e listener invariati; tornando a `wide` rientrano nella barra nell'ordine originale.
+- Intestazione compatta su mobile (titolo 20 px, Condividi solo icona, «Guida» senza versione, kicker e data nascosti).
+- Slider a tutta larghezza su mobile (etichetta e valore sopra, cursore sotto).
+- Info «i» di famiglia, luce e criteri di arresto aperte su `wide` e chiuse altrove (come intro e legenda); criterio unico `data-ui`, non più `pointer:coarse`.
+
+### Correzioni
+- Il landscape del telefono (~915 px) non usa più la colonna desktop da 340 px.
+
+### Limiti noti
+- «Julia dal marker» non è ancora contestuale: sta in «Altro» e chiude il foglio al clic.
+- Il gruppo Profilo non è ancora collassato e Colore non ha il sottogruppo «Avanzate».
+- Il tasto Indietro di Android non chiude il foglio.
+- Il foglio è in overlay: copre la parte bassa delle viste impilate finché è aperto.
+- Verificato solo con test di sintassi e simulazione DOM, non su dispositivo.
+
 ## 1.16.6 — 2026-11-26
 
 ### Correzioni

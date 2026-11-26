@@ -6,6 +6,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Esploratore di Frattali</title>
+<script>/* 1.17.0: modalita' UI unica per CSS e JS: wide | compact | short */
+(function(){var d=document.documentElement;function s(){var sh=false;try{sh=matchMedia('(orientation:landscape) and (max-height:499px)').matches}catch(e){}
+var u=sh?'short':(innerWidth<900?'compact':'wide');if(d.getAttribute('data-ui')!==u){d.setAttribute('data-ui',u);try{window.dispatchEvent(new Event('uimode'))}catch(e){}}}
+s();addEventListener('resize',s);addEventListener('orientationchange',s);})();</script>
 <style>
 :root{--ground:#F3F3F3;--card:#FFFFFF;--ink:#141414;--muted:#6E6C68;--rule:#DCDAD5;
 --serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace}
@@ -206,15 +210,57 @@ a{color:inherit}
 }
 .vpr .ptrn{stroke:#ffd166;stroke-width:1.5;stroke-dasharray:4 3}
 
+/* 1.17.0 — UI adattiva: html[data-ui] = wide (come 1.16) | compact (verticale: barra in basso + bottom sheet a tab) | short (landscape basso: binario a sinistra + drawer a destra) */
+:root{--barh:calc(64px + env(safe-area-inset-bottom,0px))}
+.shead,#ctlbtn{display:none}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+html[data-ui=wide] #tabother{display:none}
+html:not([data-ui=wide]) .kicker,html:not([data-ui=wide]) .updated,html:not([data-ui=wide]) #ptog{display:none}
+html:not([data-ui=wide]) .head{margin:6px 0 4px}
+html:not([data-ui=wide]) .head h1{font-size:20px}
+html:not([data-ui=wide]) #share span{display:none}
+html:not([data-ui=wide]) .app{grid-template-columns:minmax(0,1fr)}
+html:not([data-ui=wide]) .panel{position:fixed;z-index:35;display:block;overflow:auto;overscroll-behavior:contain;background:var(--ground);box-shadow:0 -8px 28px rgba(0,0,0,.35);visibility:hidden;transition:transform .2s ease,visibility 0s .2s;padding:0 10px 12px;max-height:none}
+html:not([data-ui=wide]) .app.full .panel{display:block}
+html:not([data-ui=wide]) .panel.open{visibility:visible;transform:none;transition:transform .2s ease}
+html:not([data-ui=wide]) .panel>.card{display:none;margin:10px 0 0}
+html:not([data-ui=wide]) .panel>.card.tabon{display:grid}
+html:not([data-ui=wide]) .panel>.card>h3{display:none}
+html:not([data-ui=wide]) .shead{display:block;position:sticky;top:0;z-index:2;margin:0 -10px;padding:0 10px 6px;background:var(--ground)}
+.shandle{display:flex;align-items:center;justify-content:center;position:relative;height:36px;touch-action:none}
+.sgrip{width:40px;height:4px;border-radius:2px;background:var(--rule)}
+.sclose{position:absolute;right:0;top:0;width:44px;height:36px;border:0;background:none;color:var(--muted);font:16px/1 var(--sans);cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;padding:4px 2px;border:0;border-radius:12px;background:none;color:var(--muted);font:11px/1.1 var(--sans);cursor:pointer}
+.tab.on{background:var(--ink);color:var(--ground)}
+html[data-ui=compact] .panel{left:0;right:0;bottom:var(--barh);height:45dvh;border-radius:18px 18px 0 0;transform:translateY(calc(100% + var(--barh)))}
+html[data-ui=short] .panel{top:0;right:0;bottom:0;width:min(360px,70vw);border-radius:18px 0 0 18px;transform:translateX(100%)}
+html[data-ui=short] .sgrip{display:none}
+html[data-ui=compact] body{padding-bottom:calc(var(--barh) + 16px)}
+html[data-ui=compact] #mainbar{position:fixed;left:0;right:0;bottom:0;z-index:36;height:var(--barh);margin:0;padding:6px 8px env(safe-area-inset-bottom,0px);flex-wrap:nowrap;justify-content:space-around;align-items:center;gap:4px;background:var(--card);border-top:1px solid var(--rule)}
+html[data-ui=compact] #mainbar>.tbtn{flex-direction:column;gap:2px!important;padding:4px 6px!important;min-width:56px;min-height:48px;background:none;border-radius:12px;font-size:11px}
+html[data-ui=compact] #mainbar>.tbtn.on,html[data-ui=compact] #mainbar>.tbtn[aria-pressed=true]{background:var(--ink);color:var(--ground)}
+html[data-ui=compact] .seg .seglab{display:none}
+html[data-ui=compact] .profpanel.open{bottom:var(--barh)}
+html:not([data-ui=wide]) #ctlbtn{display:inline-flex;align-items:center;justify-content:center}
+html[data-ui=short] #mainbar{position:fixed;left:env(safe-area-inset-left,0px);top:0;bottom:0;width:56px;z-index:36;margin:0;padding:6px 4px;flex-direction:column;flex-wrap:nowrap;justify-content:center;align-items:center;gap:6px;background:var(--card);border-right:1px solid var(--rule)}
+html[data-ui=short] #mainbar span{display:none}
+html[data-ui=short] #mainbar>.tbtn{padding:0!important;width:40px;justify-content:center}
+html[data-ui=short] .seg{flex-direction:column}
+html[data-ui=short] body{padding-left:calc(68px + env(safe-area-inset-left,0px))}
+html:not([data-ui=wide]) .ctl{grid-template-columns:minmax(0,1fr) 84px;row-gap:2px}
+html:not([data-ui=wide]) .ctl .cl{grid-column:1;grid-row:1}
+html:not([data-ui=wide]) .ctl input[type=number]{grid-column:2;grid-row:1}
+html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-height:36px}
 </style>
 </head>
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.16.6</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.17.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.16.6 · 26 novembre 2026</p>
+<p class="updated">Versione 1.17.0 · 26 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -253,7 +299,7 @@ a{color:inherit}
    <p class="pmeta" id="pmeta" role="status"></p>
   </div>
 
-  <div class="bar">
+  <div class="bar" id="mainbar">
    <button class="tbtn" id="reset" type="button" title="Vista iniziale" aria-label="Vista iniziale" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9 20v-6h6v6"/></svg><span>Vista iniziale</span></button>
    <button class="tbtn" id="back" type="button" title="Indietro" aria-label="Indietro" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/></svg><span>Indietro</span></button>
    <button class="tbtn" id="zoomarea" type="button" aria-pressed="false" title="Seleziona un rettangolo da ingrandire" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><rect x="8" y="8" width="6" height="6" rx="0.5"/></svg><span>Zoom area</span></button>
@@ -1310,14 +1356,14 @@ const PARAMDEF={
  a:{label:'Parametro a',min:-3,max:3,step:0.001},
  b:{label:'Parametro b',min:-3,max:3,step:0.001},
  c:{label:'Parametro c',min:-3,max:3,step:0.001},
- // 1.16.6: niente seconda chiave d (sovrascriveva Potenza d); gli attrattori usano paramDefOf('d')
+ // 1.17.0: niente seconda chiave d (sovrascriveva Potenza d); gli attrattori usano paramDefOf('d')
  axis:{label:'Asse',options:['r (logistica)','c (quadratica)']},
  guides:{label:'Linee guida',options:['Nascoste','Visibili']},
  fig:{label:'Figura',options:['Curva di Koch','Fiocco di Koch','Albero pitagorico']},
  ang:{label:'Angolo θ dell\'albero (°)',min:5,max:85,step:0.5},
  niter:{label:'Iterazioni',min:1,max:12,step:1}
 };
-// 1.16.6: definizione del parametro d dipendente dalla famiglia (potenza vs Clifford/de Jong)
+// 1.17.0: definizione del parametro d dipendente dalla famiglia (potenza vs Clifford/de Jong)
 const PARAMDEF_STRANGE_D={label:'Parametro d',min:-3,max:3,step:0.001};
 function paramDefOf(k,fam){if(k==='d'&&(fam||S.fam)==='strange')return PARAMDEF_STRANGE_D;return PARAMDEF[k];}
 const PALS={
@@ -1352,7 +1398,7 @@ const S={fam:'mandel',P:{},iterBase:{},auto:true,qual:'normale',
  light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false,grid:false,
  src:'iter',alpha:1,stripeS:5,levels:0}; // 1.10.0: fonte colore ('iter'|'final'|'stripe'|'mean'), peso alpha (1 = solo fase), frequenza stripe s, livelli (0 = continuo, 2 = binario)
 const PHM={final:1,stripe:2,mean:3};
-// 1.16.6: niente chiave d duplicata nel letterale comune (prima d:2 poi d:0.7 → d restava 0,7 per tutte le famiglie → Julia/Tricorno neri all'avvio)
+// 1.17.0: niente chiave d duplicata nel letterale comune (prima d:2 poi d:0.7 → d restava 0,7 per tutte le famiglie → Julia/Tricorno neri all'avvio)
 for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0,var:0,a:-1.4,b:1.6,c:1};S.iterBase[f]=FAM[f].iter;}
 S.P.strange={var:0,a:-1.4,b:1.6,c:1,d:0.7};
 S.P.bif={axis:0,guides:1};
@@ -2216,7 +2262,7 @@ function evalPointParityTest(nPer,seed){
    if(r.kind!==B.kind[q])R.kindDiff++;
    if(r.n!==pr[o])R.nDiff++;
    const dm=Math.abs(Math.fround(r.mu)-B.mu[q]);if(dm>R.muMax)R.muMax=dm;if(!(dm<=TOL))R.muDiff++;
-   // 1.16.6: confronto DE (prima il if era dentro un commento e non veniva mai eseguito)
+   // 1.17.0: confronto DE (prima il if era dentro un commento e non veniva mai eseguito)
    const dr=Math.fround((r.de===-1||r.de===0||r.de===1e9)?r.de:r.de/s),db=B.de[q]; // de del punto in unità del piano: la banda lo divide per s
    if(!(Math.abs(dr-db)<=1e-6*Math.max(1,Math.abs(db))))R.deDiff++;
   }
@@ -3731,7 +3777,7 @@ function buildParams(){
   if((k==='a0'||k==='a1') && !needsA) continue;
   if(henon && (k==='c'||k==='d')) continue; // Hénon non usa c,d
   if(k==='ang' && (P.fig|0)!==2) continue; // 1.14.8: l'angolo serve solo all'albero pitagorico
-  const d=paramDefOf(k); // 1.16.6: d = potenza o parametro attrattori secondo la famiglia
+  const d=paramDefOf(k); // 1.17.0: d = potenza o parametro attrattori secondo la famiglia
   if(!d)continue;
   if(d.options){
    const onPoly = k==='poly' ? (v=>{pushHist();P[k]=v;buildParams();render();})
@@ -3876,7 +3922,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.16.6',APP_VERSION_SHORT='1.16.6',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.17.0',APP_VERSION_SHORT='1.17.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3979,7 +4025,7 @@ function applyState(obj){
  if(!(Number.isInteger(actId)&&used.has(actId)))actId=(AV&&used.has(AV.id))?AV.id:specs[0].id;
  const Psrc=obj.P&&typeof obj.P==='object'?obj.P:{};
  const P={...S.P[fam]};
- for(const k of Object.keys(P)){if(k in Psrc){let v=Psrc[k];const d=paramDefOf(k,fam); // 1.16.6: d dipende dalla famiglia
+ for(const k of Object.keys(P)){if(k in Psrc){let v=Psrc[k];const d=paramDefOf(k,fam); // 1.17.0: d dipende dalla famiglia
   if(d&&d.options){v=Math.round(+v);if(v<0||v>=d.options.length)v=0;}
   else if(d){v=clamp(v,d.min,d.max);if(d.step===1)v=Math.round(v);}
   else v=+v; if(isFinite(v))P[k]=v;}}
@@ -4667,15 +4713,64 @@ function profCopyCSV(){
  }catch(e){/* degradazione elegante */}
 })();
 
+/* ---------- 1.17.0: UI adattiva (barra inferiore, bottom sheet a tab, drawer in landscape basso) ---------- */
+(function(){
+ const root=document.documentElement,panel=document.querySelector('.panel'),bar=$('mainbar');
+ if(!panel||!bar)return;
+ panel.id='panel';
+ const ic=p=>'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';
+ const TABS=[['f','Frattale','<path d="M12 3l4 7h-8zM8 10l-4 7h8zM16 10l-4 7h8z"/>'],
+  ['c','Colore','<path d="M12 3C7 3 3 7 3 12s4 9 8 9c2 0 2-2 1-3s0-3 2-3h3c2 0 4-1 4-4 0-4-4-8-9-8z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16" cy="11" r="1"/>'],
+  ['l','Luce','<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>'],
+  ['o','Altro','<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>']];
+ ['f','c','l'].forEach((k,i)=>{const c=panel.querySelectorAll(':scope>.card')[i];if(c)c.dataset.tab=k;});
+ const other=document.createElement('div');other.className='card';other.id='tabother';other.dataset.tab='o';
+ other.innerHTML='<div class="tools" id="tools"></div><p class="note" id="verinfo"></p>';
+ panel.appendChild(other);
+ const tools=other.querySelector('#tools'),vi=other.querySelector('#verinfo');
+ const head=document.createElement('div');head.className='shead';
+ head.innerHTML='<div class="shandle" id="shandle"><span class="sgrip"></span><button type="button" class="sclose" id="sclose" aria-label="Chiudi i controlli">\u2715</button></div><div class="tabs" role="tablist" id="tabs"></div>';
+ panel.insertBefore(head,panel.firstChild);
+ const tabs=head.querySelector('#tabs');
+ function setTab(k){panel.dataset.tab=k;panel.querySelectorAll(':scope>.card').forEach(c=>c.classList.toggle('tabon',c.dataset.tab===k));
+  tabs.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.tab===k;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});panel.scrollTop=0;}
+ TABS.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');b.dataset.tab=t[0];b.innerHTML=ic(t[2])+'<span>'+t[1]+'</span>';b.addEventListener('click',()=>setTab(t[0]));tabs.appendChild(b);});
+ const cb=document.createElement('button');cb.type='button';cb.className='tbtn';cb.id='ctlbtn';cb.title='Controlli';cb.setAttribute('aria-controls','panel');cb.setAttribute('aria-expanded','false');
+ cb.innerHTML=ic('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>')+'<span>Controlli</span>';
+ bar.appendChild(cb);
+ function openSheet(v){v=!!v;panel.classList.toggle('open',v);cb.setAttribute('aria-expanded',v?'true':'false');cb.classList.toggle('on',v);}
+ cb.addEventListener('click',()=>openSheet(!panel.classList.contains('open')));
+ $('sclose').addEventListener('click',()=>openSheet(false));
+ // chiusura: solo ✕, Esc, swipe-down sulla maniglia o azioni che richiedono la vista libera (un tap sulla vista mette un marker, non chiude)
+ const hd=$('shandle');let y0=null;
+ hd.addEventListener('pointerdown',e=>{y0=e.clientY;});
+ hd.addEventListener('pointerup',e=>{if(y0!=null&&e.clientY-y0>40&&root.getAttribute('data-ui')==='compact')openSheet(false);y0=null;});
+ hd.addEventListener('pointercancel',()=>{y0=null;});
+ addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.defaultPrevented&&panel.classList.contains('open')&&root.getAttribute('data-ui')!=='wide')openSheet(false);});
+ ['pick','profile','profgraf','sharestate','zoomarea'].forEach(id=>{const e=$(id);if(e)e.addEventListener('click',()=>{if(root.getAttribute('data-ui')!=='wide')openSheet(false);});});
+ // i pulsanti rari vivono nella barra (wide) o nel tab «Altro» (compact/short): sono gli stessi nodi, con ID e listener intatti
+ const MOVE=['frames','grid','profile','profclear','profcenter','profgraf','pick','anim','save','sharestate'];
+ function applyMode(){
+  const wide=root.getAttribute('data-ui')==='wide',ptog=$('ptog');
+  MOVE.forEach(id=>{const e=$(id);if(!e)return;
+   if(wide){if(e.parentNode!==bar)bar.insertBefore(e,id==='sharestate'?cb:ptog);}
+   else if(e.parentNode!==tools)tools.appendChild(e);});
+  if(wide)openSheet(false);
+  else{const a=$('app');if(a&&a.classList.contains('full')){a.classList.remove('full');ptog.textContent='Nascondi pannello';}if(!panel.dataset.tab)setTab('f');}
+  const g=$('guide');if(g)g.textContent=wide?'Guida - Ver. '+APP_VERSION_SHORT:'Guida';
+  vi.textContent='Versione '+APP_VERSION+' \u00b7 26 novembre 2026';
+ }
+ setTab('f');applyMode();addEventListener('uimode',applyMode);
+})();
 /* ---------- avvio ---------- */
 (function(){ // didascalie «i»: introduzione aperta solo su desktop; famiglia e luce chiuse
- let mobile=false;try{mobile=window.matchMedia('(max-width:899px),(pointer:coarse)').matches;}catch(e){}
+ const mobile=document.documentElement.getAttribute('data-ui')!=='wide';
  makeInfo('intro',undefined,{el:document.querySelector('.lede'),label:'Informazioni: come si usa',open:!mobile});
- makeInfo('fam',undefined,{el:$('famtxt'),label:'Informazioni sulla famiglia'});
+ makeInfo('fam',undefined,{el:$('famtxt'),label:'Informazioni sulla famiglia',open:!mobile});
  const nt=document.querySelector('.card .note');
- if(nt)makeInfo('luce',undefined,{el:nt,label:'Informazioni su luce e rilievo'});
+ if(nt)makeInfo('luce',undefined,{el:nt,label:'Informazioni su luce e rilievo',open:!mobile});
  // 1.9.5: testo sui criteri di arresto (chiuso) dentro la legenda; su mobile l'intera legenda è un pannello «i» chiuso
- LG.infoTxt=makeInfo('arresto',undefined,{el:$('lgtxt'),label:'Informazioni: criteri di arresto e colori'});
+ LG.infoTxt=makeInfo('arresto',undefined,{el:$('lgtxt'),label:'Informazioni: criteri di arresto e colori',open:!mobile});
  LG.info=makeInfo('legenda',undefined,{el:$('legend'),label:'Legenda cromatica',open:!mobile});
  legendSync();
 })();
