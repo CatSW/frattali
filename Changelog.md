@@ -5,7 +5,7 @@ author: IK0VCK
 type: changelog
 product: fractal-explorer
 license: MIT
-updated: 2026-11-24
+updated: 2026-11-26
 ---
 # Changelog — Esploratore di Frattali
 
@@ -15,6 +15,33 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 - `1.x.0` = incrementi funzionali successivi (una release per ogni blocco di lavoro concluso).
 
 Le date sono nel formato `AAAA-MM-GG`.
+
+## 1.16.5 — 2026-11-26
+
+— Deep zoom, parte B
+
+### Novità
+- **Perturbazione per Julia (d = 2).** Il motore della 1.16.0 ora lavora anche sulle viste Julia: il centro (z₀) e `c` sono BigInt a virgola fissa con precisione adattiva (sorgente: stringhe decimali). Due orbite di riferimento in BigInt → `Float64Array` (copia strutturata, niente `SharedArrayBuffer`): **A** = orbita del centro con quel `c`; **B** = orbita di 0 con lo stesso `c`, bersaglio del rebasing (`z = Z_n + δz_n`; quando |z| < |δz| o l'orbita A finisce, `δz ← z` e si prosegue su B). `mu`, `kind` e il buffer `ph` sono popolati come nel percorso FP64; HUD «Precisione: estesa (K cifre)» e orbita indicate anche per Julia.
+- **`c` di Julia ad alta precisione.** «Julia dal marker» da una vista profonda del Mandelbrot conserva tutte le cifre del marker (prima `toFixed(10)`). Lo stato JSON e il link `?s=` hanno il campo opzionale `chp: ["re","im"]` (stringhe decimali), accettato solo se coerente con `P.cr`/`P.ci` (entro 1e-9); se assente, `c` è il decimale più corto di `cr`/`ci` (es. `-0.7269` resta esattamente −0,7269). La cronologia (`hist`) lo ripristina.
+- **Derivata per il Distance Estimator in perturbazione**, scalata col passo del pixel: Mandelbrot `E' = 2·z·E + s` (equivale a `d(δz) = 2(Z+δz)·d(δz) + 1`); Julia `E' = 2·z·E`, `E₀ = s`. Il DE in pixel è `2|z|·ln|z| / |E|`. Restano le guardie (`isFinite`, soglie, 1e9 = non disponibile; in più, un risultato oltre il range Float32 diventa 1e9). Lo stesso vale per cursore/marker/profilo (`evalPoint`).
+- **Iterazioni automatiche in profondità.** Stessa crescita, ma con perturbazione (Mandelbrot e Julia d = 2, span < 1e-10) il tetto sale da 50000 a 100000: a 1e-250 la formula dà ~63000 (Mandelbrot, base 300) e ~84000 (Julia, base 400). L'orbita BigInt di 100000 iterazioni costa ~0,2 s e 1,6 MB (×2 per Julia).
+- **Limite di zoom 1e-250** (prima 1e-100). Zoom con rotella/tasti, zoom a finestra, «centra sul profilo», stato JSON/URL e cronologia oltre il limite vengono limitati a 1e-250 con il messaggio «Limite di zoom profondo raggiunto (1e-250)» o, per stato/URL, «superato (richiesto …)».
+- Due preset Julia: «Deep zoom: punto fisso del coniglio» a ~1e-60 e al limite 1e-250.
+
+### Correzioni
+- `drawBifGuides`: `ctx` era un'assegnazione a una variabile non dichiarata (`ReferenceError` a fine calcolo della biforcazione con le guide attive); ora `const ctx=this.ctx;`.
+- Underflow in perturbazione (già presente in 1.16.0, ma nascosto dal limite 1e-100): i test di ciclo e di rebasing usavano quadrati (`dd = ex²+ey²`, `dx²+dy²`) che valgono 0 sotto ~1e-154. Con il centro su un ciclo esatto tutti i pixel risultavano «periodici» e l'immagine usciva interamente interna (verificato a 1e-200 e 1e-250). Ora norma scalata, calcolata solo quando le componenti sono già piccole; rebasing in norma 1 sotto |δ| ~ 1e-140.
+- Derivata non scalata: sopra ~1e-160 usciva dal range e il DE diventava 1e9 ovunque; ora è scalata (vedi Novità).
+- Conversione orbita BigInt → double: oltre 1000 bit si scartano i bit bassi prima di `Number()` (evita `Infinity` per K ≳ 305 cifre).
+- Cache orbite: 10 nei worker (era 8), 16 sul main thread (era 12), perché una vista Julia usa due orbite. Se un'orbita manca, il ripiego FP64 usa il centro in double passato nel job (prima trattava gli offset come coordinate assolute).
+
+### Limiti noti
+- **Underflow, caso δc ~ 1e-300.** Il double normale arriva a 2,2e-308: δ ~ 1e-300 è ancora rappresentabile, ma δ² ~ 1e-600 va a 0 (innocuo: trascurabile rispetto a 2Zδ). Verificato solo sul motore dei worker, in Node: nei casi provati (punti fissi repulsivi e c = −2) i conteggi di iterazione coincidono con un calcolo BigInt fino a 1e-315; a 1e-320, con il passo del pixel nel range subnormale, compaiono errori. Nell'app il limite è prima: `Number('1e-K')` vale 0 per K > 323, `Number(BigInt)` esce dal range per K ≳ 305 e il passo `span/H` entra nei subnormali sotto ~1e-308. Per questo 1e-250 (margine di ~55 decadi) è il limite; oltre servirebbe un esponente esteso (floatexp), non implementato.
+- Il costo per pixel cresce con le iterazioni: i pixel non iperbolici senza ciclo rilevabile (es. vicino alla punta c = −2) eseguono tutte le `maxIt` (fino a ~63000–84000 a 1e-250); a quella profondità il calcolo può richiedere minuti.
+- Julia: il rilevamento dei cicli usa solo «3 ritorni con differenza decrescente»; la clausola relativa a |δz| (Mandelbrot) non è applicabile. Come nel percorso FP64, un'orbita che si avvicina a un ciclo repulsivo restando entro 1e-12 e con distanza decrescente può essere scambiata per interna (non osservato nei test).
+- La griglia del piano non viene disegnata a zoom profondo (etichette in double), come in 1.16.0. Profilo sezionale e cornici usano le coordinate in stringa/BigInt e funzionano.
+- Il backend WebGL2 colora soltanto: la perturbazione resta sui worker (invariato).
+- `evalPointParityTest` (da console): la riga del confronto sul DE è finita dentro un commento («…per sif(!(…))R.deDiff++»), quindi il DE non viene mai confrontato. Preesistente, non toccato in questa release.
 
 ## 1.16.0 — 2026-11-26
 

@@ -212,9 +212,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.15.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.16.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.16.0 · 26 novembre 2026</p>
+<p class="updated">Versione 1.16.5 · 26 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -401,42 +401,60 @@ a{color:inherit}
 <script id="wsrc" type="text/plain">
 "use strict";
 // 1.16.0 — Deep zoom, parte A: perturbazione per Mandelbrot d=2 con rebasing.
-// Convenzione: per un job con J.orb, x0,y0,s sono OFFSET dal centro di riferimento C0 (non coordinate assolute): il pixel (i,j) ha c = C0 + (x0+i*s, y0-j*s).
-// L'orbita di riferimento Z_k (k=0..n-1, Z_0=0) arriva da fuori (messaggio 'orbit', copia strutturata): zr, zi = Float64Array.
+// 1.16.5 — parte B: perturbazione anche per Julia d=2, derivata scalata per il DE, test privi di quadrati (nessun underflow sotto ~1e-154).
+// Convenzione: per un job con J.orb, x0,y0,s sono OFFSET dal centro di riferimento C0 (non coordinate assolute).
+//  Mandelbrot: il pixel (i,j) ha c = C0 + (x0+i*s, y0-j*s); z0 = 0; orbita Z_k (Z_0=0) del centro.
+//  Julia (J.fam===1): il pixel ha z0 = C0 + (x0+i*s, y0-j*s) e c fisso (alta precisione, solo nell'orbita); dc = 0.
+//   Orbita A = Z_k del centro (Z_0 = C0) con quel c; orbita B (J.orbB) = orbita di 0 con lo stesso c (Z_0 = 0): e' il bersaglio del rebasing.
+// Le orbite arrivano da fuori (messaggio 'orbit', copia strutturata): zr, zi = Float64Array.
 var ORBITS={}, ORBK=[];
 function setOrbit(key,zr,zi,n){
   if(ORBITS[key])return;
   ORBITS[key]={zr:zr,zi:zi,n:n};ORBK.push(key);
-  while(ORBK.length>8){delete ORBITS[ORBK.shift()];}
+  while(ORBK.length>10){delete ORBITS[ORBK.shift()];}
 }
+// norma euclidea senza quadrati che vanno in underflow/overflow (a,b qualsiasi double finiti)
+function nrm2(a,b){a=a<0?-a:a;b=b<0?-b:b;if(a<b){var t=a;a=b;b=t;}if(a===0)return 0;var q=b/a;return a*Math.sqrt(1+q*q);}
 function computePert(J){
-  var O=ORBITS[J.orb];
-  if(!O||O.n<2){var J2={};for(var q in J)J2[q]=J[q];J2.orb=null;return computeBand(J2);} // orbita assente: ripiego FP64 (non dovrebbe accadere)
+  var jul=(J.fam===1), O=ORBITS[J.orb], OB=jul?ORBITS[J.orbB]:O;
+  if(!O||O.n<2||!OB||OB.n<2){ // orbita assente: ripiego FP64 con coordinate assolute (centro di vista passato nel job; non dovrebbe accadere)
+    var J2={};for(var q in J)J2[q]=J[q];J2.orb=null;J2.x0=J.x0+(J.cx0||0);J2.y0=J.y0+(J.cy0||0);return computeBand(J2);
+  }
   var W=J.W, r0=J.r0, r1=J.r1, n=(r1-r0)*W;
   var mu=new Float32Array(n), de=new Float32Array(n), tp=new Float32Array(n), tx=new Float32Array(n), kind=new Uint8Array(n), ph=new Float32Array(n);
   var phm=(J.phm|0), phs=(J.phs>0?J.phs:5), TWOPI=2*Math.PI;
   var maxIt=J.maxIt, s=J.s, x0=J.x0, y0=J.y0, R2=1e6, lnR=Math.log(1000), PR=J.pr;
-  var ZR=O.zr, ZI=O.zi, L=O.n, k=0;
+  var ZR,ZI,L, ZRA=O.zr, ZIA=O.zi, LA=O.n, ZRB=OB.zr, ZIB=OB.zi, LB=OB.n, k=0;
   for(var j=r0;j<r1;j++){
     var dcy=y0-j*s;
     for(var i=0;i<W;i++,k++){
       var dcx=x0+i*s;
-      var dx=0,dy=0,m=0,zx=0,zy=0,ddx=0,ddy=0,r2=0,prevx=0,prevy=0;
+      var dx,dy,m=0,zx,zy,ddx,ddy,cdx,cdy,r2=0,prevx=0,prevy=0;
+      ZR=ZRA;ZI=ZIA;L=LA;
+      if(jul){dx=dcx;dy=dcy;cdx=0;cdy=0;zx=ZR[0]+dx;zy=ZI[0]+dy;ddx=s;ddy=0;} // z0 = Z_0 + dz0; derivata scalata E = s*dz/dz0, E_0 = s
+      else {dx=0;dy=0;cdx=dcx;cdy=dcy;zx=0;zy=0;ddx=0;ddy=0;}                 // z0 = 0 = Z_0; E = s*dz/dc, E_0 = 0
       var mtp=1e30,mtx=1e30,it=0,esc=false,per=8,pc=0,sZx=0,sZy=0,sdx=0,sdy=0,hitD=1e30,shr=0;
       var pSum=0,pCnt=0,pLast=0,pSS=0,pSC=0;
       for(it=0;it<maxIt;it++){
-        if(m+1>=L){dx+=ZR[m];dy+=ZI[m];m=0;} // l'orbita di riferimento e' finita: rebasing sul valore completo z = Z + dz
+        if(m+1>=L){ // l'orbita di riferimento e' finita: rebasing sul valore completo z = Z + dz (Julia: sull'orbita B di 0)
+          if(jul){dx=zx;dy=zy;ZR=ZRB;ZI=ZIB;L=LB;}
+          else {dx+=ZR[m];dy+=ZI[m];}
+          m=0;
+        }
         var Zr=ZR[m], Zi=ZI[m];
-        // derivata dz/dc (per il DE analitico): usa z_it, cioe' il valore completo dell'iterazione precedente
-        var nddx=2*(zx*ddx-zy*ddy)+1, nddy=2*(zx*ddy+zy*ddx);
+        // derivata SCALATA col passo del pixel: E = s*d z/d(param). Mandelbrot: E' = 2 z E + s; Julia: E' = 2 z E. z = valore completo dell'iterazione precedente.
+        // Cosi' E resta O(1) per i punti vicini al bordo anche con span 1e-250 (la derivata non scalata supererebbe 1e308) e il DE in pixel e' 2|z|ln|z|/|E|.
+        var nddx=2*(zx*ddx-zy*ddy)+(jul?0:s), nddy=2*(zx*ddy+zy*ddx);
         ddx=nddx;ddy=nddy;
-        // dz_{n+1} = 2 Z_n dz_n + dz_n^2 + dc
-        var ndx=2*(Zr*dx-Zi*dy)+dx*dx-dy*dy+dcx, ndy=2*(Zr*dy+Zi*dx)+2*dx*dy+dcy;
+        // dz_{n+1} = 2 Z_n dz_n + dz_n^2 + dc   (Julia: dc = 0)
+        var ndx=2*(Zr*dx-Zi*dy)+dx*dx-dy*dy+cdx, ndy=2*(Zr*dy+Zi*dx)+2*dx*dy+cdy;
         m++; prevx=zx; prevy=zy;
         dx=ndx; dy=ndy;
         zx=ZR[m]+dx; zy=ZI[m]+dy; // z completo = Z_{m} + dz
         r2=zx*zx+zy*zy;
-        if(r2<dx*dx+dy*dy){dx=zx;dy=zy;m=0;} // rebasing: |Z+dz| < |dz|
+        // rebasing: |Z+dz| < |dz|. Con |dz| < ~1e-140 i quadrati vanno in underflow: confronto in norma 1 (stesso criterio a meno di un fattore <= sqrt 2)
+        var dn=dx*dx+dy*dy;
+        if(dn>1e-280?(r2<dn):(Math.abs(zx)+Math.abs(zy)<Math.abs(dx)+Math.abs(dy))){dx=zx;dy=zy;m=0;if(jul){ZR=ZRB;ZI=ZIB;L=LB;}}
         var az=Math.sqrt(r2); if(az<mtp)mtp=az;
         var m2=Math.min(Math.abs(zx),Math.abs(zy)); if(m2<mtx)mtx=m2;
         if(phm>=2&&it>=2&&az>0){
@@ -445,11 +463,15 @@ function computePert(J){
         }
         if(r2>R2){esc=true;break;}
         // ciclo attrattivo: differenza dei valori completi calcolata come (dZ)+(ddz), cosi' non si perde il termine piccolo.
-        // La tolleranza e' anche RELATIVA a |dz|: a zoom profondo tutta la dinamica locale di un minibrot sta entro ~1/D (D = moltiplicatore del periodo) da Z, quindi una soglia assoluta la scambierebbe per periodica.
-        // A zoom profondo un'orbita che indugia vicino a un ciclo repulsivo (es. z = 2 per c ~ -2) e' "vicina" a lungo senza essere periodica:
-        // si accetta il ciclo solo dopo 3 ritorni consecutivi con differenza che si riduce (attrattivo), non al primo ritorno entro tolleranza.
-        var ex=(ZR[m]-sZx)+(dx-sdx), ey=(ZI[m]-sZy)+(dy-sdy), dd=ex*ex+ey*ey;
-        if(dd<1e-24&&dd<=1e-18*(dx*dx+dy*dy)){if(dd<=hitD*0.999){if(++shr>=3)break;}else shr=0;hitD=dd;}
+        // Mandelbrot: la tolleranza e' anche RELATIVA a |dz|: a zoom profondo tutta la dinamica locale di un minibrot sta entro ~1/D (D = moltiplicatore del periodo) da Z, quindi una soglia assoluta la scambierebbe per periodica.
+        // Un'orbita che indugia vicino a un ciclo repulsivo e' «vicina» a lungo senza essere periodica: si accetta il ciclo solo dopo 3 ritorni consecutivi con differenza che si riduce (attrattivo).
+        // Julia: la sola condizione di 3 ritorni con differenza decrescente (un ciclo repulsivo la fa crescere): la clausola relativa non e' applicabile (l'orbita nel bacino converge al ciclo insieme al riferimento).
+        // 1.16.5: nessun quadrato (dd = ex*ex+ey*ey andava in underflow a 0 sotto ~1e-154 e dichiarava periodici tutti i pixel): norma scalata nrm2, calcolata solo se entrambe le componenti sono gia' piccole.
+        var ex=(ZR[m]-sZx)+(dx-sdx), ey=(ZI[m]-sZy)+(dy-sdy);
+        if((ex<1e-12&&ex>-1e-12)&&(ey<1e-12&&ey>-1e-12)){
+          var en=nrm2(ex,ey);
+          if(en<1e-12&&(jul||en<=1e-9*nrm2(dx,dy))){if(en<=hitD*0.9995){if(++shr>=3)break;}else shr=0;hitD=en;}
+        }
         if(++pc===per){pc=0;per*=2;sZx=ZR[m];sZy=ZI[m];sdx=dx;sdy=dy;hitD=1e30;shr=0;}
       }
       tp[k]=mtp; tx[k]=mtx;
@@ -464,22 +486,25 @@ function computePert(J){
           else {var An=pSum/pCnt, ff=mm-it; if(!(ff>0))ff=0; else if(ff>1)ff=1; A=(pCnt>1)?ff*An+(1-ff)*((pSum-pLast)/(pCnt-1)):An;}
           ph[k]=(A>=0&&A<=1)?A:0.5;
         } else if(phm===3){var tm=(pCnt>0)?Math.atan2(pSS,pSC):0; if(tm<0)tm+=TWOPI; var fm=Math.fround(tm/TWOPI); ph[k]=(fm>=1||!(fm>=0))?0:fm;}
-        var dm=Math.sqrt(ddx*ddx+ddy*ddy); var dv1=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9; de[k]=dv1; if(PR)PR[k*6+4]=dv1;
+        // DE in pixel = 2|z| ln|z| / |E| (E scalata: vedi sopra). Guardie: |E| nulla/non finita o risultato oltre il range Float32 -> 1e9 (come nel percorso FP64).
+        var dm=nrm2(ddx,ddy); var dv1=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm):1e9; if(!(dv1<3e38))dv1=1e9; de[k]=dv1; if(PR)PR[k*6+4]=dv1;
       } else {mu[k]=0;de[k]=0;kind[k]=1;}
     }
   }
   return {mu:mu,de:de,tp:tp,tx:tx,kind:kind,ph:ph};
 }
-// valutatore puntuale in perturbazione: (dcx,dcy) = offset del punto da C0 (stessa orbita del job).
-function evalPointDeep(P,orb,dcx,dcy,maxIt){
+// valutatore puntuale in perturbazione: (dcx,dcy) = offset del punto da C0 (stessa orbita del job): Mandelbrot = offset di c, Julia = offset di z0.
+// 1.16.5: orbB (orbita di 0, solo Julia) e sp (passo del pixel per la derivata scalata; il DE restituito e' comunque in unita' del piano). P.fam===1 -> Julia.
+function evalPointDeep(P,orb,dcx,dcy,maxIt,orbB,sp){
   var J={};for(var q in P)J[q]=P[q];
-  J.fam=0;J.d=2;J.orb=orb;J.W=1;J.H=1;J.r0=0;J.r1=1;J.x0=dcx;J.y0=dcy;J.s=1;J.maxIt=maxIt|0;
+  var sc=(sp>0&&isFinite(sp))?sp:1;
+  J.fam=(P.fam===1)?1:0;J.d=2;J.orb=orb;J.orbB=orbB;J.W=1;J.H=1;J.r0=0;J.r1=1;J.x0=dcx;J.y0=dcy;J.s=sc;J.maxIt=maxIt|0;
   var pr=new Float64Array(6);J.pr=pr;
-  var B=computeBand(J),zx=pr[1],zy=pr[2];
-  return {kind:B.kind[0],n:pr[0],mu:pr[3],zx:zx,zy:zy,mod:Math.sqrt(zx*zx+zy*zy),arg:Math.atan2(zy,zx),de:pr[4],root:pr[5],ph:B.ph[0]};
+  var B=computeBand(J),zx=pr[1],zy=pr[2],dpx=pr[4];
+  return {kind:B.kind[0],n:pr[0],mu:pr[3],zx:zx,zy:zy,mod:Math.sqrt(zx*zx+zy*zy),arg:Math.atan2(zy,zx),de:(dpx===1e9||dpx===0||dpx===-1)?dpx:dpx*sc,root:pr[5],ph:B.ph[0]};
 }
 function computeBand(J){
-  if(J.orb&&J.fam===0&&(J.d|0)===2&&!J.pt)return computePert(J); // 1.16.0: Mandelbrot d=2 con orbita di riferimento -> perturbazione
+  if(J.orb&&(J.fam===0||J.fam===1)&&(J.d|0)===2&&!J.pt)return computePert(J); // 1.16.0: Mandelbrot d=2; 1.16.5: anche Julia d=2 (con orbita di riferimento -> perturbazione)
   var W=J.W, r0=J.r0, r1=J.r1, n=(r1-r0)*W;
   var mu=new Float32Array(n), de=new Float32Array(n), tp=new Float32Array(n), tx=new Float32Array(n), kind=new Uint8Array(n);
   // 1.10.0: ph = fonte di fase per pixel (Float32, in [0,1]); 0 per i punti interni e quando la fonte e' 'Iterazioni'.
@@ -1148,7 +1173,11 @@ const FAM={
    {name:'Germogli (0,285 + 0,01i)',p:{d:2,cr:0.285,ci:0.01},style:'smeraldo'},
    {name:'Cubica (d = 3, c = 0,4 + 0,5i)',p:{d:3,cr:0.4,ci:0.5},style:'scarabeo'},
    {name:'Stripe average (neuroni)',p:{d:2,cr:-0.7269,ci:0.1889},style:'oro',src:'stripe',stripeS:5,
-    desc:'Stesso metodo del Mandelbrot, ma con c fisso e il punto di partenza che varia.\nLe strisce seguono le linee di campo dell\'insieme di Julia. Prova s = 2 oppure s = 12 per cambiare la trama.'}]},
+    desc:'Stesso metodo del Mandelbrot, ma con c fisso e il punto di partenza che varia.\nLe strisce seguono le linee di campo dell\'insieme di Julia. Prova s = 2 oppure s = 12 per cambiare la trama.'},
+   {name:'Deep zoom: punto fisso del coniglio (~1e-60)',view:{cx:1.2765819494559259,cy:-0.4796660548973278,span:1e-60,hx:'1.2765819494559259200108923723127381391741040544095296183861895449184838612367201565202255343747097443691158200639447687889213581437331565124116072978831371443977143981491446343514848714297848097341571964542203005006122093487030248634031456594031911037156523103140772784886193212661572574823878804331',hy:'-0.479666054897327793313079723716885277958931991891790284323238956066520086154643524714676477109231303823874020348465756876490761401164493507136171128461960136248981394843149900472675819215013272284883586545694895678658035651533567755164022424708345921041201825778729918362681809191878483781090683772'},p:{d:2,cr:-0.123,ci:0.745},style:'smeraldo',
+    desc:'c = −0,123 + 0,745i. Il centro è il punto fisso repulsivo β = (1 + √(1 − 4c))/2, sul bordo dell\'insieme di Julia (moltiplicatore |2β| ≈ 2,7): l\'immagine si ripete a ogni scala, con una leggera rotazione. Perturbazione con orbita del centro e orbita di 0 (per il rebasing). L\'HUD indica «Precisione: estesa».'},
+   {name:'Deep zoom: punto fisso del coniglio, limite (1e-250)',view:{cx:1.2765819494559259,cy:-0.4796660548973278,span:1e-250,hx:'1.2765819494559259200108923723127381391741040544095296183861895449184838612367201565202255343747097443691158200639447687889213581437331565124116072978831371443977143981491446343514848714297848097341571964542203005006122093487030248634031456594031911037156523103140772784886193212661572574823878804331',hy:'-0.479666054897327793313079723716885277958931991891790284323238956066520086154643524714676477109231303823874020348465756876490761401164493507136171128461960136248981394843149900472675819215013272284883586545694895678658035651533567755164022424708345921041201825778729918362681809191878483781090683772'},p:{d:2,cr:-0.123,ci:0.745},style:'smeraldo',
+    desc:'Stesso punto, alla profondità massima di questa versione (1e-250). Un ulteriore zoom mostra il messaggio di limite: oltre, i δ della perturbazione in FP64 andrebbero in underflow.'}]},
  ship:{name:'Burning Ship e varianti',code:2,caps:CAP({phase:true}),axes:'complex',de:false,view:{cx:-0.5,cy:0.5,span:2.6},iter:300,params:['v','jul','cr','ci'],
   txt:'Come il Mandelbrot, ma con valori assoluti dentro il passo: Burning Ship (|x|, |y|)², Celtic |Re z²|, Heart (|x| + iy)², Perpendicolare (|x| − iy)², Nave perpendicolare. Le funzioni non sono analitiche e nascono forme spigolose. L\'interruttore Julia fissa c e fa variare il punto di partenza.',
   presets:[
@@ -1985,7 +2014,7 @@ try{window.gpuParityTest=gpuParityTest;}catch(_){}
 /* ---------- worker (pool condiviso fra le viste) ---------- */
 const TILE_SIZE=64, MS_ENABLE=true, MS_MIN=4, MS_FAMS={mandel:1,julia:1,tricorn:1};
 let workers=[],useWorkers=true,jobSeq=0,queue=[],busy=[],inflight=[],staleMs=0;
-let wOrb=[]; // 1.16.0: chiavi di orbita già inviate a ciascun worker (specchio della cache FIFO da 8 del worker)
+let wOrb=[]; // 1.16.0: chiavi di orbita già inviate a ciascun worker (specchio della cache FIFO da 10 del worker; 1.16.5: 2 orbite per vista Julia)
 const VPS=[];let AV=null,LAYOUT=1; // viste esistenti, vista attiva, numero di viste
 function vpById(id){for(let i=0;i<VPS.length;i++)if(VPS[i].id===id)return VPS[i];return null;}
 function initWorkers(){
@@ -1998,9 +2027,9 @@ function initWorkers(){
 function fallback(){if(!useWorkers)return;useWorkers=false;workers.forEach(w=>w.terminate());workers=[];busy=[];inflight=[];wOrb=[];setStatus('Worker non disponibili: calcolo sul thread principale');render();}
 function pump(){
  if(useWorkers){
-  for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;if(J.orb)sendOrbit(i,J.orb);workers[i].postMessage(J);}}
+  for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;if(J.orb)sendOrbit(i,J.orb);if(J.orbB)sendOrbit(i,J.orbB);workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();if(J.orb){const o=ORB_REG[J.orb];if(o)LIB.setOrbit(J.orb,o.zr,o.zi,o.n);}let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){const X=J.type==='geo'?LIB.computeGeo(J):(J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J))));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap,geo:X.geo};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();if(J.orb){const o=ORB_REG[J.orb];if(o)LIB.setOrbit(J.orb,o.zr,o.zi,o.n);}if(J.orbB){const o=ORB_REG[J.orbB];if(o)LIB.setOrbit(J.orbB,o.zr,o.zi,o.n);}let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){const X=J.type==='geo'?LIB.computeGeo(J):(J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J))));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap,geo:X.geo};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
  }
 }
 
@@ -2008,33 +2037,45 @@ function pump(){
 /* ---------- 1.16.0: registro delle orbite di riferimento ---------- */
 // Un'orbita per (centro C0, K, maxIt): calcolata nel main thread in BigInt, poi inviata a ogni worker una sola volta (messaggio 'orbit', copia strutturata, niente SharedArrayBuffer).
 const ORB_REG={},ORB_BY={},ORB_KEYS=[];let orbSeq=0;
-function orbitFor(h,maxIt){
- const lk=h.K+':'+maxIt+':'+h.x+':'+h.y;
+function regOrbit(lk,mk){
  let o=ORB_BY[lk];
  if(o){o.hit=true;return o;}
- const t=performance.now(),r=hpOrbit(h,maxIt);
- o={key:'o'+(++orbSeq),lk,zr:r.zr,zi:r.zi,n:r.n,esc:r.esc,ms:performance.now()-t,K:h.K,hit:false};
+ const t=performance.now(),r=mk();
+ o={key:'o'+(++orbSeq),lk,zr:r.zr,zi:r.zi,n:r.n,esc:r.esc,ms:performance.now()-t,hit:false};
  ORB_REG[o.key]=o;ORB_BY[lk]=o;ORB_KEYS.push(o.key);
- if(ORB_KEYS.length>12){
-  const used=new Set(VPS.map(v=>v.cur&&v.cur.deep?v.cur.deep.key:null));
-  for(let i=0;i<ORB_KEYS.length&&ORB_KEYS.length>12;){const k=ORB_KEYS[i];if(used.has(k)||k===o.key){i++;continue;}ORB_KEYS.splice(i,1);delete ORB_BY[ORB_REG[k].lk];delete ORB_REG[k];}
- }
  return o;
+}
+// Mandelbrot: orbita di C0 (cH assente). 1.16.5 — Julia (cH = c ad alta precisione): A = orbita del centro (z0 = C0) e B = orbita di 0 con lo stesso c (bersaglio del rebasing; condivisa tra le viste con lo stesso c).
+function orbitFor(h,maxIt,cH){
+ const base=h.K+':'+maxIt+':';let A,B=null;
+ if(!cH)A=regOrbit(base+h.x+':'+h.y,()=>hpOrbit(h,maxIt));
+ else{
+  const cs=cH.x+','+cH.y;
+  A=regOrbit('JA:'+cs+':'+base+h.x+':'+h.y,()=>hpOrbit(h,maxIt,cH,h));
+  B=(h.x===BigInt(0)&&h.y===BigInt(0))?A:regOrbit('JB:'+cs+':'+base,()=>hpOrbit(cH,maxIt,cH,null)); // centro in 0: A e B coincidono
+ }
+ if(ORB_KEYS.length>16){
+  const used=new Set();VPS.forEach(v=>{const d=v.cur&&v.cur.deep;if(d){used.add(d.key);if(d.keyB)used.add(d.keyB);}});used.add(A.key);if(B)used.add(B.key);
+  for(let i=0;i<ORB_KEYS.length&&ORB_KEYS.length>16;){const k=ORB_KEYS[i];if(used.has(k)){i++;continue;}ORB_KEYS.splice(i,1);delete ORB_BY[ORB_REG[k].lk];delete ORB_REG[k];}
+ }
+ return {key:A.key,keyB:B?B.key:undefined,n:A.n,nB:B?B.n:0,esc:A.esc,ms:A.ms+((B&&B!==A)?B.ms:0),K:h.K,hit:A.hit&&(!B||B.hit)};
 }
 function sendOrbit(i,key){
  const o=ORB_REG[key];if(!o||!workers[i])return;
  const a=wOrb[i]||(wOrb[i]=[]);if(a.indexOf(key)>=0)return;
  workers[i].postMessage({type:'orbit',key,zr:o.zr,zi:o.zi,n:o.n});
- a.push(key);while(a.length>8)a.shift();
+ a.push(key);while(a.length>10)a.shift();
 }
 
 /* ---------- rendering ---------- */
 let renderPending=0;
+// 1.16.5: con perturbazione (Mandelbrot e Julia d=2, span < 1e-10) la crescita resta la stessa (base·(1 + 0,25·log2 dello zoom)) ma il tetto sale da 50000 a 100000:
+// a 1e-250 la formula dà ~63000 (Mandelbrot, base 300) e ~84000 (Julia, base 400) invece di restare inchiodata a 50000 da ~1e-200. L'orbita BigInt di 100000 iterazioni costa ~0,2 s e 1,6 MB (×2 per Julia).
 function curIter(view){
  view=view||AV.view;
  const f=FAM[S.fam],base=S.iterBase[S.fam];
  if(!S.auto||f.noauto)return base;
- const z=f.view.span/view.span;return Math.min(50000,Math.round(base*(1+0.25*Math.max(0,Math.log2(z)))));
+ const z=f.view.span/view.span,cap=(view.span<DEEP_ITER_SPAN&&deepFamNow())?DEEP_ITER_MAX:50000;return Math.min(cap,Math.round(base*(1+0.25*Math.max(0,Math.log2(z)))));
 }
 function findRoots(c){
  const n=c.length-1,a=c.map(v=>v/c[0]);let z=[];for(let i=0;i<n;i++){const ang=2*Math.PI*i/n+0.4;z.push([0.9*Math.cos(ang)*1.3,0.9*Math.sin(ang)*1.3]);}
@@ -2074,7 +2115,7 @@ function baseJob(W,H,view,deep){
  view=view||AV.view;
  const P=S.P[S.fam],s=view.span/H;
  // 1.16.0: con perturbazione x0,y0 sono OFFSET dal centro di riferimento C0 (= centro della vista), non coordinate assolute
- if(deep)return Object.assign({W,H,s,x0:-(W/2-0.5)*s,y0:(H/2-0.5)*s,maxIt:curIter(view),orb:deep.key},famJobParams(S.fam,P,S.nw));
+ if(deep)return Object.assign({W,H,s,x0:-(W/2-0.5)*s,y0:(H/2-0.5)*s,maxIt:curIter(view),orb:deep.key,orbB:deep.keyB,cx0:view.cx,cy0:view.cy},famJobParams(S.fam,P,S.nw)); // 1.16.5: orbB (Julia) e centro in double (ripiego FP64 se l'orbita manca)
  return Object.assign({W,H,s,x0:view.cx-(W/2-0.5)*s,y0:view.cy+(H/2-0.5)*s,maxIt:curIter(view)},famJobParams(S.fam,P,S.nw));
 }
 /* ---------- evalPoint (1.9.0): valutatore puntuale, cursore informativo ---------- */
@@ -2087,11 +2128,14 @@ function evalPoint(fam,params,z0x,z0y,cx,cy,maxIt,nw,deep){
  if(!f||!f.caps||!f.caps.point)return null;
  const P=params||S.P[key];
  // 1.16.0: sotto la soglia FP64 (Mandelbrot d=2) il punto si valuta in perturbazione sull'orbita della vista; deep = {key,dx,dy} (offset del punto da C0)
- if(deep&&key==='mandel'&&(P.d|0)===2){
+ // 1.16.5: anche Julia d=2 (deep.keyB = orbita di 0; (dx,dy) = offset di z0) e deep.s = passo del pixel (derivata scalata)
+ if(deep&&(key==='mandel'||key==='julia')&&(P.d|0)===2){
   const o=ORB_REG[deep.key];
   if(!o)return null;
   LIB.setOrbit(deep.key,o.zr,o.zi,o.n);
-  return LIB.evalPointDeep(famJobParams('mandel',P,null),deep.key,+deep.dx,+deep.dy,Math.max(1,(maxIt||S.iterBase[key])|0));
+  let kb;
+  if(key==='julia'){const ob=deep.keyB&&ORB_REG[deep.keyB];if(!ob)return null;LIB.setOrbit(deep.keyB,ob.zr,ob.zi,ob.n);kb=deep.keyB;}
+  return LIB.evalPointDeep(famJobParams(key,P,null),deep.key,+deep.dx,+deep.dy,Math.max(1,(maxIt||S.iterBase[key])|0),kb,deep.s);
  }
  return LIB.evalPoint(f.code,famJobParams(key,P,nw||null),+z0x,+z0y,+cx,+cy,Math.max(1,(maxIt||S.iterBase[key])|0));
 }
@@ -2365,7 +2409,8 @@ function panView(view,W,H,a,b){
 const HP_BIG=(typeof BigInt==='function');
 const DEEP_S=1e-13;         // span/H sotto cui, per Mandelbrot d=2, si attiva la perturbazione
 const HP_ON_SPAN=1e-8;      // sotto questo span la vista mantiene anche hp (margine per canvas molto alti)
-const DEEP_MIN_SPAN=1e-100; // limite di questa release (parte A)
+const DEEP_MIN_SPAN=1e-250; // 1.16.5 (parte B): limite della perturbazione in FP64. Oltre, i δ si avvicinano al minimo normale (2.2e-308) e Number(BigInt)/Number('1e-K') escono dal range: la vista si ferma qui
+const DEEP_ITER_MAX=100000,DEEP_ITER_SPAN=1e-10; // 1.16.5: tetto delle iterazioni automatiche con perturbazione (prima 50000 per tutte le viste)
 const HP_MARGIN=28;         // cifre decimali di margine oltre −log10(span)
 const _P10={};
 function p10(k){return _P10[k]||(_P10[k]=BigInt('1'+'0'.repeat(k)));}
@@ -2470,14 +2515,16 @@ function viewFromPt(pt,span,rot){
  if(HP_BIG&&pt.hp&&span<HP_ON_SPAN){const h=hpRes(pt.hp,hpK(span));v.hp=h;v.cx=hpNum(h.x,h.K);v.cy=hpNum(h.y,h.K);}
  return v;
 }
-// Orbita di riferimento Z_{n+1}=Z_n²+C0 in BigInt a virgola fissa BINARIA (B bit, B ≈ K·log2(10)); C0 = centro della vista.
+// Orbita di riferimento Z_{n+1}=Z_n²+c in BigInt a virgola fissa BINARIA (B bit, B ≈ K·log2(10)).
+// Mandelbrot (default): Z_0 = 0 e c = C0 = centro della vista h. 1.16.5 — Julia: cc = {x,y,K} (c ad alta precisione, stessa K di h) e z0 = {x,y,K} (A: centro della vista; B: assente = 0).
 // Restituisce Z_n arrotondata a double in due Float64Array(maxIt); si ferma alla fuga (|Z|² > 1e6).
-function hpOrbit(h,maxIt){
- const bits=Math.ceil(h.K*3.3219280948873626)+16,B=BigInt(bits),one=BigInt(1),f=p10(h.K);
- const cx=(h.x<<B)/f,cy=(h.y<<B)/f,sc=Math.pow(2,-bits),zr=new Float64Array(maxIt),zi=new Float64Array(maxIt);
- let zx=BigInt(0),zy=BigInt(0),n=maxIt,esc=false;
+// Conversione in double: oltre 1000 bit si scartano i bit bassi prima di Number() (Number(BigInt) > 1.8e308 darebbe Infinity: la perturbazione e' comunque limitata a span ≥ 1e-250, K ≈ 280 cifre, ~950 bit).
+function hpOrbit(h,maxIt,cc,z0){
+ const bits=Math.ceil(h.K*3.3219280948873626)+16,B=BigInt(bits),one=BigInt(1),f=p10(h.K),c=cc||h;
+ const cx=(c.x<<B)/f,cy=(c.y<<B)/f,xs=Math.max(0,bits-1000),XS=BigInt(xs),sc=Math.pow(2,-(bits-xs)),zr=new Float64Array(maxIt),zi=new Float64Array(maxIt);
+ let zx=z0?(z0.x<<B)/f:BigInt(0),zy=z0?(z0.y<<B)/f:BigInt(0),n=maxIt,esc=false;
  for(let i=0;i<maxIt;i++){
-  const a=Number(zx)*sc,b=Number(zy)*sc;zr[i]=a;zi[i]=b;
+  const a=Number(zx>>XS)*sc,b=Number(zy>>XS)*sc;zr[i]=a;zi[i]=b;
   if(a*a+b*b>1e6){n=i+1;esc=true;break;}
   const xx=(zx*zx)>>B,yy=(zy*zy)>>B,xy=(zx*zy)>>B;
   zx=xx-yy+cx;zy=(xy<<one)+cy;
@@ -2485,7 +2532,21 @@ function hpOrbit(h,maxIt){
  return {zr,zi,n,esc};
 }
 
-function deepFamNow(){return HP_BIG&&S.fam==='mandel'&&(S.P.mandel.d|0)===2;} // famiglia con perturbazione (Mandelbrot d=2)
+function deepFamOf(fam,P){return HP_BIG&&(fam==='mandel'||fam==='julia')&&!!P&&(P.d|0)===2;} // famiglie con perturbazione: Mandelbrot d=2 e (1.16.5) Julia d=2
+function deepFamNow(){return deepFamOf(S.fam,S.P[S.fam]);}
+function deepFamKey(){return deepFamNow()?S.fam:null;}
+// 1.16.5: c di Julia come BigInt scalati 10^K. Sorgente: le stringhe decimali di S.jc (marker profondo o stato JSON/URL «chp»), valide solo finche' cr,ci coincidono con quelli con cui sono state fissate;
+// altrimenti String(cr), String(ci) (il decimale più corto che identifica il double: «-0.7269» resta esattamente −0,7269, non il suo valore binario)
+function juliaCHP(K){
+ const P=S.P.julia,jc=S.jc;let re=null,im=null;
+ if(jc&&jc.dr===P.cr&&jc.di===P.ci){re=hpParse(jc.re,K);im=hpParse(jc.im,K);}
+ if(re===null||im===null){re=hpParse(String(P.cr),K);im=hpParse(String(P.ci),K);}
+ return (re===null||im===null)?null:{x:re,y:im,K};
+}
+// messaggi di limite: 'zoom' = azione dell'utente che raggiunge il limite; 'load' = stato/URL/cronologia che chiede uno span oltre il limite
+function deepLimitMsg(kind,req){
+ return 'Limite di zoom profondo '+(kind==='load'?'superato (richiesto '+(+req).toExponential(1).replace('.',',')+'): vista limitata a 1e-250':'raggiunto (1e-250)')+'. Oltre, i δ della perturbazione in FP64 andrebbero in underflow.';
+}
 function deepFor(view,H){return deepFamNow()&&hpWanted(view)&&view.span/(H||1000)<DEEP_S;} // modalità a precisione estesa attiva per questa vista
 function hpSig(v){return v&&v.hp?v.hp.K+':'+v.hp.x+':'+v.hp.y:'';}
 function profPt(p,w){return w==='a'?{x:p.ax,y:p.ay,hp:p.ahp}:{x:p.bx,y:p.by,hp:p.bhp};} // estremi del profilo come punti (con hp se presente)
@@ -2834,7 +2895,7 @@ class Viewport{
   if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'||S.fam==='geo'){if(this.gpu)this.gpu.release();this.renderIFS(W,H);return null;}
   const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
   const pre=newBuf(pw,ph),full=newBuf(W,H),cur=this.cur={pre,full,id:this.jobId,W,H,left:0};
-  cur.deep=this.prepDeep(H); // 1.16.0: orbita di riferimento (solo Mandelbrot d=2 sotto soglia)
+  cur.deep=this.prepDeep(H); // 1.16.0: orbita di riferimento (Mandelbrot d=2; 1.16.5: anche Julia d=2) sotto soglia
   const j1=makeTileJobs(pre,0,this.jobId,this),j2=makeTileJobs(full,1,this.jobId,this);
   cur.left0=j1.length;cur.left1=j2.length;cur.n1=j2.length;
   cur.gpuOK=!!(this.gpu&&this.gpu.ok&&this.gpu.alloc(W,H)); // 1.15.0: texture dati pronte (kind=255 = non calcolato)
@@ -2890,7 +2951,7 @@ class Viewport{
   const W=this.cv.width,H=this.cv.height,v=this.view,axis=(S.P.bif.axis|0);
   const rs=[3, 1+Math.sqrt(6), 3.5699456, 1+Math.sqrt(8)]; // r1, r2≈3.449, r∞, periodo-3
   const labels=['r₁=3','r₂≈3,449','r_∞≈3,570','per.3 ≈3,828'];
-  ctx=this.ctx;
+  const ctx=this.ctx; // 1.16.5: era un'assegnazione a variabile non dichiarata (ReferenceError in strict mode)
   ctx.save();
   try{
    ctx.setLineDash([4,3]);ctx.lineWidth=1.2;
@@ -2934,10 +2995,13 @@ class Viewport{
   if(!deepFor(this.view,H))return null;
   const h=viewHP(this.view);if(!h)return null;
   const maxIt=curIter(this.view);
-  try{const o=orbitFor(h,maxIt);return {key:o.key,K:h.K,hp:h,n:o.n,ms:o.ms,hit:!!o.hit,maxIt};}catch(e){return null;} // se l'orbita fallisce: ripiego sul percorso FP64
+  try{
+   let cH=null;if(deepFamKey()==='julia'){cH=juliaCHP(h.K);if(!cH)return null;} // Julia: c ad alta precisione
+   const o=orbitFor(h,maxIt,cH);return {key:o.key,keyB:o.keyB,K:h.K,hp:h,n:o.n,ms:o.ms,hit:!!o.hit,maxIt,s:this.view.span/H};
+  }catch(e){return null;} // se l'orbita fallisce: ripiego sul percorso FP64
  }
- deepEval(pt){const d=this.cur&&this.cur.deep;if(!d||!pt||!pt.hp)return null;const o=hpDiff(pt.hp,d.hp);return {key:d.key,dx:o[0],dy:o[1]};}
- deepNote(){const d=this.cur&&this.cur.deep;if(!d)return '';return ' · precisione estesa '+d.K+' cifre, orbita di '+d.n+' it. ('+(d.hit?'già in memoria':d.ms.toFixed(0)+' ms')+')';}
+ deepEval(pt){const d=this.cur&&this.cur.deep;if(!d||!pt||!pt.hp)return null;const o=hpDiff(pt.hp,d.hp);return {key:d.key,keyB:d.keyB,dx:o[0],dy:o[1],s:d.s};}
+ deepNote(){const d=this.cur&&this.cur.deep;if(!d)return '';return ' · precisione estesa '+d.K+' cifre, orbita di '+d.n+' it.'+(d.keyB&&d.keyB!==d.key?' + orbita di 0':'')+' ('+(d.hit?'già in memoria':d.ms.toFixed(0)+' ms')+')';}
  precTxt(){if(!deepFamNow())return '';return deepFor(this.view,this.cv.height)?' · Precisione: estesa ('+hpK(this.view.span)+' cifre)':' · Precisione: FP64';}
  hudCenter(v){
   if(deepFor(v,this.cv.height)){const h=viewHP(v);if(h){
@@ -3169,7 +3233,7 @@ class Viewport{
  // tocco breve (touch) o, dalla 1.14.7, clic sinistro singolo senza trascinamento (mouse): con «Julia dal marker» in attesa il punto ha la precedenza; doppio tocco/clic = zoom ×2 e marker precedente ripristinato
  onTap(p){
   const cv=this.cv,k=cv.getBoundingClientRect().width/(cv.width||1),now=performance.now();
-  if(S.pick&&S.fam==='mandel'){const c=this.pxToC(p[0],p[1]);juliaFrom(c[0],c[1]);return;}
+  if(S.pick&&S.fam==='mandel'){const c=this.pxToPt(p[0],p[1]);juliaFrom(c.x,c.y,c.hp);return;}
   const tp=this.tapPrev;
   if(tp&&now-tp.t<350&&Math.hypot(p[0]-tp.p[0],p[1]-tp.p[1])*k<32){
    this.tapPrev=null;this.marker=tp.before;this.placeMarker();
@@ -3187,7 +3251,7 @@ class Viewport{
   this.longT=0;const ts=this.tapStart;
   if(!ts||!ts.touch||ts.moved||this.gest||this.sel||this.ptrs.size!==1)return;
   const items=[];
-  if(S.fam==='mandel'){const c=this.pxToC(ts.p[0],ts.p[1]);items.push(['Julia da qui',()=>juliaFrom(c[0],c[1])]);}
+  if(S.fam==='mandel'){const c=this.pxToPt(ts.p[0],ts.p[1]);items.push(['Julia da qui',()=>juliaFrom(c.x,c.y,c.hp)]);}
   if(this.marker)items.push(['Rimuovi marker',()=>this.clearMarker()]);
   if(!items.length)return;
   ts.menu=true;showCtx(cx,cy,items);
@@ -3195,7 +3259,7 @@ class Viewport{
 
  zoomAt(px,py,f){
   const W=this.cv.width,H=this.cv.height;let ns=this.view.span/f;
-  if(deepFamNow()&&ns<DEEP_MIN_SPAN){ns=DEEP_MIN_SPAN;showMsg('Zoom limitato a 1e-100 in questa versione');} // 1.16.0 (parte A)
+  if(deepFamNow()&&ns<DEEP_MIN_SPAN){ns=DEEP_MIN_SPAN;showMsg(deepLimitMsg('zoom'),6000);} // 1.16.5: limite 1e-250
   if(HP_BIG&&(this.view.hp||ns<HP_ON_SPAN)){ // centro in BigInt: nuovo = vecchio + (offset del punto con lo span vecchio − offset con lo span nuovo)
    const a=screenToWorld({cx:0,cy:0,span:this.view.span,rot:this.view.rot},W,H,px,py),b=screenToWorld({cx:0,cy:0,span:ns,rot:this.view.rot},W,H,px,py);
    this.view=vMove(this.view,a[0]-b[0],a[1]-b[1],ns);return;
@@ -3330,7 +3394,7 @@ class Viewport{
    else if(ts&&ts.touch){if(!ts.moved&&!ts.menu&&e.type==='pointerup'&&performance.now()-ts.t<(S.pick&&S.fam==='mandel'?450:250))this.onTap(ts.p);}
    else if(ts&&!ts.moved&&!wasPan&&performance.now()-ts.t<450){
     const [px,py]=ts.p;
-    if(S.pick&&S.fam==='mandel'){const [x,y]=this.pxToC(px,py);juliaFrom(x,y);}
+    if(S.pick&&S.fam==='mandel'){const c=this.pxToPt(px,py);juliaFrom(c.x,c.y,c.hp);}
     else if(ts.mouse&&e.type==='pointerup')this.onTap(ts.p); // 1.14.7: clic sinistro senza trascinamento = tap (marker; secondo clic entro 350 ms = zoom ×2 e marker ripristinato)
     else {const now=performance.now();if(now-this.lastTap<350){this.lastTap=0;pushHist();this.zoomAt(px,py,2);render([this]);}else this.lastTap=now;}
    }
@@ -3363,13 +3427,13 @@ class Viewport{
  applyZoomRect(x0,y0,x1,y1){
   const v=fitRect(this.view,this.cv.width,this.cv.height,x0,y0,x1,y1);
   if(!isFinite(v.cx)||!isFinite(v.cy)||!(v.span>0))return;
-  const m=Math.max(1,Math.abs(v.cx),Math.abs(v.cy)),deepF=deepFamNow(),minSpan=deepF?DEEP_MIN_SPAN:this.cv.height*4e-16*m*8*1.001; // stessa soglia di precWarn(); con perturbazione il limite è 1e-100
+  const m=Math.max(1,Math.abs(v.cx),Math.abs(v.cy)),deepF=deepFamNow(),minSpan=deepF?DEEP_MIN_SPAN:this.cv.height*4e-16*m*8*1.001; // stessa soglia di precWarn(); con perturbazione il limite è 1e-250
   const lim=v.span<minSpan;if(lim){const w=viewFromPt(ptFromView(v),minSpan,v.rot);v.span=w.span;v.hp=w.hp;v.cx=w.cx;v.cy=w.cy;}
   pushHist();
   this.view={...v,rot:this.view.rot||0}; // IFS incluso: la vista resta quella scelta, fitIFS non viene richiamata
   setZoomMode(false);
   render([this]);
-  if(lim)showMsg(deepF?'Zoom limitato a 1e-100 in questa versione':'Zoom limitato dalla precisione a 64 bit');
+  if(lim)showMsg(deepF?deepLimitMsg('zoom'):'Zoom limitato dalla precisione a 64 bit',deepF?6000:undefined);
  }
 }
 /* ---------- viste: creazione, layout 1→2→4, chiusura, reflow, vista attiva ---------- */
@@ -3561,7 +3625,7 @@ function centerOnProfile(vp){
  let span=Math.max(dy,dx/aspect)*1.35;
  if(!(span>0)||!isFinite(span))span=(FAM[S.fam].view.span||3)*0.15;
  const m=Math.max(1,Math.abs(mx),Math.abs(my)),minSpan=deepFamNow()?DEEP_MIN_SPAN:H*4e-16*m*8*1.001;
- if(span<minSpan)span=minSpan;
+ if(span<minSpan){span=minSpan;if(deepFamNow())showMsg(deepLimitMsg('zoom'),6000);}
  pushHist();
  vp.view=viewFromPt(mid,span,vp.view.rot||0);
  render([vp]);
@@ -3630,7 +3694,7 @@ window.addEventListener('keydown',e=>{
 },true);
 function fmt(v,d=6){return (+v).toFixed(d).replace('.',',');}
 // snapshot globale: famiglia, parametri, soglie Newton e {views[], layout} (+ vista attiva)
-function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>{const s=v.view.hp?viewStr(v.view):null;return {id:v.id,cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0,hx:s?s[0]:undefined,hy:s?s[1]:undefined};}),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
+function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>{const s=v.view.hp?viewStr(v.view):null;return {id:v.id,cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0,hx:s?s[0]:undefined,hy:s?s[1]:undefined};}),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})},jc:S.jc?{...S.jc}:null});if(hist.length>60)hist.shift();}
 function ctlRow(parent,o){
  const row=document.createElement('label');row.className='ctl';
  row.innerHTML='<span class="cl"></span><input type="range"><input type="number" step="any">';
@@ -3717,7 +3781,7 @@ function applyStyle(k){
 }
 function showPresetDesc(t){const e=$('presetdesc');if(!e)return;e.textContent=t||'';e.style.display=t?'':'none';}
 function applyPreset(i){
- const p=FAM[S.fam].presets[i];if(!p)return;pushHist();S.nw={};
+ const p=FAM[S.fam].presets[i];if(!p)return;pushHist();S.nw={};S.jc=null;
  if(p.src){S.src=p.src;S.alpha=p.alpha!=null?p.alpha:1;S.stripeS=p.stripeS||5;S.levels=p.levels===2?2:0;} // 1.10.0: solo i preset di fase toccano la fonte colore
  if(p.p)Object.assign(S.P[S.fam],p.p);
  if(S.fam==='ifs'){buildParams();fitIFS();}
@@ -3736,8 +3800,12 @@ function setPick(on){
  const b=$('pick');
  if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');b.textContent=on?'Scegli il punto sulla vista…':'Julia dal marker';}
 }
-function juliaFrom(x,y){
- pushHist();setPick(false);const d=S.P.mandel.d;Object.assign(S.P.julia,{cr:+x.toFixed(10),ci:+y.toFixed(10),d});
+function juliaFrom(x,y,hp){
+ pushHist();setPick(false);const d=S.P.mandel.d;
+ if(HP_BIG&&hp&&hp.x!=null&&hp.y!=null&&hp.K>0){ // 1.16.5: marker di una vista profonda: c con tutte le cifre del marker (stringhe decimali in S.jc), cr/ci = double più vicini
+  const cr=hpNum(hp.x,hp.K),ci=hpNum(hp.y,hp.K);Object.assign(S.P.julia,{cr,ci,d});
+  S.jc=(d|0)===2?{re:hpStr(hp.x,hp.K),im:hpStr(hp.y,hp.K),dr:cr,di:ci}:null;x=cr;y=ci;
+ } else {Object.assign(S.P.julia,{cr:+x.toFixed(10),ci:+y.toFixed(10),d});S.jc=null;}
  VPS.forEach(vp=>{delete vp.fv.julia;});setFam('julia');render();
  setStatus('Julia con c = '+fmt(x,6)+(y<0?' − ':' + ')+fmt(Math.abs(y),6)+'i');
 }
@@ -3801,7 +3869,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.16.0',APP_VERSION_SHORT='1.16.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.16.5',APP_VERSION_SHORT='1.16.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3858,6 +3926,7 @@ function getState(){
   light:+S.light,az:+S.az,el:+S.el,relief:+S.relief,shin:+S.shin,irid:+S.irid};
  if(S.pal==='custom')st.custom=PALS.custom.c.slice();
  if(fam==='newton'){const nb=nwExport();if(nb)st.newton=nb;}
+ if(fam==='julia'&&S.jc&&S.jc.dr===P.cr&&S.jc.di===P.ci)st.chp=[S.jc.re,S.jc.im]; // 1.16.5: c ad alta precisione (stringhe decimali), omesso se c e' un decimale breve
  if(S.grid&&gridAvail())st.grid=true; // omesso se falso
  // 1.10.0: campi opzionali della fonte colore, omessi se coincidono con i valori predefiniti (iter, alpha 1, stripeS 5, livelli continuo)
  if(FAM[fam].caps&&FAM[fam].caps.phase&&S.src&&S.src!=='iter'){
@@ -3908,6 +3977,15 @@ function applyState(obj){
   else if(d){v=clamp(v,d.min,d.max);if(d.step===1)v=Math.round(v);}
   else v=+v; if(isFinite(v))P[k]=v;}}
  const nw=fam==='newton'?nwParse(obj.newton,P):{};
+ // 1.16.5: c di Julia ad alta precisione (stringhe decimali); accettato solo se coerente con P.cr, P.ci (entro 1e-9) e se la famiglia lo usa (d = 2)
+ let jcN=null;
+ if(fam==='julia'&&HP_BIG&&(P.d|0)===2&&Array.isArray(obj.chp)&&obj.chp.length===2){
+  const ca=String(obj.chp[0]).trim(),cb=String(obj.chp[1]).trim();
+  if(hpParse(ca,40)!==null&&hpParse(cb,40)!==null&&Math.abs(parseFloat(ca.replace(',','.'))-P.cr)<=1e-9*Math.max(1,Math.abs(P.cr))&&Math.abs(parseFloat(cb.replace(',','.'))-P.ci)<=1e-9*Math.max(1,Math.abs(P.ci)))jcN={re:ca,im:cb,dr:P.cr,di:P.ci};
+ }
+ // 1.16.5: span oltre il limite della perturbazione -> limitato (con messaggio, dopo l'applicazione)
+ let spanLim=null;
+ if(deepFamOf(fam,P))specs.forEach(sp=>{if(sp.span<DEEP_MIN_SPAN){if(spanLim===null||sp.span<spanLim)spanLim=sp.span;sp.span=DEEP_MIN_SPAN;}});
  let iterBase=obj.iterBase!=null?Math.round(clamp(obj.iterBase,20,50000)):S.iterBase[fam];
  const auto=obj.auto!=null?!!obj.auto:S.auto;
  const qual=['veloce','normale','alta','ultra'].includes(obj.qual)?obj.qual:S.qual;
@@ -3935,7 +4013,7 @@ function applyState(obj){
  const levelsN=(srcN==='final'&&(obj.levels===2||obj.levels==='2'))?2:0;
  // applica
  pushHist();fvSave();
- S.P[fam]=P; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
+ S.P[fam]=P; S.jc=jcN; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
  S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
  S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid; S.grid=grid;
  S.src=srcN; S.alpha=alphaN; S.stripeS=stripeN; S.levels=levelsN;
@@ -3976,6 +4054,7 @@ function applyState(obj){
  viewNote=cut.length?'schermo stretto: max '+specs.length+' viste, '+(cut.length>1?'chiuse le viste ':'chiusa la vista ')+cut.join(', '):'';
  setStatus(m+(viewNote?' · '+viewNote:''));
  clearTimeout(applyState._tm);applyState._tm=setTimeout(()=>{$('headmsg').textContent='';},cut.length?6000:3500);
+ if(spanLim!==null)showMsg(deepLimitMsg('load',spanLim),7000);
  return true;
 }
 function toB64url(str){
@@ -4056,9 +4135,9 @@ $('back').addEventListener('click',()=>{
  const h=hist.pop();if(!h)return;
  viewNote='';
  fvSave();
- const sameP=h.fam===S.fam&&JSON.stringify(h.P)===JSON.stringify(S.P[h.fam])&&JSON.stringify(h.nw||{})===JSON.stringify(S.nw||{});
+ const sameP=h.fam===S.fam&&JSON.stringify(h.P)===JSON.stringify(S.P[h.fam])&&JSON.stringify(h.nw||{})===JSON.stringify(S.nw||{})&&JSON.stringify(h.jc||null)===JSON.stringify(S.jc||null);
  if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;setPick(false);}
- S.P[h.fam]=h.P;S.nw=h.nw?{...h.nw}:{};
+ S.P[h.fam]=h.P;S.nw=h.nw?{...h.nw}:{};S.jc=h.jc?{...h.jc}:null;
  const specs=(h.views||[]).filter(v=>v&&isFinite(+v.cx)&&isFinite(+v.cy)&&+v.span>0).map((v,k)=>({id:(v.id!=null&&isFinite(+v.id)?+v.id:k),cx:+v.cx,cy:+v.cy,span:+v.span,hx:v.hx,hy:v.hy}));
  if(!specs.length){const vs=viewStr(AV.view);specs.push({id:AV?AV.id:0,cx:AV.view.cx,cy:AV.view.cy,span:AV.view.span,hx:vs[0],hy:vs[1]});}
  const r=setViews(specs,h.act);
@@ -4066,7 +4145,7 @@ $('back').addEventListener('click',()=>{
  if(sameP){const list=r.added.concat(r.changed);if(list.length)render(list);scheduleReflow(60);} // stessa famiglia e parametri: solo viste nuove o con vista cambiata (+ reflow)
  else render();
 });
-function zoomStep(f,vp){vp=vp||AV;pushHist();let ns=vp.view.span/f;if(deepFamNow()&&ns<DEEP_MIN_SPAN){ns=DEEP_MIN_SPAN;showMsg('Zoom limitato a 1e-100 in questa versione');}vp.view=vMove(vp.view,0,0,ns);render([vp]);}
+function zoomStep(f,vp){vp=vp||AV;pushHist();let ns=vp.view.span/f;if(deepFamNow()&&ns<DEEP_MIN_SPAN){ns=DEEP_MIN_SPAN;showMsg(deepLimitMsg('zoom'),6000);}vp.view=vMove(vp.view,0,0,ns);render([vp]);}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
 $('profile').addEventListener('click',()=>setProfileMode(!profileMode));
 $('profclear').addEventListener('click',clearActiveProfile);
@@ -4077,7 +4156,7 @@ $('grid').addEventListener('click',toggleGrid);
 $('pick').addEventListener('click',()=>{
  if(S.fam!=='mandel')return;
  const m=AV&&AV.marker;
- if(m){juliaFrom(m.x,m.y);return;}
+ if(m){juliaFrom(m.x,m.y,m.hp);return;}
  if(S.pick){setPick(false);setStatus('');return;}
  if(zoomMode)setZoomMode(false); // le modalità si escludono a vicenda
  if(profileMode)setProfileMode(false);
