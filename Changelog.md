@@ -16,6 +16,16 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.16.6 — 2026-11-26
+
+### Correzioni
+- **Julia e Tricorno/Multicorn neri alla selezione iniziale.** Nell'inizializzazione di `S.P` il letterale aveva due chiavi `d` (`d:2` potenza, poi `d:0.7` degli attrattori): in JavaScript prevale l'ultima, quindi tutte le famiglie partivano con `d = 0,7`. Mandelbrot veniva sistemato da `applyPreset(0)` (`p:{d:2}`); Julia e Tricorno no, perché il cambio famiglia non applica il primo preset. Rimosso il secondo `d` dal letterale comune; `S.P.strange` resta con `d:0.7`.
+- **`PARAMDEF`:** rimossa la seconda chiave `d` (sovrascriveva «Potenza d» con «Parametro d» −3…3). Aggiunti `PARAMDEF_STRANGE_D` e `paramDefOf(k, fam)` usati in `buildParams` e `applyState`, così gli attrattori strani conservano etichetta e range corretti senza rompere stati JSON salvati.
+- **`evalPointParityTest`:** il confronto sul Distance Estimator era finito dentro un commento (`…per s` + `if(!(…))R.deDiff++` sulla stessa riga), quindi `deDiff` restava sempre 0. Il controllo è di nuovo eseguito (come nei Limiti noti della 1.16.5).
+
+### Limiti noti
+- Nessun limite nuovo rispetto alla 1.16.5; il bug del DE nel test di parità non è più nei limiti noti.
+
 ## 1.16.5 — 2026-11-26
 
 — Deep zoom, parte B

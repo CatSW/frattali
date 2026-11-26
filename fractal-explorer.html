@@ -212,9 +212,9 @@ a{color:inherit}
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.16.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.16.6</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.16.5 · 26 novembre 2026</p>
+<p class="updated">Versione 1.16.6 · 26 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -1310,13 +1310,16 @@ const PARAMDEF={
  a:{label:'Parametro a',min:-3,max:3,step:0.001},
  b:{label:'Parametro b',min:-3,max:3,step:0.001},
  c:{label:'Parametro c',min:-3,max:3,step:0.001},
- d:{label:'Parametro d',min:-3,max:3,step:0.001},
+ // 1.16.6: niente seconda chiave d (sovrascriveva Potenza d); gli attrattori usano paramDefOf('d')
  axis:{label:'Asse',options:['r (logistica)','c (quadratica)']},
  guides:{label:'Linee guida',options:['Nascoste','Visibili']},
  fig:{label:'Figura',options:['Curva di Koch','Fiocco di Koch','Albero pitagorico']},
  ang:{label:'Angolo θ dell\'albero (°)',min:5,max:85,step:0.5},
  niter:{label:'Iterazioni',min:1,max:12,step:1}
 };
+// 1.16.6: definizione del parametro d dipendente dalla famiglia (potenza vs Clifford/de Jong)
+const PARAMDEF_STRANGE_D={label:'Parametro d',min:-3,max:3,step:0.001};
+function paramDefOf(k,fam){if(k==='d'&&(fam||S.fam)==='strange')return PARAMDEF_STRANGE_D;return PARAMDEF[k];}
 const PALS={
  pavone:{name:'Pavone metallico',c:['#06281f','#0f6e4a','#3fcf96','#0e5a8a','#1d2f8f','#5b2a9e','#a8306e','#d9503a','#f0b341','#7a5a12']},
  smeraldo:{name:'Smeraldo e oro',c:['#02160f','#0b4f36','#24a06a','#9be6b4','#0a3a28','#4a3508','#c8901a','#ffe9a3','#a86d0c','#04261a']},
@@ -1349,7 +1352,8 @@ const S={fam:'mandel',P:{},iterBase:{},auto:true,qual:'normale',
  light:0.85,az:135,el:45,relief:8,shin:40,irid:0.15,pick:false,anim:false,grid:false,
  src:'iter',alpha:1,stripeS:5,levels:0}; // 1.10.0: fonte colore ('iter'|'final'|'stripe'|'mean'), peso alpha (1 = solo fase), frequenza stripe s, livelli (0 = continuo, 2 = binario)
 const PHM={final:1,stripe:2,mean:3};
-for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0,var:0,a:-1.4,b:1.6,c:1,d:0.7};S.iterBase[f]=FAM[f].iter;}
+// 1.16.6: niente chiave d duplicata nel letterale comune (prima d:2 poi d:0.7 → d restava 0,7 per tutte le famiglie → Julia/Tricorno neri all'avvio)
+for(const f in FAM){S.P[f]={d:2,cr:-0.7269,ci:0.1889,qr:-0.5,qi:0,ar:1,ai:0,n:3,poly:0,ifs:0,v:0,jul:0,a0:1,a1:0,var:0,a:-1.4,b:1.6,c:1};S.iterBase[f]=FAM[f].iter;}
 S.P.strange={var:0,a:-1.4,b:1.6,c:1,d:0.7};
 S.P.bif={axis:0,guides:1};
 S.P.geo={fig:0,ang:45,niter:5};
@@ -2212,7 +2216,9 @@ function evalPointParityTest(nPer,seed){
    if(r.kind!==B.kind[q])R.kindDiff++;
    if(r.n!==pr[o])R.nDiff++;
    const dm=Math.abs(Math.fround(r.mu)-B.mu[q]);if(dm>R.muMax)R.muMax=dm;if(!(dm<=TOL))R.muDiff++;
-   const dr=Math.fround((r.de===-1||r.de===0||r.de===1e9)?r.de:r.de/s),db=B.de[q]; // de del punto in unità del piano: la banda lo divide per sif(!(Math.abs(dr-db)<=1e-6*Math.max(1,Math.abs(db))))R.deDiff++;
+   // 1.16.6: confronto DE (prima il if era dentro un commento e non veniva mai eseguito)
+   const dr=Math.fround((r.de===-1||r.de===0||r.de===1e9)?r.de:r.de/s),db=B.de[q]; // de del punto in unità del piano: la banda lo divide per s
+   if(!(Math.abs(dr-db)<=1e-6*Math.max(1,Math.abs(db))))R.deDiff++;
   }
   R.ok=R.kindDiff===0&&R.nDiff===0&&R.muDiff===0&&R.deDiff===0;if(!R.ok)out.ok=false;out.fams[key]=R;
  }
@@ -3725,7 +3731,8 @@ function buildParams(){
   if((k==='a0'||k==='a1') && !needsA) continue;
   if(henon && (k==='c'||k==='d')) continue; // Hénon non usa c,d
   if(k==='ang' && (P.fig|0)!==2) continue; // 1.14.8: l'angolo serve solo all'albero pitagorico
-  const d=PARAMDEF[k];
+  const d=paramDefOf(k); // 1.16.6: d = potenza o parametro attrattori secondo la famiglia
+  if(!d)continue;
   if(d.options){
    const onPoly = k==='poly' ? (v=>{pushHist();P[k]=v;buildParams();render();})
     : k==='var' ? (v=>{pushHist();P[k]=v;buildParams();fitStrange();render();})
@@ -3869,7 +3876,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.16.5',APP_VERSION_SHORT='1.16.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.16.6',APP_VERSION_SHORT='1.16.6',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3972,7 +3979,7 @@ function applyState(obj){
  if(!(Number.isInteger(actId)&&used.has(actId)))actId=(AV&&used.has(AV.id))?AV.id:specs[0].id;
  const Psrc=obj.P&&typeof obj.P==='object'?obj.P:{};
  const P={...S.P[fam]};
- for(const k of Object.keys(P)){if(k in Psrc){let v=Psrc[k];const d=PARAMDEF[k];
+ for(const k of Object.keys(P)){if(k in Psrc){let v=Psrc[k];const d=paramDefOf(k,fam); // 1.16.6: d dipende dalla famiglia
   if(d&&d.options){v=Math.round(+v);if(v<0||v>=d.options.length)v=0;}
   else if(d){v=clamp(v,d.min,d.max);if(d.step===1)v=Math.round(v);}
   else v=+v; if(isFinite(v))P[k]=v;}}
