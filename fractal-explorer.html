@@ -214,7 +214,7 @@ a{color:inherit}
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
   <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.15.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.15.5 · 25 novembre 2026</p>
+<p class="updated">Versione 1.16.0 · 26 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -400,7 +400,86 @@ a{color:inherit}
 
 <script id="wsrc" type="text/plain">
 "use strict";
+// 1.16.0 — Deep zoom, parte A: perturbazione per Mandelbrot d=2 con rebasing.
+// Convenzione: per un job con J.orb, x0,y0,s sono OFFSET dal centro di riferimento C0 (non coordinate assolute): il pixel (i,j) ha c = C0 + (x0+i*s, y0-j*s).
+// L'orbita di riferimento Z_k (k=0..n-1, Z_0=0) arriva da fuori (messaggio 'orbit', copia strutturata): zr, zi = Float64Array.
+var ORBITS={}, ORBK=[];
+function setOrbit(key,zr,zi,n){
+  if(ORBITS[key])return;
+  ORBITS[key]={zr:zr,zi:zi,n:n};ORBK.push(key);
+  while(ORBK.length>8){delete ORBITS[ORBK.shift()];}
+}
+function computePert(J){
+  var O=ORBITS[J.orb];
+  if(!O||O.n<2){var J2={};for(var q in J)J2[q]=J[q];J2.orb=null;return computeBand(J2);} // orbita assente: ripiego FP64 (non dovrebbe accadere)
+  var W=J.W, r0=J.r0, r1=J.r1, n=(r1-r0)*W;
+  var mu=new Float32Array(n), de=new Float32Array(n), tp=new Float32Array(n), tx=new Float32Array(n), kind=new Uint8Array(n), ph=new Float32Array(n);
+  var phm=(J.phm|0), phs=(J.phs>0?J.phs:5), TWOPI=2*Math.PI;
+  var maxIt=J.maxIt, s=J.s, x0=J.x0, y0=J.y0, R2=1e6, lnR=Math.log(1000), PR=J.pr;
+  var ZR=O.zr, ZI=O.zi, L=O.n, k=0;
+  for(var j=r0;j<r1;j++){
+    var dcy=y0-j*s;
+    for(var i=0;i<W;i++,k++){
+      var dcx=x0+i*s;
+      var dx=0,dy=0,m=0,zx=0,zy=0,ddx=0,ddy=0,r2=0,prevx=0,prevy=0;
+      var mtp=1e30,mtx=1e30,it=0,esc=false,per=8,pc=0,sZx=0,sZy=0,sdx=0,sdy=0,hitD=1e30,shr=0;
+      var pSum=0,pCnt=0,pLast=0,pSS=0,pSC=0;
+      for(it=0;it<maxIt;it++){
+        if(m+1>=L){dx+=ZR[m];dy+=ZI[m];m=0;} // l'orbita di riferimento e' finita: rebasing sul valore completo z = Z + dz
+        var Zr=ZR[m], Zi=ZI[m];
+        // derivata dz/dc (per il DE analitico): usa z_it, cioe' il valore completo dell'iterazione precedente
+        var nddx=2*(zx*ddx-zy*ddy)+1, nddy=2*(zx*ddy+zy*ddx);
+        ddx=nddx;ddy=nddy;
+        // dz_{n+1} = 2 Z_n dz_n + dz_n^2 + dc
+        var ndx=2*(Zr*dx-Zi*dy)+dx*dx-dy*dy+dcx, ndy=2*(Zr*dy+Zi*dx)+2*dx*dy+dcy;
+        m++; prevx=zx; prevy=zy;
+        dx=ndx; dy=ndy;
+        zx=ZR[m]+dx; zy=ZI[m]+dy; // z completo = Z_{m} + dz
+        r2=zx*zx+zy*zy;
+        if(r2<dx*dx+dy*dy){dx=zx;dy=zy;m=0;} // rebasing: |Z+dz| < |dz|
+        var az=Math.sqrt(r2); if(az<mtp)mtp=az;
+        var m2=Math.min(Math.abs(zx),Math.abs(zy)); if(m2<mtx)mtx=m2;
+        if(phm>=2&&it>=2&&az>0){
+          if(phm===2){pLast=0.5+0.5*Math.sin(phs*Math.atan2(zy,zx));pSum+=pLast;pCnt++;}
+          else{pSC+=zx/az;pSS+=zy/az;pCnt++;}
+        }
+        if(r2>R2){esc=true;break;}
+        // ciclo attrattivo: differenza dei valori completi calcolata come (dZ)+(ddz), cosi' non si perde il termine piccolo.
+        // La tolleranza e' anche RELATIVA a |dz|: a zoom profondo tutta la dinamica locale di un minibrot sta entro ~1/D (D = moltiplicatore del periodo) da Z, quindi una soglia assoluta la scambierebbe per periodica.
+        // A zoom profondo un'orbita che indugia vicino a un ciclo repulsivo (es. z = 2 per c ~ -2) e' "vicina" a lungo senza essere periodica:
+        // si accetta il ciclo solo dopo 3 ritorni consecutivi con differenza che si riduce (attrattivo), non al primo ritorno entro tolleranza.
+        var ex=(ZR[m]-sZx)+(dx-sdx), ey=(ZI[m]-sZy)+(dy-sdy), dd=ex*ex+ey*ey;
+        if(dd<1e-24&&dd<=1e-18*(dx*dx+dy*dy)){if(dd<=hitD*0.999){if(++shr>=3)break;}else shr=0;hitD=dd;}
+        if(++pc===per){pc=0;per*=2;sZx=ZR[m];sZy=ZI[m];sdx=dx;sdy=dy;hitD=1e30;shr=0;}
+      }
+      tp[k]=mtp; tx[k]=mtx;
+      if(PR){var o1=k*6;PR[o1]=esc?it+1:maxIt;PR[o1+1]=zx;PR[o1+2]=zy;PR[o1+3]=0;PR[o1+4]=0;PR[o1+5]=-1;}
+      if(esc){
+        var lz=0.5*Math.log(Math.max(r2,1e-30)), mm=it+1-Math.log(lz/lnR)/Math.log(2); if(mm<0)mm=0;
+        mu[k]=mm; kind[k]=0; if(PR)PR[k*6+3]=mm;
+        if(phm===1){var th=Math.atan2(zy,zx); if(th<0)th+=TWOPI; var fu=Math.fround(th/TWOPI); ph[k]=(fu>=1||!(fu>=0))?0:fu;}
+        else if(phm===2){
+          var A;
+          if(pCnt<1)A=0.5;
+          else {var An=pSum/pCnt, ff=mm-it; if(!(ff>0))ff=0; else if(ff>1)ff=1; A=(pCnt>1)?ff*An+(1-ff)*((pSum-pLast)/(pCnt-1)):An;}
+          ph[k]=(A>=0&&A<=1)?A:0.5;
+        } else if(phm===3){var tm=(pCnt>0)?Math.atan2(pSS,pSC):0; if(tm<0)tm+=TWOPI; var fm=Math.fround(tm/TWOPI); ph[k]=(fm>=1||!(fm>=0))?0:fm;}
+        var dm=Math.sqrt(ddx*ddx+ddy*ddy); var dv1=(dm>0&&isFinite(dm))?(2*Math.sqrt(r2)*lz/dm)/s:1e9; de[k]=dv1; if(PR)PR[k*6+4]=dv1;
+      } else {mu[k]=0;de[k]=0;kind[k]=1;}
+    }
+  }
+  return {mu:mu,de:de,tp:tp,tx:tx,kind:kind,ph:ph};
+}
+// valutatore puntuale in perturbazione: (dcx,dcy) = offset del punto da C0 (stessa orbita del job).
+function evalPointDeep(P,orb,dcx,dcy,maxIt){
+  var J={};for(var q in P)J[q]=P[q];
+  J.fam=0;J.d=2;J.orb=orb;J.W=1;J.H=1;J.r0=0;J.r1=1;J.x0=dcx;J.y0=dcy;J.s=1;J.maxIt=maxIt|0;
+  var pr=new Float64Array(6);J.pr=pr;
+  var B=computeBand(J),zx=pr[1],zy=pr[2];
+  return {kind:B.kind[0],n:pr[0],mu:pr[3],zx:zx,zy:zy,mod:Math.sqrt(zx*zx+zy*zy),arg:Math.atan2(zy,zx),de:pr[4],root:pr[5],ph:B.ph[0]};
+}
 function computeBand(J){
+  if(J.orb&&J.fam===0&&(J.d|0)===2&&!J.pt)return computePert(J); // 1.16.0: Mandelbrot d=2 con orbita di riferimento -> perturbazione
   var W=J.W, r0=J.r0, r1=J.r1, n=(r1-r0)*W;
   var mu=new Float32Array(n), de=new Float32Array(n), tp=new Float32Array(n), tx=new Float32Array(n), kind=new Uint8Array(n);
   // 1.10.0: ph = fonte di fase per pixel (Float32, in [0,1]); 0 per i punti interni e quando la fonte e' 'Iterazioni'.
@@ -739,10 +818,10 @@ function computeMS(J){
   // recurse 4 quadrants
   var hw=W>>1,hh=H>>1;
   if(hw<minS||hh<minS)return computeBand(J);
-  var q1=computeMS(Object.assign({},J,{W:hw,H:hh,x0:x0,y0:y0,ms:true,fillFlat:fillFlat}));
-  var q2=computeMS(Object.assign({},J,{W:W-hw,H:hh,x0:x0+hw*s,y0:y0,ms:true,fillFlat:fillFlat}));
-  var q3=computeMS(Object.assign({},J,{W:hw,H:H-hh,x0:x0,y0:y0-hh*s,ms:true,fillFlat:fillFlat}));
-  var q4=computeMS(Object.assign({},J,{W:W-hw,H:H-hh,x0:x0+hw*s,y0:y0-hh*s,ms:true,fillFlat:fillFlat}));
+  var q1=computeMS(Object.assign({},J,{W:hw,H:hh,x0:x0,y0:y0,r0:0,r1:hh,ms:true,fillFlat:fillFlat})); // 1.16.0: r0/r1 del quadrante (prima ereditati dalla piastrella: righe in eccesso calcolate e scartate)
+  var q2=computeMS(Object.assign({},J,{W:W-hw,H:hh,x0:x0+hw*s,y0:y0,r0:0,r1:hh,ms:true,fillFlat:fillFlat}));
+  var q3=computeMS(Object.assign({},J,{W:hw,H:H-hh,x0:x0,y0:y0-hh*s,r0:0,r1:H-hh,ms:true,fillFlat:fillFlat}));
+  var q4=computeMS(Object.assign({},J,{W:W-hw,H:H-hh,x0:x0+hw*s,y0:y0-hh*s,r0:0,r1:H-hh,ms:true,fillFlat:fillFlat}));
   // merge
   var n=W*H,mu=new Float32Array(n),de=new Float32Array(n),tp=new Float32Array(n),tx=new Float32Array(n),kind=new Uint8Array(n),ph=new Float32Array(n);
   function blit(src,ox,oy,sw,sh){
@@ -987,6 +1066,7 @@ function computeGeo(J){
 if(typeof importScripts==='function'){
   self.onmessage=function(e){
     var J=e.data;
+    if(J.type==='orbit'){setOrbit(J.key,J.zr,J.zi,J.n);return;} // 1.16.0: orbita di riferimento (copia strutturata)
     if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){
       var R=J.type==='geo'?computeGeo(J):(J.type==='ifs'?computeIFS(J):(J.type==='buddha'?computeBuddha(J):(J.type==='attr'?computeAttractor(J):computeBif(J))));
       self.postMessage({id:J.id,target:J.target,type:'ifs',cnt:R.cnt,col:R.col,lyap:R.lyap,geo:R.geo},[R.cnt.buffer,R.col.buffer]);
@@ -1003,7 +1083,7 @@ if(typeof importScripts==='function'){
 "use strict";
 const $=id=>document.getElementById(id);
 const SRC=$('wsrc').textContent;
-const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor,computeBif:computeBif,computeGeo:computeGeo,geoBBox:geoBBox};')();
+const LIB=new Function(SRC+'\nreturn {computeBand:computeBand,setOrbit:setOrbit,evalPointDeep:evalPointDeep,evalPoint:evalPoint,computeMS:computeMS,computeIFS:computeIFS,computeBuddha:computeBuddha,computeAttractor:computeAttractor,computeBif:computeBif,computeGeo:computeGeo,geoBBox:geoBBox};')();
 
 /* ---------- definizioni ---------- */
 const CELTIC={cx:-0.4,cy:0,span:3.2},HEART={cx:-0.6,cy:0,span:1.8},PERP={cx:-1,cy:0,span:2.8},PSHIP={cx:-1,cy:-0.2,span:3.6},MAGV={cx:1.6,cy:0,span:4},BJC=[-1,-0.1],CJC=[-0.7,0.5],MJC=[2,0];
@@ -1050,7 +1130,11 @@ const FAM={
    {name:'Fase binaria (decomposizione binaria)',view:{cx:-0.6,cy:0,span:2.7},p:{d:2},style:'classico',src:'final',levels:2,
     desc:'Solo il segno di Im zₙ alla fuga: due colori.\nLe cellette seguono i raggi esterni e i gusci del tempo di fuga: è la decomposizione binaria del Mandelbrot.'},
    {name:'Stripe average: valle dei cavallucci marini',view:{cx:-0.7453,cy:0.1127,span:0.012},p:{d:2},style:'pavone',src:'stripe',stripeS:5,
-    desc:'Lungo l\'orbita si media 0,5 + 0,5·sin(s·θ): l\'angolo θ di ogni passo disegna strisce, con s = 5.\nL\'interpolazione con la parte frazionaria dell\'iterazione elimina le bande. Prova altri valori di s.'}]},
+    desc:'Lungo l\'orbita si media 0,5 + 0,5·sin(s·θ): l\'angolo θ di ogni passo disegna strisce, con s = 5.\nL\'interpolazione con la parte frazionaria dell\'iterazione elimina le bande. Prova altri valori di s.'},
+   {name:'Deep zoom: mini-Mandelbrot di periodo 27 (~1e-30)',view:{cx:-2,cy:0,span:2e-30,hx:'-1.999999999999999178190346247658319870835545730333223498269408975940073977',hy:'0'},p:{d:2},
+    desc:'Centro = nucleo di un mini-Mandelbrot di periodo 27 sull\'asse reale (Z₂₇(c) = 0, calcolato con Newton a 200 cifre; dimensione ≈ 6e-31). Oltre il limite FP64: orbita di riferimento in BigInt e perturbazione nei worker. L\'HUD indica «Precisione: estesa».'},
+   {name:'Deep zoom: mini-Mandelbrot di periodo 68 (~1e-80)',view:{cx:-2,cy:0,span:8e-80,hx:'-1.99999999999999999999999999999999999999983005374680178719761953919536637620471024039770690767189088247365221124402726870309',hy:'0'},p:{d:2},
+    desc:'Centro = nucleo di un mini-Mandelbrot di periodo 68 sull\'asse reale (dimensione ≈ 2,6e-80). Zoom ≈ 3e79 volte, 108 cifre decimali per il centro. Per la prova di prestazioni imposta 10000 iterazioni (auto spento).'}]},
  julia:{name:'Julia',code:1,caps:CAP({phase:true}),axes:'complex',de:true,view:{cx:0,cy:0,span:3},iter:400,params:['d','cr','ci'],
   txt:'Qui c è fisso e varia il punto di partenza z. Se c appartiene al Mandelbrot l\'insieme di Julia è connesso, altrimenti è polvere sparsa. Con c = i è una dendrite pura: connessa, senza interno, tutta rami.',
   presets:[
@@ -1901,6 +1985,7 @@ try{window.gpuParityTest=gpuParityTest;}catch(_){}
 /* ---------- worker (pool condiviso fra le viste) ---------- */
 const TILE_SIZE=64, MS_ENABLE=true, MS_MIN=4, MS_FAMS={mandel:1,julia:1,tricorn:1};
 let workers=[],useWorkers=true,jobSeq=0,queue=[],busy=[],inflight=[],staleMs=0;
+let wOrb=[]; // 1.16.0: chiavi di orbita già inviate a ciascun worker (specchio della cache FIFO da 8 del worker)
 const VPS=[];let AV=null,LAYOUT=1; // viste esistenti, vista attiva, numero di viste
 function vpById(id){for(let i=0;i<VPS.length;i++)if(VPS[i].id===id)return VPS[i];return null;}
 function initWorkers(){
@@ -1910,13 +1995,37 @@ function initWorkers(){
   for(let i=0;i<n;i++){const w=new Worker(url);w.onmessage=e=>onResult(i,e.data);w.onerror=()=>{fallback();};workers.push(w);busy.push(false);inflight.push(null);}
  }catch(e){useWorkers=false;workers=[];busy=[];inflight=[];}
 }
-function fallback(){if(!useWorkers)return;useWorkers=false;workers.forEach(w=>w.terminate());workers=[];busy=[];inflight=[];setStatus('Worker non disponibili: calcolo sul thread principale');render();}
+function fallback(){if(!useWorkers)return;useWorkers=false;workers.forEach(w=>w.terminate());workers=[];busy=[];inflight=[];wOrb=[];setStatus('Worker non disponibili: calcolo sul thread principale');render();}
 function pump(){
  if(useWorkers){
-  for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;workers[i].postMessage(J);}}
+  for(let i=0;i<workers.length;i++){if(!busy[i]&&queue.length){const J=queue.shift();busy[i]=true;inflight[i]=J;if(J.orb)sendOrbit(i,J.orb);workers[i].postMessage(J);}}
  } else if(queue.length&&!pump.t){
-  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){const X=J.type==='geo'?LIB.computeGeo(J):(J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J))));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap,geo:X.geo};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
+  pump.t=setTimeout(()=>{pump.t=0;const t0=performance.now();while(queue.length&&performance.now()-t0<30){const J=queue.shift();if(J.orb){const o=ORB_REG[J.orb];if(o)LIB.setOrbit(J.orb,o.zr,o.zi,o.n);}let R;if(J.type==='ifs'||J.type==='buddha'||J.type==='attr'||J.type==='bif'||J.type==='geo'){const X=J.type==='geo'?LIB.computeGeo(J):(J.type==='ifs'?LIB.computeIFS(J):(J.type==='buddha'?LIB.computeBuddha(J):(J.type==='attr'?LIB.computeAttractor(J):LIB.computeBif(J))));R={id:J.id,target:J.target,type:'ifs',cnt:X.cnt,col:X.col,lyap:X.lyap,geo:X.geo};}else{const B=J.ms?LIB.computeMS(J):LIB.computeBand(J);R={id:J.id,target:J.target,pass:J.pass,r0:J.r0,r1:J.r1,oi:J.oi|0,oj:J.oj|0,W:J.W,H:J.H,...B};}onResult(-1,R);}pump();},0);
  }
+}
+
+
+/* ---------- 1.16.0: registro delle orbite di riferimento ---------- */
+// Un'orbita per (centro C0, K, maxIt): calcolata nel main thread in BigInt, poi inviata a ogni worker una sola volta (messaggio 'orbit', copia strutturata, niente SharedArrayBuffer).
+const ORB_REG={},ORB_BY={},ORB_KEYS=[];let orbSeq=0;
+function orbitFor(h,maxIt){
+ const lk=h.K+':'+maxIt+':'+h.x+':'+h.y;
+ let o=ORB_BY[lk];
+ if(o){o.hit=true;return o;}
+ const t=performance.now(),r=hpOrbit(h,maxIt);
+ o={key:'o'+(++orbSeq),lk,zr:r.zr,zi:r.zi,n:r.n,esc:r.esc,ms:performance.now()-t,K:h.K,hit:false};
+ ORB_REG[o.key]=o;ORB_BY[lk]=o;ORB_KEYS.push(o.key);
+ if(ORB_KEYS.length>12){
+  const used=new Set(VPS.map(v=>v.cur&&v.cur.deep?v.cur.deep.key:null));
+  for(let i=0;i<ORB_KEYS.length&&ORB_KEYS.length>12;){const k=ORB_KEYS[i];if(used.has(k)||k===o.key){i++;continue;}ORB_KEYS.splice(i,1);delete ORB_BY[ORB_REG[k].lk];delete ORB_REG[k];}
+ }
+ return o;
+}
+function sendOrbit(i,key){
+ const o=ORB_REG[key];if(!o||!workers[i])return;
+ const a=wOrb[i]||(wOrb[i]=[]);if(a.indexOf(key)>=0)return;
+ workers[i].postMessage({type:'orbit',key,zr:o.zr,zi:o.zi,n:o.n});
+ a.push(key);while(a.length>8)a.shift();
 }
 
 /* ---------- rendering ---------- */
@@ -1961,9 +2070,11 @@ function famJobParams(key,P,nw){
  if(key==='nova'){const n=P.n,c=new Float64Array((n+1)*2);c[0]=1;c[2*n]=-1;J.co=c;}
  return J;
 }
-function baseJob(W,H,view){
+function baseJob(W,H,view,deep){
  view=view||AV.view;
  const P=S.P[S.fam],s=view.span/H;
+ // 1.16.0: con perturbazione x0,y0 sono OFFSET dal centro di riferimento C0 (= centro della vista), non coordinate assolute
+ if(deep)return Object.assign({W,H,s,x0:-(W/2-0.5)*s,y0:(H/2-0.5)*s,maxIt:curIter(view),orb:deep.key},famJobParams(S.fam,P,S.nw));
  return Object.assign({W,H,s,x0:view.cx-(W/2-0.5)*s,y0:view.cy+(H/2-0.5)*s,maxIt:curIter(view)},famJobParams(S.fam,P,S.nw));
 }
 /* ---------- evalPoint (1.9.0): valutatore puntuale, cursore informativo ---------- */
@@ -1971,14 +2082,21 @@ function baseJob(W,H,view){
 // fam: chiave di FAM (o codice numerico); params: come S.P[fam]; (z0x,z0y) partenza e (cx,cy) parametro c già risolti; nw: soglie Newton opzionali.
 // kind: 0 fuga (Nova: convergenza), 1 non fugge/timeout, 2.. radice, 253 singolarità, 254 divergenza. n: iterazioni eseguite (maxIt se non fugge).
 // mu: continuo (0 se non definito). de: in unità del piano (−1 se non disponibile). root: indice radice (Newton) o −1.
-function evalPoint(fam,params,z0x,z0y,cx,cy,maxIt,nw){
+function evalPoint(fam,params,z0x,z0y,cx,cy,maxIt,nw,deep){
  const key=typeof fam==='string'?fam:Object.keys(FAM).find(k=>FAM[k].code===fam),f=FAM[key];
  if(!f||!f.caps||!f.caps.point)return null;
  const P=params||S.P[key];
+ // 1.16.0: sotto la soglia FP64 (Mandelbrot d=2) il punto si valuta in perturbazione sull'orbita della vista; deep = {key,dx,dy} (offset del punto da C0)
+ if(deep&&key==='mandel'&&(P.d|0)===2){
+  const o=ORB_REG[deep.key];
+  if(!o)return null;
+  LIB.setOrbit(deep.key,o.zr,o.zi,o.n);
+  return LIB.evalPointDeep(famJobParams('mandel',P,null),deep.key,+deep.dx,+deep.dy,Math.max(1,(maxIt||S.iterBase[key])|0));
+ }
  return LIB.evalPoint(f.code,famJobParams(key,P,nw||null),+z0x,+z0y,+cx,+cy,Math.max(1,(maxIt||S.iterBase[key])|0));
 }
 // punto (px,py) del piano visualizzato -> (z0,c) con le stesse regole di computeBand, poi evalPoint
-function evalPlane(key,P,px,py,maxIt,nw){
+function evalPlane(key,P,px,py,maxIt,nw,deep){
  const c=FAM[key].code;let z0x,z0y,cx,cy;
  if(c===5){z0x=px;z0y=py;cx=0;cy=0;}
  else if(c===6){z0x=1;z0y=0;cx=px;cy=py;}
@@ -1987,7 +2105,7 @@ function evalPlane(key,P,px,py,maxIt,nw){
   if(jul){z0x=px;z0y=py;cx=P.cr;cy=P.ci;}
   else{z0x=(c===11)?Math.PI/2:0;z0y=0;cx=px;cy=(c===2)?-py:py;}
  }
- return evalPoint(key,P,z0x,z0y,cx,cy,maxIt,nw);
+ return evalPoint(key,P,z0x,z0y,cx,cy,maxIt,nw,deep);
 }
 function fmtG(v){const a=Math.abs(v);if(v===0)return '0';return (a>=1e5||a<1e-4)?v.toExponential(3).replace('.',','):fmt(v,5);}
 function pointLines(key,r,N){
@@ -2016,12 +2134,17 @@ function phaseLine(key,r){
  return 'fase finale θ = '+fmt(u*2*Math.PI,4)+' rad (u = '+fmt(u,4)+')'+(S.levels===2?' · livello '+(u<0.5?'Im zₙ ≥ 0':'Im zₙ < 0'):'');
 }
 // testo del cursore/marker per il punto (x,y) del piano; null se la famiglia non supporta evalPoint o in caso di errore
-function planeText(vp,x,y,label){
+function deepReIm(view,pt){ // Re/Im a precisione estesa, con tante cifre quante ne distingue il pixel (+3)
+ const K=pt.hp.K,dig=Math.min(K,Math.ceil(-Math.log10(view.span))+3),cut=dig>30,d=cut?30:dig;
+ return 'Re '+hpFmt(pt.hp.x,K,d)+' · Im '+hpFmt(pt.hp.y,K,d)+(cut?' … (+'+(dig-30)+' cifre)':'');
+}
+function planeText(vp,x,y,label,pt){
  try{
   const F=FAM[S.fam];if(!F.caps||!F.caps.point)return null;
-  const N=curIter(vp.view),r=evalPlane(S.fam,S.P[S.fam],x,y,N,S.nw);if(!r)return null;
+  const N=curIter(vp.view),dp=pt?vp.deepEval(pt):null,r=evalPlane(S.fam,S.P[S.fam],x,y,N,S.nw,dp);if(!r)return null;
   try{legendFeed(r,vp,!!label);}catch(e){} // 1.9.5: indicatore sulla legenda (stesso evalPoint)
-  return (label||'')+'Re '+fmt(x,5)+' · Im '+fmt(y,5)+'\n'+pointLines(S.fam,r,N).join('\n');
+  const head=dp?(label||'')+deepReIm(vp.view,pt):(label||'')+'Re '+fmt(x,5)+' · Im '+fmt(y,5);
+  return head+'\n'+pointLines(S.fam,r,N).join('\n');
  }catch(e){return null;}
 }
 // test di parità da console: evalPointParityTest(500) -> {ok,tol,fams:{...}}; confronta evalPoint con computeBand sullo stesso pixel
@@ -2055,7 +2178,7 @@ function evalPointParityTest(nPer,seed){
 /* ---------- fine evalPoint ---------- */
 function makeTileJobs(B,pass,id,vp){
  vp=vp||AV;
- const J0=baseJob(B.W,B.H,vp.view);
+ const J0=baseJob(B.W,B.H,vp.view,vp.cur&&vp.cur.deep);
  const ts=pass===0?Math.max(16,Math.min(TILE_SIZE,Math.floor(B.W/4))):TILE_SIZE;
  const ms=!!(MS_ENABLE && MS_FAMS[S.fam] && S.inmode==='flat');
  const fillFlat=S.inmode==='flat';
@@ -2098,7 +2221,7 @@ function fallbackWorkers(){
  // i job in corso ancora validi vengono rimessi in coda: il riavvio non deve far perdere lavoro alle altre viste
  const lost=inflight.filter(J=>{if(!J)return false;const v=vpById(J.target);return !!v&&v.jobId===J.id;});
  workers.forEach(w=>{try{w.terminate();}catch(_){}});
- workers=[];busy=[];inflight=[];
+ workers=[];busy=[];inflight=[];wOrb=[];
  try{
   const url=URL.createObjectURL(new Blob([SRC],{type:'text/javascript'}));
   const n=Math.max(2,Math.min(16,(navigator.hardwareConcurrency||4)-1));
@@ -2224,13 +2347,148 @@ function worldToScreen(view,W,H,X,Y){
 // Nuova vista centrata sul centro del rettangolo schermo (x0,y0)-(x1,y1), con il rettangolo INTERO dentro il canvas (fit sul rapporto W:H).
 function fitRect(view,W,H,x0,y0,x1,y1){
  const c=screenToWorld(view,W,H,(x0+x1)/2,(y0+y1)/2),w=Math.abs(x1-x0),h=Math.abs(y1-y0);
+ if(HP_BIG){ // 1.16.0: sotto HP_ON_SPAN il centro del rettangolo si somma in BigInt (offset in double rispetto allo span)
+  const ns=view.span*Math.max(w/(W||1),h/(H||1));
+  if(view.hp||ns<HP_ON_SPAN){const o=screenToWorld({cx:0,cy:0,span:view.span,rot:view.rot},W,H,(x0+x1)/2,(y0+y1)/2);return vMove(view,o[0],o[1],ns);}
+ }
  return {cx:c[0],cy:c[1],span:view.span*Math.max(w/(W||1),h/(H||1)),rot:view.rot||0};
 }
 // Pan: il punto del piano sotto lo schermo-punto a finisce sotto b. Lavora su offset (centro a 0) per non perdere precisione a zoom profondo.
 function panView(view,W,H,a,b){
  const z={cx:0,cy:0,span:view.span,rot:view.rot},p=screenToWorld(z,W,H,a[0],a[1]),q=screenToWorld(z,W,H,b[0],b[1]);
+ if(HP_BIG&&(view.hp||view.span<HP_ON_SPAN))return vMove(view,p[0]-q[0],p[1]-q[1],view.span); // 1.16.0: centro aggiornato in BigInt
  return {...view,cx:view.cx+p[0]-q[0],cy:view.cy+p[1]-q[1]};
 }
+/* ---------- 1.16.0 — Deep zoom, parte A: centro ad alta precisione (BigInt a virgola fissa decimale) ---------- */
+// La vista conserva cx, cy, span in double come prima; sotto HP_ON_SPAN porta in più hp={x,y,K}: x,y = centro × 10^K (BigInt), K = cifre decimali adattive a −log10(span).
+// Sorgente del centro: le stringhe decimali dello stato v:1 (se manca hp, String(cx)). Senza BigInt tutto resta in FP64 e nessuna funzione solleva errori.
+const HP_BIG=(typeof BigInt==='function');
+const DEEP_S=1e-13;         // span/H sotto cui, per Mandelbrot d=2, si attiva la perturbazione
+const HP_ON_SPAN=1e-8;      // sotto questo span la vista mantiene anche hp (margine per canvas molto alti)
+const DEEP_MIN_SPAN=1e-100; // limite di questa release (parte A)
+const HP_MARGIN=28;         // cifre decimali di margine oltre −log10(span)
+const _P10={};
+function p10(k){return _P10[k]||(_P10[k]=BigInt('1'+'0'.repeat(k)));}
+function hpK(span){return Math.max(40,Math.ceil(-Math.log10(span>0?span:1))+HP_MARGIN);}
+// stringa decimale (anche esponenziale, virgola ammessa) -> BigInt scalato 10^K, troncato; null se non valida
+function hpParse(str,K){
+ try{
+  const s=String(str).trim().replace('−','-').replace(',','.');
+  if(s.length>4000)return null;
+  const m=/^([+-]?)(\d*)\.?(\d*)(?:[eE]([+-]?\d+))?$/.exec(s);
+  if(!m||(m[2]===''&&m[3]===''))return null;
+  const ex=m[4]?parseInt(m[4],10):0;if(!(Math.abs(ex)<=2000))return null;
+  const dg=BigInt((m[2]+m[3])||'0'),sh=K+ex-m[3].length,v=sh>=0?dg*p10(sh):dg/p10(-sh);
+  return m[1]==='-'?-v:v;
+ }catch(e){return null;}
+}
+function hpStr(x,K){
+ const neg=x<BigInt(0),a=neg?-x:x,s=a.toString().padStart(K+1,'0'),ip=s.slice(0,s.length-K),fp=s.slice(s.length-K).replace(/0+$/,'');
+ return (neg&&/[1-9]/.test(ip+fp)?'-':'')+ip+(fp?'.'+fp:'');
+}
+function hpNum(x,K){return +hpStr(x,K);} // Number() della stringa: arrotondamento corretto
+function hpFromDouble(d,K){if(!isFinite(d)||d===0)return BigInt(0);const v=hpParse(d.toExponential(16),K);return v===null?BigInt(0):v;}
+function hpRes(h,K){ // riscala {x,y,K}: padding con zeri se K cresce, troncamento se cala
+ if(h.K===K)return h;
+ if(K>h.K){const f=p10(K-h.K);return {x:h.x*f,y:h.y*f,K};}
+ const f=p10(h.K-K);return {x:h.x/f,y:h.y/f,K};
+}
+function hpDiff(a,b){ // a−b in double: {x,y,K} − {x,y,K}
+ const K=Math.max(a.K,b.K),A=hpRes(a,K),B=hpRes(b,K),sc=Number('1e-'+K);
+ return [Number(A.x-B.x)*sc,Number(A.y-B.y)*sc];
+}
+function hpFmt(x,K,dig){ // troncato a dig decimali, formato italiano
+ const s=hpStr(x,K),i=s.indexOf('.');
+ return (i<0?s:s.slice(0,Math.min(s.length,i+1+dig))).replace('-','−').replace('.',',');
+}
+function hpWanted(v){return HP_BIG&&!!(v&&(v.hp||v.span<HP_ON_SPAN));}
+// hp della vista con K adattivo al suo span; se manca, la costruisce dalle stringhe decimali dei double (stessa sorgente dello stato)
+function viewHP(v){
+ if(!HP_BIG)return null;
+ const K=hpK(v.span);
+ if(v.hp)return hpRes(v.hp,K);
+ const x=hpParse(String(v.cx),K),y=hpParse(String(v.cy),K);
+ return (x===null||y===null)?null:{x,y,K};
+}
+// Sposta il centro di (dx,dy) (offset in double, dell'ordine dello span) e imposta lo span: il centro si aggiorna in BigInt.
+function vMove(v,dx,dy,ns){
+ ns=ns>0?ns:v.span;
+ if(HP_BIG&&(v.hp||ns<HP_ON_SPAN)){
+  const h=viewHP({cx:v.cx,cy:v.cy,span:ns,hp:v.hp});
+  if(h){
+   const x=h.x+hpFromDouble(dx,h.K),y=h.y+hpFromDouble(dy,h.K),r={cx:hpNum(x,h.K),cy:hpNum(y,h.K),span:ns,rot:v.rot||0};
+   if(ns<HP_ON_SPAN)r.hp={x,y,K:h.K};
+   return r;
+  }
+ }
+ return {cx:v.cx+dx,cy:v.cy+dy,span:ns,rot:v.rot||0};
+}
+// vista da stringhe decimali (stato, cronologia, preset); senza BigInt o con stringhe non valide ripiega sui double
+function viewFromStr(cx,cy,span,hx,hy,rot){
+ const v={cx:+cx,cy:+cy,span:+span,rot:rot||0};
+ if(HP_BIG&&hx!=null&&hy!=null&&v.span<HP_ON_SPAN){
+  const K=hpK(v.span),x=hpParse(hx,K),y=hpParse(hy,K);
+  if(x!==null&&y!==null){v.hp={x,y,K};v.cx=hpNum(x,K);v.cy=hpNum(y,K);}
+ }
+ return v;
+}
+function viewStr(v){ // [cx,cy] come stringhe decimali (complete se la vista ha hp)
+ return (HP_BIG&&v.hp)?[hpStr(v.hp.x,v.hp.K),hpStr(v.hp.y,v.hp.K)]:[String(v.cx),String(v.cy)];
+}
+// punti del piano ad alta precisione: {x,y,hp?}
+function ptFromScreen(view,W,H,px,py){
+ const c=screenToWorld(view,W,H,px,py);
+ if(!hpWanted(view))return {x:c[0],y:c[1]};
+ const h=viewHP(view);if(!h)return {x:c[0],y:c[1]};
+ const o=screenToWorld({cx:0,cy:0,span:view.span,rot:view.rot},W,H,px,py),x=h.x+hpFromDouble(o[0],h.K),y=h.y+hpFromDouble(o[1],h.K);
+ return {x:hpNum(x,h.K),y:hpNum(y,h.K),hp:{x,y,K:h.K}};
+}
+function ptToScreen(view,W,H,pt){
+ if(pt.hp&&hpWanted(view)){
+  const h=viewHP(view);
+  if(h){const d=hpDiff(pt.hp,h),s=view.span/(H||1),r=view.rot||0,c=Math.cos(r),sn=Math.sin(r);return [W/2+(d[0]*c+d[1]*sn)/s,H/2-(-d[0]*sn+d[1]*c)/s];}
+ }
+ return worldToScreen(view,W,H,pt.x,pt.y);
+}
+function ptLerp(A,B,t){
+ if(HP_BIG&&A.hp&&B.hp){
+  const K=Math.max(A.hp.K,B.hp.K),a=hpRes(A.hp,K),b=hpRes(B.hp,K),tb=BigInt(Math.round(Math.max(0,Math.min(1,t))*1e9)),G=BigInt(1000000000);
+  const x=a.x+(b.x-a.x)*tb/G,y=a.y+(b.y-a.y)*tb/G;
+  return {x:hpNum(x,K),y:hpNum(y,K),hp:{x,y,K}};
+ }
+ return {x:A.x+(B.x-A.x)*t,y:A.y+(B.y-A.y)*t};
+}
+function ptCoord(pt,c){return pt.hp?hpStr(pt.hp[c],pt.hp.K):String(pt[c]);}
+function ptDelta(A,B){return (A.hp&&B.hp)?hpDiff(A.hp,B.hp):[A.x-B.x,A.y-B.y];} // A−B
+function viewDelta(nv,mv){ // centro di nv − centro di mv, accurato anche a zoom profondo
+ if(hpWanted(nv)&&hpWanted(mv)){const a=viewHP(nv),b=viewHP(mv);if(a&&b)return hpDiff(a,b);}
+ return [nv.cx-mv.cx,nv.cy-mv.cy];
+}
+function ptFromView(v){return {x:v.cx,y:v.cy,hp:v.hp};}
+function viewFromPt(pt,span,rot){
+ const v={cx:pt.x,cy:pt.y,span,rot:rot||0};
+ if(HP_BIG&&pt.hp&&span<HP_ON_SPAN){const h=hpRes(pt.hp,hpK(span));v.hp=h;v.cx=hpNum(h.x,h.K);v.cy=hpNum(h.y,h.K);}
+ return v;
+}
+// Orbita di riferimento Z_{n+1}=Z_n²+C0 in BigInt a virgola fissa BINARIA (B bit, B ≈ K·log2(10)); C0 = centro della vista.
+// Restituisce Z_n arrotondata a double in due Float64Array(maxIt); si ferma alla fuga (|Z|² > 1e6).
+function hpOrbit(h,maxIt){
+ const bits=Math.ceil(h.K*3.3219280948873626)+16,B=BigInt(bits),one=BigInt(1),f=p10(h.K);
+ const cx=(h.x<<B)/f,cy=(h.y<<B)/f,sc=Math.pow(2,-bits),zr=new Float64Array(maxIt),zi=new Float64Array(maxIt);
+ let zx=BigInt(0),zy=BigInt(0),n=maxIt,esc=false;
+ for(let i=0;i<maxIt;i++){
+  const a=Number(zx)*sc,b=Number(zy)*sc;zr[i]=a;zi[i]=b;
+  if(a*a+b*b>1e6){n=i+1;esc=true;break;}
+  const xx=(zx*zx)>>B,yy=(zy*zy)>>B,xy=(zx*zy)>>B;
+  zx=xx-yy+cx;zy=(xy<<one)+cy;
+ }
+ return {zr,zi,n,esc};
+}
+
+function deepFamNow(){return HP_BIG&&S.fam==='mandel'&&(S.P.mandel.d|0)===2;} // famiglia con perturbazione (Mandelbrot d=2)
+function deepFor(view,H){return deepFamNow()&&hpWanted(view)&&view.span/(H||1000)<DEEP_S;} // modalità a precisione estesa attiva per questa vista
+function hpSig(v){return v&&v.hp?v.hp.K+':'+v.hp.x+':'+v.hp.y:'';}
+function profPt(p,w){return w==='a'?{x:p.ax,y:p.ay,hp:p.ahp}:{x:p.bx,y:p.by,hp:p.bhp};} // estremi del profilo come punti (con hp se presente)
 
 /* ---------- cornici proiettate (1.6) ---------- */
 /* FRAMES-PURE-BEGIN */
@@ -2259,8 +2517,8 @@ function clipPolyRect(pts,W,H){
 function polyArea(q){let a=0;for(let i=0,n=q.length;i<n;i++){const A=q[i],B=q[(i+1)%n];a+=A.x*B.y-B.x*A.y;}return a/2;}
 // Cornice della vista N nella vista M. Dimensioni in px CSS (Wm,Hm,Wn,Hn). Lavora su offset rispetto al centro per non perdere precisione a zoom profondo.
 // Ritorna {kind:'inside'|'partial'|'outside'|'covers'|'none', pts, poly, cen}
-function frameGeom(mv,Wm,Hm,nv,Wn,Hn){
- const M0={cx:0,cy:0,span:mv.span,rot:mv.rot||0},N0={cx:0,cy:0,span:nv.span,rot:nv.rot||0},oN=[nv.cx-mv.cx,nv.cy-mv.cy],e=0.5;
+function frameGeom(mv,Wm,Hm,nv,Wn,Hn,off){
+ const M0={cx:0,cy:0,span:mv.span,rot:mv.rot||0},N0={cx:0,cy:0,span:nv.span,rot:nv.rot||0},oN=off||[nv.cx-mv.cx,nv.cy-mv.cy],e=0.5;
  const pts=[[0,0],[Wn,0],[Wn,Hn],[0,Hn]].map(p=>{const d=screenToWorld(N0,Wn,Hn,p[0],p[1]);return worldToScreen(M0,Wm,Hm,d[0]+oN[0],d[1]+oN[1]);});
  const cen=worldToScreen(M0,Wm,Hm,oN[0],oN[1]);
  if(!pts.every(p=>isFinite(p[0])&&isFinite(p[1]))||!isFinite(cen[0])||!isFinite(cen[1]))return {kind:'none',pts,cen};
@@ -2341,6 +2599,7 @@ function gridText(ctx,t,x,y,al,bl){
 function drawGrid(M,ctx,W,H){
  const view=M.view,lab=GRID_LAB[famAxes(S.fam)];
  if(!lab||!(view.span>0))return;
+ if(deepFor(view,H))return; // 1.16.0: a zoom profondo le etichette in double non hanno senso: griglia non disegnata
  const step=gridStep(view.span,H);if(!(step>0))return;
  const dec=step>=1?0:Math.max(0,Math.ceil(-Math.log10(step)-1e-9));
  const rot=view.rot||0,c=Math.cos(rot),sn=Math.sin(rot),O=worldToScreen(view,W,H,0,0);
@@ -2431,7 +2690,7 @@ function drawFramesOn(M){
   for(const N of VPS){
    if(N===M)continue;
    const rn=N.cv.getBoundingClientRect();if(rn.width<8||rn.height<8)continue;
-   const col=VCOL[N.id%VCOL.length],g=frameGeom(M.view,W,H,N.view,rn.width,rn.height),txt='V'+(N.id+1);
+   const col=VCOL[N.id%VCOL.length],g=frameGeom(M.view,W,H,N.view,rn.width,rn.height,viewDelta(N.view,M.view)),txt='V'+(N.id+1);
    if(g.kind==='none')continue;
    if(g.kind==='covers'){
     ctx.beginPath();ctx.rect(7,7,W-14,H-14);frStroke(ctx,col.c,[8,6]);
@@ -2489,7 +2748,7 @@ class Viewport{
   this.cv=el.querySelector('canvas');this.ctx=this.cv.getContext('2d');
   this.selEl=el.querySelector('.selr');
   const hs=el.querySelectorAll('.hud span');this.hud={l:hs[0],m:hs[1],r:hs[2]};
-  this.view={cx:view.cx,cy:view.cy,span:view.span,rot:0}; // vista propria: centro, ampiezza (altezza in unità del piano), rotazione
+  this.view={cx:view.cx,cy:view.cy,span:view.span,rot:0};if(view.hp)this.view.hp=view.hp; // vista propria: centro, ampiezza (altezza in unità del piano), rotazione
   this.fv={};                                             // ultima vista per famiglia
   this.cur={pre:null,full:null};                          // buffer {mu,de,tp,tx,kind,img}, cache pre/full/CDF
   this.jobId=0;this.t0=0;this.lastRS='';this.st='';this.dead=false;
@@ -2575,6 +2834,7 @@ class Viewport{
   if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'||S.fam==='geo'){if(this.gpu)this.gpu.release();this.renderIFS(W,H);return null;}
   const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
   const pre=newBuf(pw,ph),full=newBuf(W,H),cur=this.cur={pre,full,id:this.jobId,W,H,left:0};
+  cur.deep=this.prepDeep(H); // 1.16.0: orbita di riferimento (solo Mandelbrot d=2 sotto soglia)
   const j1=makeTileJobs(pre,0,this.jobId,this),j2=makeTileJobs(full,1,this.jobId,this);
   cur.left0=j1.length;cur.left1=j2.length;cur.n1=j2.length;
   cur.gpuOK=!!(this.gpu&&this.gpu.ok&&this.gpu.alloc(W,H)); // 1.15.0: texture dati pronte (kind=255 = non calcolato)
@@ -2602,7 +2862,7 @@ class Viewport{
   else {
    cur.left1--;
    if(!cur.full.cdf&&cur.pre.cdf)cur.full.cdf=cur.pre.cdf;
-   if(cur.left1===0){buildCDF(cur.full);if(!this.gpuActive())colorize(cur.full);this.draw();const ms=performance.now()-this.t0;this.setSt('Pronto in '+(ms/1000).toFixed(2).replace('.',',')+' s · '+cur.W+'×'+cur.H+' px · '+curIter(this.view)+' iterazioni'+(this.qAdapt?' · risoluzione adattata a '+VPS.length+' viste':'')+this.precWarn());}
+   if(cur.left1===0){buildCDF(cur.full);if(!this.gpuActive())colorize(cur.full);this.draw();const ms=performance.now()-this.t0;this.setSt('Pronto in '+(ms/1000).toFixed(2).replace('.',',')+' s · '+cur.W+'×'+cur.H+' px · '+curIter(this.view)+' iterazioni'+(this.qAdapt?' · risoluzione adattata a '+VPS.length+' viste':'')+this.precWarn()+this.deepNote());}
    else this.scheduleProgress();
   }
  }
@@ -2611,7 +2871,7 @@ class Viewport{
   const busy=Math.max(1,VPS.filter(v=>v.cur&&v.cur.left1>0).length);
   this.progT=setTimeout(()=>{this.progT=0;const c=this.cur;if(!this.dead&&c.full&&c.left1>0){const t=performance.now();if(!this.gpuActive())colorize(c.full);this.draw();this.cdt=performance.now()-t;this.setSt('Calcolo… '+Math.round(100*(1-c.left1/c.n1))+'%');}},Math.max(120,cur.W*cur.H/10000,3*(this.cdt||0)*busy));
  }
- precWarn(){const s=this.view.span/this.cv.height,m=Math.max(1,Math.abs(this.view.cx),Math.abs(this.view.cy));return s<4e-16*m*8?' · limite di precisione raggiunto':'';}
+ precWarn(){if(deepFor(this.view,this.cv.height))return '';const s=this.view.span/this.cv.height,m=Math.max(1,Math.abs(this.view.cx),Math.abs(this.view.cy));return s<4e-16*m*8?' · limite di precisione raggiunto':'';}
  draw(){
   const cv=this.cv,ctx=this.ctx,cur=this.cur;
   ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
@@ -2668,6 +2928,24 @@ class Viewport{
   g.show();c.gpuPainted=true;
  }
  colTag(){return ' · Colore: '+(this.gpuActive()?'GPU':'CPU');}
+
+ /* 1.16.0 — Deep zoom, parte A */
+ prepDeep(H){
+  if(!deepFor(this.view,H))return null;
+  const h=viewHP(this.view);if(!h)return null;
+  const maxIt=curIter(this.view);
+  try{const o=orbitFor(h,maxIt);return {key:o.key,K:h.K,hp:h,n:o.n,ms:o.ms,hit:!!o.hit,maxIt};}catch(e){return null;} // se l'orbita fallisce: ripiego sul percorso FP64
+ }
+ deepEval(pt){const d=this.cur&&this.cur.deep;if(!d||!pt||!pt.hp)return null;const o=hpDiff(pt.hp,d.hp);return {key:d.key,dx:o[0],dy:o[1]};}
+ deepNote(){const d=this.cur&&this.cur.deep;if(!d)return '';return ' · precisione estesa '+d.K+' cifre, orbita di '+d.n+' it. ('+(d.hit?'già in memoria':d.ms.toFixed(0)+' ms')+')';}
+ precTxt(){if(!deepFamNow())return '';return deepFor(this.view,this.cv.height)?' · Precisione: estesa ('+hpK(this.view.span)+' cifre)':' · Precisione: FP64';}
+ hudCenter(v){
+  if(deepFor(v,this.cv.height)){const h=viewHP(v);if(h){
+   const dig=Math.min(h.K,Math.ceil(-Math.log10(v.span))+4),cut=dig>30,d=cut?30:dig,yn=h.y<BigInt(0);
+   return 'Centro '+hpFmt(h.x,h.K,d)+(yn?' − ':' + ')+hpFmt(yn?-h.y:h.y,h.K,d)+'i'+(cut?' … (+'+(dig-30)+' cifre)':'');
+  }}
+  return 'Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
+ }
  refreshColTag(){if(this.zoomTxt==null||!this.hud.r)return;const t=this.zoomTxt+this.colTag();if(this.hud.r.textContent!==t)this.hud.r.textContent=t;}
  onGpuLost(){try{this.recolor();}catch(e){}}
  // immagine visibile (anteprima CPU + strato GPU): serve a «Salva PNG» e allo snapshot dei gesti
@@ -2681,8 +2959,8 @@ class Viewport{
   const v=this.view,z=FAM[S.fam].view.span/v.span,ax=famAxes(S.fam);
   if(ax==='rx'){const axn=(S.P.bif&&(S.P.bif.axis|0))?'c':'r';this.hud.l.textContent='Centro '+axn+' '+fmt(v.cx,6)+' · x '+fmt(v.cy,6);}
   else if(ax==='xy')this.hud.l.textContent='Centro x '+fmt(v.cx,6)+' · y '+fmt(v.cy,6);
-  else this.hud.l.textContent='Centro '+fmt(v.cx,8)+(v.cy<0?' − ':' + ')+fmt(Math.abs(v.cy),8)+'i';
-  this.zoomTxt='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','));
+  else this.hud.l.textContent=this.hudCenter(v);
+  this.zoomTxt='Zoom ×'+(z<1000?z.toFixed(z<10?2:0).replace('.',','):z.toExponential(2).replace('.',','))+this.precTxt();
   this.hud.r.textContent=this.zoomTxt+this.colTag();
   if(S.fam==='strange'&&this.lyapEst!=null&&isFinite(this.lyapEst)){
    const L=this.lyapEst;this.hud.m.textContent='λ≈'+(L>=0?'+':'')+fmt(L,4)+(L>0?' (espansivo)':'');
@@ -2747,6 +3025,7 @@ class Viewport{
  /* gesti */
  toPx(e){const r=this.cv.getBoundingClientRect();return [(e.clientX-r.left)*this.cv.width/r.width,(e.clientY-r.top)*this.cv.height/r.height];}
  pxToC(px,py,v){return screenToWorld(v||this.view,this.cv.width,this.cv.height,px,py);}
+ pxToPt(px,py){return ptFromScreen(this.view,this.cv.width,this.cv.height,px,py);} // 1.16.0: punto con hp se la vista è profonda
  startGesture(){
   if(this.gest)return;pushHist();
   this.cancel();
@@ -2755,7 +3034,7 @@ class Viewport{
   this.gest={snap:sn,v0:{...this.view}};
  }
  drawGesture(){
-  const g=this.gest;if(!g)return;const v0=g.v0,v=this.view,W=this.cv.width,H=this.cv.height,k=v0.span/v.span,p=worldToScreen(v,W,H,v0.cx,v0.cy);
+  const g=this.gest;if(!g)return;const v0=g.v0,v=this.view,W=this.cv.width,H=this.cv.height,k=v0.span/v.span,p=ptToScreen(v,W,H,{x:v0.cx,y:v0.cy,hp:v0.hp});
   const ox=p[0]-W*k/2,oy=p[1]-H*k/2;
   this.ctx.fillStyle='#000';this.ctx.fillRect(0,0,W,H);this.ctx.drawImage(g.snap,ox,oy,W*k,H*k);this.updateHud();
  }
@@ -2765,7 +3044,7 @@ class Viewport{
   const m=this.marker,el=this.mkEl;if(!el)return;
   if(!m){el.style.display='none';return;}
   const cv=this.cv,r=cv.getBoundingClientRect();if(!(r.width>0&&cv.width>0))return;
-  const p=worldToScreen(this.view,cv.width,cv.height,m.x,m.y),x=p[0]*r.width/cv.width,y=p[1]*r.height/cv.height;
+  const p=ptToScreen(this.view,cv.width,cv.height,m),x=p[0]*r.width/cv.width,y=p[1]*r.height/cv.height;
   const out=!isFinite(x)||!isFinite(y)||x<-13||y<-13||x>r.width+13||y>r.height+13;
   el.style.display=out?'none':'block';if(!out){el.style.left=x+'px';el.style.top=y+'px';}
  }
@@ -2774,7 +3053,7 @@ class Viewport{
   try{
    const cur=this.cur,B=cur&&cur.full;
    if(this.gest||!B||!B.kind||cur.left1!==0||!MK_FAMS[S.fam])return '';
-   const cv=this.cv,p=worldToScreen(this.view,cv.width,cv.height,this.marker.x,this.marker.y),i=Math.floor(p[0]),j=Math.floor(p[1]);
+   const cv=this.cv,p=ptToScreen(this.view,cv.width,cv.height,this.marker),i=Math.floor(p[0]),j=Math.floor(p[1]);
    if(!(i>=0&&j>=0&&i<B.W&&j<B.H))return '';
    const q=j*B.W+i;if(!B.done[q])return '';
    const k=B.kind[q];
@@ -2785,19 +3064,19 @@ class Viewport{
  }
  markerText(){
   const m=this.marker;if(!m)return '';
-  if(!this.gest){const pt=planeText(this,m.x,m.y,'Marker ');if(pt)return pt;} // 1.9.0: stesso valutatore del cursore
+  if(!this.gest){const pt=planeText(this,m.x,m.y,'Marker ',m);if(pt)return pt;} // 1.9.0: stesso valutatore del cursore
   let t='Marker '+fmt(m.x,6)+(m.y<0?' − ':' + ')+fmt(Math.abs(m.y),6)+'i';
   const d=this.markerInfo();if(d)t+=' · '+d;
   return t;
  }
  markerHud(){if(this.hud.m)this.hud.m.textContent=this.markerText();}
- setMarkerAt(px,py){const c=this.pxToC(px,py);this.marker={x:c[0],y:c[1]};this.placeMarker();this.markerHud();}
+ setMarkerAt(px,py){this.marker=this.pxToPt(px,py);this.placeMarker();this.markerHud();}
  clearMarker(){this.marker=null;this.tapPrev=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent=this.hudIdle();legendRefresh();}
  /* 1.10.5 — profilo sezionale */
  clearProfile(){this.profile=null;this.profDrag=null;this.profDraw=null;this.profTrans=null;this.drawProfile();this.syncProfCursor();try{profChartsOnChange(this);}catch(e){}}
  setProfileFromScreen(ax,ay,bx,by){
-  const a=this.pxToC(ax,ay),b=this.pxToC(bx,by);
-  this.profile={ax:a[0],ay:a[1],bx:b[0],by:b[1]};
+  const a=this.pxToPt(ax,ay),b=this.pxToPt(bx,by);
+  this.profile={ax:a.x,ay:a.y,bx:b.x,by:b.y,ahp:a.hp,bhp:b.hp};
   this.profDraw=null;this.profTrans=null;this.drawProfile();
   try{profChartsOnChange(this);}catch(e){}
  }
@@ -2807,8 +3086,8 @@ class Viewport{
   if(!(r.width>0&&cv.width>0))return null;
   const k=r.width/cv.width; // px CSS / px canvas
   const thr=(isTouch?28:14)/k; // soglia in coordinate canvas
-  const A=worldToScreen(this.view,cv.width,cv.height,p.ax,p.ay);
-  const B=worldToScreen(this.view,cv.width,cv.height,p.bx,p.by);
+  const A=ptToScreen(this.view,cv.width,cv.height,profPt(p,'a'));
+  const B=ptToScreen(this.view,cv.width,cv.height,profPt(p,'b'));
   const dA=Math.hypot(px-A[0],py-A[1]),dB=Math.hypot(px-B[0],py-B[1]);
   if(dA<=thr&&dA<=dB)return 'a';
   if(dB<=thr)return 'b';
@@ -2834,8 +3113,8 @@ class Viewport{
   let ax,ay,bx,by;
   if(dr){ax=dr.a[0]*sx;ay=dr.a[1]*sy;bx=dr.b[0]*sx;by=dr.b[1]*sy;}
   else{
-   const A=worldToScreen(this.view,this.cv.width,this.cv.height,p.ax,p.ay);
-   const B=worldToScreen(this.view,this.cv.width,this.cv.height,p.bx,p.by);
+   const A=ptToScreen(this.view,this.cv.width,this.cv.height,profPt(p,'a'));
+   const B=ptToScreen(this.view,this.cv.width,this.cv.height,profPt(p,'b'));
    ax=A[0]*sx;ay=A[1]*sy;bx=B[0]*sx;by=B[1]*sy;
   }
   if(![ax,ay,bx,by].every(isFinite))return;
@@ -2867,8 +3146,7 @@ class Viewport{
   if((tr&&tr.length)||(ht!=null&&isFinite(ht))){
    const mapT=(tt)=>{
     if(dr){return [ax+(bx-ax)*tt, ay+(by-ay)*tt];}
-    const xx=p.ax+(p.bx-p.ax)*tt, yy=p.ay+(p.by-p.ay)*tt;
-    const S=worldToScreen(this.view,this.cv.width,this.cv.height,xx,yy);
+    const S=ptToScreen(this.view,this.cv.width,this.cv.height,ptLerp(profPt(p,'a'),profPt(p,'b'),tt));
     return [S[0]*sx,S[1]*sy];
    };
    if(tr)for(const u of tr){
@@ -2898,10 +3176,10 @@ class Viewport{
    if(this.marker)this.markerHud();else if(this.hud.m)this.hud.m.textContent=this.hudIdle();
    legendRefresh();pushHist();this.zoomAt(p[0],p[1],2);render([this]);return;
   }
-  const before=this.marker?{x:this.marker.x,y:this.marker.y}:null;
+  const before=this.marker?{...this.marker}:null;
   this.tapPrev={t:now,p:p.slice(),before};
   let hit=false;
-  if(this.marker){const s=worldToScreen(this.view,cv.width,cv.height,this.marker.x,this.marker.y);hit=Math.hypot(s[0]-p[0],s[1]-p[1])*k<24;}
+  if(this.marker){const s=ptToScreen(this.view,cv.width,cv.height,this.marker);hit=Math.hypot(s[0]-p[0],s[1]-p[1])*k<24;}
   if(hit){this.marker=null;this.placeMarker();if(this.hud.m)this.hud.m.textContent=this.hudIdle();legendRefresh();}
   else this.setMarkerAt(p[0],p[1]);
  }
@@ -2914,7 +3192,16 @@ class Viewport{
   if(!items.length)return;
   ts.menu=true;showCtx(cx,cy,items);
  }
- zoomAt(px,py,f){const [zx,zy]=this.pxToC(px,py),ns=this.view.span/f,o=screenToWorld({cx:0,cy:0,span:ns,rot:this.view.rot},this.cv.width,this.cv.height,px,py);this.view={cx:zx-o[0],cy:zy-o[1],span:ns,rot:this.view.rot||0};}
+
+ zoomAt(px,py,f){
+  const W=this.cv.width,H=this.cv.height;let ns=this.view.span/f;
+  if(deepFamNow()&&ns<DEEP_MIN_SPAN){ns=DEEP_MIN_SPAN;showMsg('Zoom limitato a 1e-100 in questa versione');} // 1.16.0 (parte A)
+  if(HP_BIG&&(this.view.hp||ns<HP_ON_SPAN)){ // centro in BigInt: nuovo = vecchio + (offset del punto con lo span vecchio − offset con lo span nuovo)
+   const a=screenToWorld({cx:0,cy:0,span:this.view.span,rot:this.view.rot},W,H,px,py),b=screenToWorld({cx:0,cy:0,span:ns,rot:this.view.rot},W,H,px,py);
+   this.view=vMove(this.view,a[0]-b[0],a[1]-b[1],ns);return;
+  }
+  const [zx,zy]=this.pxToC(px,py),o=screenToWorld({cx:0,cy:0,span:ns,rot:this.view.rot},W,H,px,py);this.view={cx:zx-o[0],cy:zy-o[1],span:ns,rot:this.view.rot||0};
+ }
  onDown(e){
   if(this.sel)return;
   setActive(this); // il gesto agisce sulla vista toccata, che diventa attiva
@@ -2950,14 +3237,14 @@ class Viewport{
    }
   } else {if(this.longT){clearTimeout(this.longT);this.longT=0;}this.tapStart&&(this.tapStart.moved=true);}
  }
- hoverHud(c){
-  this.hvC=c;const now=performance.now(),dt=now-(this.hvLast||0);
+ hoverHud(c,pt){
+  this.hvC=c;this.hvP=pt||null;const now=performance.now(),dt=now-(this.hvLast||0);
   if(dt>=HOVER_MS){this.hvLast=now;this.hoverRun();}
   else if(!this.hvT)this.hvT=setTimeout(()=>{this.hvT=0;this.hvLast=performance.now();this.hoverRun();},HOVER_MS-dt);
  }
  hoverRun(){
   if(this.dead||!this.hvC||this.gest||this.sel||this.ptrs.size!==0||!this.hud.m)return;
-  const c=this.hvC,t=planeText(this,c[0],c[1]);
+  const c=this.hvC,t=planeText(this,c[0],c[1],undefined,this.hvP);
   this.hud.m.textContent=t!==null?t:fmt(c[0],5)+(c[1]<0?' − ':' + ')+fmt(Math.abs(c[1]),5)+'i';
  }
  onMove(e){
@@ -2969,7 +3256,7 @@ class Viewport{
   }
   if(!this.gest&&!this.sel&&this.ptrs.size===0){
    const p=this.toPx(e),c=this.pxToC(p[0],p[1]),F=FAM[S.fam];
-   if(F.caps&&F.caps.point)this.hoverHud(c); // 1.9.0: informazioni sul punto, con throttling
+   if(F.caps&&F.caps.point)this.hoverHud(c,hpWanted(this.view)?this.pxToPt(p[0],p[1]):null); // 1.9.0: informazioni sul punto, con throttling
    else if(this.hud.m){
     if(S.fam==='geo'){const gt=this.marker?this.markerText():geoHudText(this);if(this.hud.m.textContent!==gt)this.hud.m.textContent=gt;}
     else if(S.fam==='bif'){
@@ -2981,9 +3268,9 @@ class Viewport{
   if(this.sel){if(e.pointerId===this.sel.id)this.moveSel(e);return;}
   // 1.10.5: trascina handle o disegna segmento
   if(this.profDrag&&this.ptrs.has(e.pointerId)&&this.profile){
-   const now=this.toPx(e),c=this.pxToC(now[0],now[1]);
-   if(this.profDrag==='a'){this.profile.ax=c[0];this.profile.ay=c[1];}
-   else{this.profile.bx=c[0];this.profile.by=c[1];}
+   const now=this.toPx(e),c=this.pxToPt(now[0],now[1]);
+   if(this.profDrag==='a'){this.profile.ax=c.x;this.profile.ay=c.y;this.profile.ahp=c.hp;}
+   else{this.profile.bx=c.x;this.profile.by=c.y;this.profile.bhp=c.hp;}
    this.ptrs.set(e.pointerId,now);this.drawProfile();try{profChartsOnChange(this,true);}catch(e){}return;
   }
   if(this.profDraw&&this.ptrs.has(e.pointerId)){
@@ -3076,13 +3363,13 @@ class Viewport{
  applyZoomRect(x0,y0,x1,y1){
   const v=fitRect(this.view,this.cv.width,this.cv.height,x0,y0,x1,y1);
   if(!isFinite(v.cx)||!isFinite(v.cy)||!(v.span>0))return;
-  const m=Math.max(1,Math.abs(v.cx),Math.abs(v.cy)),minSpan=this.cv.height*4e-16*m*8*1.001; // stessa soglia di precWarn()
-  const lim=v.span<minSpan;if(lim)v.span=minSpan;
+  const m=Math.max(1,Math.abs(v.cx),Math.abs(v.cy)),deepF=deepFamNow(),minSpan=deepF?DEEP_MIN_SPAN:this.cv.height*4e-16*m*8*1.001; // stessa soglia di precWarn(); con perturbazione il limite è 1e-100
+  const lim=v.span<minSpan;if(lim){const w=viewFromPt(ptFromView(v),minSpan,v.rot);v.span=w.span;v.hp=w.hp;v.cx=w.cx;v.cy=w.cy;}
   pushHist();
-  this.view={cx:v.cx,cy:v.cy,span:v.span,rot:this.view.rot||0}; // IFS incluso: la vista resta quella scelta, fitIFS non viene richiamata
+  this.view={...v,rot:this.view.rot||0}; // IFS incluso: la vista resta quella scelta, fitIFS non viene richiamata
   setZoomMode(false);
   render([this]);
-  if(lim)showMsg('Zoom limitato dalla precisione a 64 bit');
+  if(lim)showMsg(deepF?'Zoom limitato a 1e-100 in questa versione':'Zoom limitato dalla precisione a 64 bit');
  }
 }
 /* ---------- viste: creazione, layout 1→2→4, chiusura, reflow, vista attiva ---------- */
@@ -3170,10 +3457,10 @@ function closeView(vp){
 function setViews(specs,actId){
  const ids=new Set(specs.map(s=>s.id)),added=[],changed=[],src=(AV&&VPS.indexOf(AV)>=0)?AV:VPS[0];
  specs.forEach(s=>{
-  let v=vpById(s.id);
+  let v=vpById(s.id);const nv=viewFromStr(s.cx,s.cy,s.span,s.hx,s.hy,0); // 1.16.0: con stringhe decimali e span profondo il centro diventa BigInt
   if(!v){v=makeVp(s.id,s);if(src)v.fv=copyFv(src.fv);added.push(v);}
-  else if(v.view.cx!==s.cx||v.view.cy!==s.cy||v.view.span!==s.span)changed.push(v);
-  v.view={cx:s.cx,cy:s.cy,span:s.span,rot:0};
+  else if(v.view.cx!==nv.cx||v.view.cy!==nv.cy||v.view.span!==nv.span||hpSig(v.view)!==hpSig(nv))changed.push(v);
+  v.view=nv;
  });
  VPS.slice().forEach(v=>{if(!ids.has(v.id))removeView(v);});
  setActive(vpById(actId)||((AV&&VPS.indexOf(AV)>=0)?AV:VPS[0]));
@@ -3267,15 +3554,16 @@ function clearActiveProfile(){
 function centerOnProfile(vp){
  vp=vp||AV;if(!vp||!vp.profile){setStatus('Nessun segmento profilo nella vista attiva');return;}
  const p=vp.profile,ax=+p.ax,ay=+p.ay,bx=+p.bx,by=+p.by;
- const mx=(ax+bx)/2,my=(ay+by)/2;
- const dx=Math.abs(bx-ax),dy=Math.abs(by-ay);
+ const PA=profPt(p,'a'),PB=profPt(p,'b'),mid=ptLerp(PA,PB,0.5),dd=ptDelta(PB,PA); // 1.16.0: punto medio e differenze accurati anche con hp
+ const mx=mid.x,my=mid.y;
+ const dx=Math.abs(dd[0]),dy=Math.abs(dd[1]);
  const W=vp.cv.width||1,H=vp.cv.height||1,aspect=W/H;
  let span=Math.max(dy,dx/aspect)*1.35;
  if(!(span>0)||!isFinite(span))span=(FAM[S.fam].view.span||3)*0.15;
- const m=Math.max(1,Math.abs(mx),Math.abs(my)),minSpan=H*4e-16*m*8*1.001;
+ const m=Math.max(1,Math.abs(mx),Math.abs(my)),minSpan=deepFamNow()?DEEP_MIN_SPAN:H*4e-16*m*8*1.001;
  if(span<minSpan)span=minSpan;
  pushHist();
- vp.view={cx:mx,cy:my,span,rot:vp.view.rot||0};
+ vp.view=viewFromPt(mid,span,vp.view.rot||0);
  render([vp]);
 }
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&VPS.some(v=>v.sel)){endSel(false);e.preventDefault();}});
@@ -3342,7 +3630,7 @@ window.addEventListener('keydown',e=>{
 },true);
 function fmt(v,d=6){return (+v).toFixed(d).replace('.',',');}
 // snapshot globale: famiglia, parametri, soglie Newton e {views[], layout} (+ vista attiva)
-function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>({id:v.id,cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0})),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
+function pushHist(){hist.push({fam:S.fam,views:VPS.map(v=>{const s=v.view.hp?viewStr(v.view):null;return {id:v.id,cx:v.view.cx,cy:v.view.cy,span:v.view.span,rot:0,hx:s?s[0]:undefined,hy:s?s[1]:undefined};}),layout:LAYOUT,act:AV?AV.id:0,P:{...S.P[S.fam]},nw:{...(S.nw||{})}});if(hist.length>60)hist.shift();}
 function ctlRow(parent,o){
  const row=document.createElement('label');row.className='ctl';
  row.innerHTML='<span class="cl"></span><input type="range"><input type="number" step="any">';
@@ -3435,7 +3723,7 @@ function applyPreset(i){
  if(S.fam==='ifs'){buildParams();fitIFS();}
  else if(S.fam==='strange'){buildParams();const pv=p.view;if(pv)VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});else fitStrange();}
  else if(S.fam==='geo'){buildParams();const pv=p.view;if(pv)VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});else fitGeo();}
- else {const pv=p.view||FAM[S.fam].view;VPS.forEach(vp=>{vp.view={cx:pv.cx,cy:pv.cy,span:pv.span,rot:0};});buildParams();} // il preset vale per tutte le viste
+ else {const pv=p.view||FAM[S.fam].view;VPS.forEach(vp=>{vp.view=viewFromStr(pv.cx,pv.cy,pv.span,pv.hx,pv.hy,0);});buildParams();} // il preset vale per tutte le viste
  $('preset').value=i;
  if(p.style)applyStyle(p.style);
  try{syncSrcUI();}catch(e){}
@@ -3513,7 +3801,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.15.5',APP_VERSION_SHORT='1.15.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='1.16.0',APP_VERSION_SHORT='1.16.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3564,7 +3852,7 @@ function nwExport(){
  return Object.keys(b).length?b:undefined;
 }
 function getState(){
- const fam=S.fam,P={...S.P[fam]},vs=VPS.map(vp=>({id:vp.id,cx:String(vp.view.cx),cy:String(vp.view.cy),span:+vp.view.span,rot:0}));
+ const fam=S.fam,P={...S.P[fam]},vs=VPS.map(vp=>{const s=viewStr(vp.view);return {id:vp.id,cx:s[0],cy:s[1],span:+vp.view.span,rot:0};});
  const st={v:1,fam,layout:String(VPS.length),active:AV?AV.id:0,views:vs,P,iterBase:S.iterBase[fam],auto:!!S.auto,qual:S.qual,
   pal:S.pal,mode:S.mode,inmode:S.inmode,incol:S.incol,dens:+S.dens,off:+S.off,glow:+S.glow,
   light:+S.light,az:+S.az,el:+S.el,relief:+S.relief,shin:+S.shin,irid:+S.irid};
@@ -3581,7 +3869,7 @@ function getState(){
  // 1.10.5: profilo sezionale (un solo segmento, della vista in cui è stato tracciato)
  {const pv=VPS.find(v=>v.profile);if(pv&&pv.profile){
   const p=pv.profile;
-  st.profile={view:pv.id,a:[String(p.ax),String(p.ay)],b:[String(p.bx),String(p.by)]};
+  const A=profPt(p,'a'),B=profPt(p,'b');st.profile={view:pv.id,a:[ptCoord(A,'x'),ptCoord(A,'y')],b:[ptCoord(B,'x'),ptCoord(B,'y')]};
  }}
  return st;
 }
@@ -3597,11 +3885,11 @@ function applyState(obj){
  for(let k=0;k<nl;k++){
   const vs=vsrc[k]&&typeof vsrc[k]==='object'?vsrc[k]:null;
   let sp;
-  if(!vs)sp=k>0?{cx:specs[0].cx,cy:specs[0].cy,span:specs[0].span}:{cx:0,cy:0,span:3};
+  if(!vs)sp=k>0?{cx:specs[0].cx,cy:specs[0].cy,span:specs[0].span,hx:specs[0].hx,hy:specs[0].hy}:{cx:0,cy:0,span:3};
   else{
    let cx=parseFloat(vs.cx),cy=parseFloat(vs.cy),span=+vs.span;
    if(!isFinite(cx))cx=0;if(!isFinite(cy))cy=0;if(!(span>0))span=FAM[fam].view.span;
-   sp={cx,cy,span};
+   sp={cx,cy,span,hx:vs.cx,hy:vs.cy}; // hx,hy: stringhe decimali originali (alta precisione)
   }
   const idn=vs&&vs.id!=null?Number(vs.id):NaN; // id assente o non valido (stati 1.5–1.6): assegnati in ordine
   sp.id=(Number.isInteger(idn)&&idn>=0&&idn<MAX_VIEWS&&!used.has(idn))?idn:-1;
@@ -3663,7 +3951,14 @@ function applyState(obj){
    let ax,ay,bx,by;
    if(Array.isArray(pr.a)&&Array.isArray(pr.b)){ax=+pr.a[0];ay=+pr.a[1];bx=+pr.b[0];by=+pr.b[1];}
    else{ax=+pr.ax;ay=+pr.ay;bx=+pr.bx;by=+pr.by;}
-   if(vp&&[ax,ay,bx,by].every(isFinite)){vp.profile={ax,ay,bx,by};}
+   if(vp&&[ax,ay,bx,by].every(isFinite)){
+    const pf={ax,ay,bx,by};
+    if(HP_BIG&&hpWanted(vp.view)&&Array.isArray(pr.a)&&Array.isArray(pr.b)){ // estremi in stringa decimale -> BigInt alla precisione della vista
+     const K=hpK(vp.view.span),a0=hpParse(pr.a[0],K),a1=hpParse(pr.a[1],K),b0=hpParse(pr.b[0],K),b1=hpParse(pr.b[1],K);
+     if(a0!==null&&a1!==null&&b0!==null&&b1!==null){pf.ahp={x:a0,y:a1,K};pf.bhp={x:b0,y:b1,K};}
+    }
+    vp.profile=pf;
+   }
   }catch(e){}
  }
  $('fam').value=fam; $('qual').value=qual; $('auto').checked=auto;
@@ -3764,14 +4059,14 @@ $('back').addEventListener('click',()=>{
  const sameP=h.fam===S.fam&&JSON.stringify(h.P)===JSON.stringify(S.P[h.fam])&&JSON.stringify(h.nw||{})===JSON.stringify(S.nw||{});
  if(h.fam!==S.fam){S.fam=h.fam;$('fam').value=h.fam;setPick(false);}
  S.P[h.fam]=h.P;S.nw=h.nw?{...h.nw}:{};
- const specs=(h.views||[]).filter(v=>v&&isFinite(+v.cx)&&isFinite(+v.cy)&&+v.span>0).map((v,k)=>({id:(v.id!=null&&isFinite(+v.id)?+v.id:k),cx:+v.cx,cy:+v.cy,span:+v.span}));
- if(!specs.length)specs.push({id:AV?AV.id:0,cx:AV.view.cx,cy:AV.view.cy,span:AV.view.span});
+ const specs=(h.views||[]).filter(v=>v&&isFinite(+v.cx)&&isFinite(+v.cy)&&+v.span>0).map((v,k)=>({id:(v.id!=null&&isFinite(+v.id)?+v.id:k),cx:+v.cx,cy:+v.cy,span:+v.span,hx:v.hx,hy:v.hy}));
+ if(!specs.length){const vs=viewStr(AV.view);specs.push({id:AV?AV.id:0,cx:AV.view.cx,cy:AV.view.cy,span:AV.view.span,hx:vs[0],hy:vs[1]});}
  const r=setViews(specs,h.act);
  buildParams();
  if(sameP){const list=r.added.concat(r.changed);if(list.length)render(list);scheduleReflow(60);} // stessa famiglia e parametri: solo viste nuove o con vista cambiata (+ reflow)
  else render();
 });
-function zoomStep(f,vp){vp=vp||AV;pushHist();vp.view={...vp.view,span:vp.view.span/f};render([vp]);}
+function zoomStep(f,vp){vp=vp||AV;pushHist();let ns=vp.view.span/f;if(deepFamNow()&&ns<DEEP_MIN_SPAN){ns=DEEP_MIN_SPAN;showMsg('Zoom limitato a 1e-100 in questa versione');}vp.view=vMove(vp.view,0,0,ns);render([vp]);}
 $('zoomarea').addEventListener('click',()=>setZoomMode(!zoomMode));
 $('profile').addEventListener('click',()=>setProfileMode(!profileMode));
 $('profclear').addEventListener('click',clearActiveProfile);
@@ -4009,6 +4304,7 @@ function profChartsSample(tok,quick){
  if(!vp||!vp.profile)return;
  const p=vp.profile,ax=+p.ax,ay=+p.ay,bx=+p.bx,by=+p.by;
  if(![ax,ay,bx,by].every(isFinite))return;
+ const PA=profPt(p,'a'),PB=profPt(p,'b'),ctx={A:PA,B:PB,vp}; // 1.16.0: punti con hp
  const el=$('pchart0');
  let Wpx=320;try{Wpx=Math.max(64,Math.round((el&&el.clientWidth)||320));}catch(e){}
  const N=Math.min(1024,Math.max(32,Wpx));
@@ -4022,27 +4318,27 @@ function profChartsSample(tok,quick){
   const end=Math.min(N,i+block);
   for(;i<end;i++){
    const t=i/(N-1||1);
-   const x=ax+(bx-ax)*t,y=ay+(by-ay)*t;
+   const pt=ptLerp(PA,PB,t),x=pt.x,y=pt.y;
    let r=null;
-   try{r=evalPlane(key,P,x,y,maxIt,nw);}catch(e){r=null;}
-   samples[i]={t,x,y,r};
+   try{r=evalPlane(key,P,x,y,maxIt,nw,vp.deepEval(pt));}catch(e){r=null;}
+   samples[i]={t,x,y,r,pt};
   }
   if(i<N){requestAnimationFrame(step);return;}
   if(tok!==PROF.token)return;
   PROF.samples=samples;
-  PROF.trans=profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by);
+  PROF.trans=profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by,ctx);
   vp.profTrans=PROF.trans.slice();
   try{vp.drawProfile();}catch(e){}
   profChartsDraw();
-  const len=Math.hypot(bx-ax,by-ay);
+  const dl=ptDelta(PB,PA),len=Math.hypot(dl[0],dl[1]);
   const m=$('pmeta');
-  if(m)m.textContent=N+' campioni · |z_B−z_A| = '+fmt(len,6)+' · transizioni '+PROF.trans.length+(quick?' · (trascinamento)':'');
+  if(m)m.textContent=N+' campioni · |z_B−z_A| = '+(len<1e-4?fmtG(len):fmt(len,6))+' · transizioni '+PROF.trans.length+(quick?' · (trascinamento)':'');
  }
  step();
 }
 function isInsideKind(k){return k===1;}
 function isOutsideKind(k){return k===0||(k>=2&&k<253);}
-function profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by){
+function profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by,ctx){
  const out=[];
  for(let i=1;i<samples.length;i++){
   const a=samples[i-1],b=samples[i];
@@ -4055,8 +4351,8 @@ function profFindTransitions(samples,key,P,maxIt,nw,ax,ay,bx,by){
   // bisezione ~12 passi
   let lo=a.t,hi=b.t,lox=a.x,loy=a.y,hix=b.x,hiy=b.y,lok=ka;
   for(let s=0;s<12;s++){
-   const mt=(lo+hi)/2,mx=ax+(bx-ax)*mt,my=ay+(by-ay)*mt;
-   let r=null;try{r=evalPlane(key,P,mx,my,maxIt,nw);}catch(e){}
+   const mt=(lo+hi)/2,mp=ctx?ptLerp(ctx.A,ctx.B,mt):{x:ax+(bx-ax)*mt,y:ay+(by-ay)*mt},mx=mp.x,my=mp.y;
+   let r=null;try{r=evalPlane(key,P,mx,my,maxIt,nw,ctx?ctx.vp.deepEval(mp):null);}catch(e){}
    if(!r)break;
    const kin=isInsideKind(r.kind);
    if(kin===(isInsideKind(lok))){lo=mt;lox=mx;loy=my;lok=r.kind;}
@@ -4256,7 +4552,7 @@ function profCopyCSV(){
  const lines=['t,Re,Im,mu,arg,kind,n,mod,de'];
  for(const s of samples){
   const r=s.r;
-  lines.push([s.t,s.x,s.y,r?r.mu:'',r?r.arg:'',r?r.kind:'',r?r.n:'',r?r.mod:'',r?r.de:''].join(','));
+  lines.push([s.t,s.pt?ptCoord(s.pt,'x'):s.x,s.pt?ptCoord(s.pt,'y'):s.y,r?r.mu:'',r?r.arg:'',r?r.kind:'',r?r.n:'',r?r.mod:'',r?r.de:''].join(','));
  }
  const txt=lines.join('\n');
  copyText(txt).then(ok=>{if(ok)showMsg('CSV copiato ('+samples.length+' righe)');else showMsg('Copia fallita');});

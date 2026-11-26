@@ -16,6 +16,34 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 1.16.0 — 2026-11-26
+
+— Deep zoom, parte A
+
+### Novità
+- **Zoom oltre il limite FP64 per la sola famiglia Mandelbrot con d = 2.** Si attiva da solo quando `span / H < 1e-13` (H = altezza in pixel della vista) ed è disattivo altrove; sopra la soglia il comportamento non cambia. Obiettivo di questa release: span fino a `1e-100` (lo zoom si ferma lì con un messaggio).
+- **Coordinate ad alta precisione per vista.** Sotto `span < 1e-8` la vista porta, oltre a `cx`, `cy`, `span` in double, il centro in `BigInt` a virgola fissa decimale (`hp = {x, y, K}`), con `K = ceil(−log10(span)) + 28` cifre (minimo 40), ricalcolato a ogni cambio di span. La sorgente è la stringa decimale di `cx`/`cy` dello stato `v:1` (se manca `hp`, `String(cx)`).
+- **Pan, rotella, pinch, doppio clic/tap, zoom a finestra, «Zoom ×2/÷2» e «Centra sul profilo»** aggiornano il centro in `BigInt` sommando offset in double scalati sullo span: il punto sotto il cursore resta fermo anche a 1e-100.
+- **Stato, URL, JSON, cronologia (B) e preset** salvano e rileggono il centro con tutte le cifre (`views[].cx/cy` lunghi; i preset accettano `hx`/`hy`). Il formato resta `v:1`: un lettore vecchio usa i double arrotondati. Gli estremi del profilo sezionale (`profile.a`/`profile.b`) restano stringhe decimali coerenti con la vista.
+- **Orbita di riferimento** `Z_{n+1} = Z_n² + C0` con `C0` = centro della vista, calcolata nel main thread in `BigInt` a virgola fissa binaria (≈ K·3,32 + 16 bit) e arrotondata a double in due `Float64Array(maxIt)`. Si ferma alla fuga (|Z|² > 1e6). Ogni worker la riceve una sola volta per copia strutturata (messaggio `orbit`; niente `SharedArrayBuffer`); registro da 12 orbite lato main, cache FIFO da 8 nel worker, riutilizzo a parità di centro, K e `maxIt`.
+- **Perturbazione nei worker** (`computePert`): per ogni pixel `c = C0 + δc`, `δz' = 2·Z_n·δz + δz² + δc` in FP64 con rebasing (`|Z_n + δz| < |δz|` oppure orbita di riferimento finita → `δz ← Z_n + δz`, indice a 0). Produce `mu` liscio, `kind`, `tp`, `tx`, `de` e `ph` (con `z = Z_n + δz`) come il percorso normale: colorazione CPU e GPU (1.15.5) invariate. Le posizioni dei job in questa modalità sono offset da `C0`; Mariani–Silver funziona senza modifiche.
+- **DE in perturbazione: analitico**, non gradiente numerico: la ricorrenza di `dz/dc` è semplice su `z = Z + δz`, quindi si usa direttamente (scelta dichiarata rispetto all'alternativa prevista).
+- **HUD:** per Mandelbrot d = 2 compare «Precisione: FP64» oppure «Precisione: estesa (K cifre)»; il centro è mostrato con tante cifre quante ne distingue il pixel (+4, oltre 30 cifre con «… (+N cifre)»). La riga di stato indica K e la lunghezza/tempo dell'orbita.
+- **Cursore informativo, marker, profilo sezionale ed `evalPoint` sono estesi** (non disattivati): sotto la soglia valutano il punto in perturbazione sull'orbita della vista, con Re/Im a precisione estesa. `evalPoint(fam, params, z0x, z0y, cx, cy, maxIt, nw[, deep])` accetta un nono parametro opzionale `deep = {key, dx, dy}`; senza di esso nulla cambia. Marker ed estremi del profilo restano ancorati al piano a qualsiasi zoom (`ptToScreen`/`ptFromScreen`); cornici proiettate fra viste a zoom diverso usano la differenza fra centri in BigInt.
+- **Due preset di zoom profondo** (Mandelbrot): nucleo di un mini-Mandelbrot di periodo 27 (span 2e-30, 58 cifre) e di periodo 68 (span 8e-80, 108 cifre), con `Z_p(c) = 0` calcolato con Newton a 200 cifre.
+
+### Correzioni
+- `computeMS`: i quattro quadranti ereditavano `r0/r1` della piastrella e ricalcolavano righe poi scartate (fino a 16× di lavoro sui blocchi 4×4). Ora ricevono le proprie righe: risultato identico, calcolo più rapido per tutte le famiglie con Mariani–Silver.
+- Rilevazione dei cicli in perturbazione: tolleranza anche relativa a |δz| e conferma su 3 ritorni consecutivi con differenza decrescente. Senza questo, a zoom profondo ogni orbita che indugia vicino a un ciclo repulsivo (es. z ≈ 2 per c ≈ −2) veniva scambiata per interna.
+
+### Limiti noti
+- Solo Mandelbrot con d = 2. Le altre famiglie, d ≠ 2 e le viste sotto la soglia in quei casi restano in FP64 con l'avviso «limite di precisione raggiunto». Senza `BigInt` nel browser tutto resta in FP64, senza errori.
+- Rimandati alla 1.16.5: Julia, DE dedicato in perturbazione, casi limite estremi e avvisi finali. Oltre 1e-100 lo zoom è bloccato.
+- La griglia del piano di Gauss non viene disegnata in modalità estesa.
+- Se il centro della vista esce presto (orbita di riferimento corta) e un pixel sopravvive più a lungo, dopo il rebasing sul valore completo la precisione cala; centrare la vista dentro l'insieme o su un mini-Mandelbrot evita il problema. Sui pixel caotici `mu` può differire da un calcolo esatto di ~1e-3; rispetto al percorso FP64 la differenza può essere di più iterazioni, perché il percorso FP64 perde il termine piccolo.
+- L'orbita si calcola nel main thread: pochi ms per 10000 iterazioni a K ≈ 110; a `maxIt` molto alti il costo cresce linearmente.
+- Preesistente, non toccato: `drawBifGuides` usa `ctx` non dichiarata (ReferenceError al termine del calcolo della biforcazione).
+
 ## 1.15.5 — 2026-11-25
 
 ### Novità
