@@ -259,15 +259,45 @@ html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-
 .trmono{font:13px var(--mono);color:var(--muted);white-space:nowrap}
 .trinfo{margin:2px 0 6px;font-size:13px;color:var(--muted)}
 .trhint{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+/* 2.0.5 — editor delle tappe */
+.trtlw{margin:8px 0 2px}
+.trtl{position:relative;height:30px;margin:0 9px}
+.trtl:before{content:"";position:absolute;left:0;right:0;top:14px;height:2px;background:var(--rule)}
+.trmk{position:absolute;top:3px;transform:translateX(-50%);min-width:24px;height:24px;padding:0 4px;border:1.5px solid var(--ink);border-radius:12px;background:var(--ground);color:var(--ink);font:600 11px/1 var(--sans);cursor:pointer}
+.trmk.on{background:var(--ink);color:var(--ground)}
+.trtlw input[type=range]{display:block;width:100%;margin:0;min-height:28px;accent-color:var(--ink)}
+.trlist{display:flex;flex-direction:column;gap:4px;margin:6px 0;max-height:min(44vh,420px);overflow:auto}
+html:not([data-ui=wide]) .trlist{max-height:none;overflow:visible}
+.trrow{border:1px solid var(--rule);border-radius:10px;background:var(--ground)}
+.trrow.on{border-color:var(--ink)}
+.trrow.drag{opacity:.55}
+.trrow.dropu{box-shadow:0 -3px 0 var(--ink)}
+.trrow.dropd{box-shadow:0 3px 0 var(--ink)}
+.trhead{display:flex;align-items:center;gap:4px;padding:3px 4px}
+.trh{flex:none;width:30px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:grab;touch-action:none;user-select:none;font-size:18px}
+.trn{flex:none;min-width:30px;height:30px;border:0;border-radius:15px;background:var(--rule);color:var(--ink);font:600 12px var(--sans);cursor:pointer}
+.trrow.on .trn{background:var(--ink);color:var(--ground)}
+.trname{flex:1 1 auto;min-width:0;height:34px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);font:14px var(--sans)}
+.trname:focus{border-color:var(--rule);background:var(--card)}
+.trmv{flex:none;width:36px;height:36px;padding:0!important;justify-content:center}
+.trdet{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;padding:4px 8px 8px}
+.trdet label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.trdet input,.trdet select{height:36px;padding:0 6px;border:1px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink);font:14px var(--sans)}
+.trdet input:disabled,.trdet select:disabled{opacity:.5}
+.trbtns{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+html:not([data-ui=wide]) #sharepanel{position:fixed;z-index:35;margin:0!important;overflow:auto;overscroll-behavior:contain;background:var(--ground);box-shadow:0 -8px 28px rgba(0,0,0,.35);border-radius:18px 18px 0 0}
+html[data-ui=compact] #sharepanel{left:0;right:0;bottom:var(--barh);max-height:45dvh}
+html[data-ui=short] #sharepanel{top:0;right:0;bottom:0;width:min(360px,70vw);border-radius:18px 0 0 18px}
+
 </style>
 </head>
 <body><div class="wrap">
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.17.0</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 2.0.5</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 2.0.0 · 27 novembre 2026</p>
+<p class="updated">Versione 2.0.5 · 27 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -342,15 +372,19 @@ html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-
     <h3>Viaggio nel frattale</h3>
     <div class="bar" style="margin:0">
      <button class="tbtn" id="traddtappa" type="button" title="Aggiunge come tappa lo stato corrente (la prima tappa fissa lo stato di base)">Aggiungi tappa da qui</button>
+     <button class="tbtn" id="trundo" type="button" title="Annulla l'ultima modifica all'elenco delle tappe">↶ Annulla</button>
+     <button class="tbtn" id="trredo" type="button" title="Ripristina la modifica annullata">↷ Ripeti</button>
+     <button class="tbtn" id="trpreview" type="button" aria-pressed="false" title="Mostra sulla vista la traiettoria del centro e le tappe">Anteprima percorso</button>
      <button class="tbtn" id="trclear" type="button">Svuota viaggio</button>
     </div>
     <div class="trplayer">
      <button class="tbtn" id="trplay" type="button">▶ Riproduci</button>
      <button class="tbtn" id="trstop" type="button">■ Stop</button>
-     <input type="range" id="trscrub" min="0" max="1000" value="0" step="1" aria-label="Posizione nel viaggio">
      <span class="trmono" id="trtime">0,0 / 0,0 s</span>
     </div>
+    <div class="trtlw"><div class="trtl" id="trtl"></div><input type="range" id="trscrub" min="0" max="1000" value="0" step="1" aria-label="Posizione nel viaggio"></div>
     <p class="trinfo" id="trinfo" role="status"></p>
+    <div class="trlist" id="trlist" role="list" aria-label="Tappe del viaggio"></div>
     <textarea id="trtxt" rows="8" style="width:100%;font:12px/1.4 var(--mono);padding:8px;border:1px solid var(--rule);border-radius:10px;background:var(--ground);color:var(--ink);resize:vertical" spellcheck="false" aria-label="JSON del viaggio"></textarea>
     <div class="bar" style="margin-top:8px">
      <button class="tbtn" id="trcopyjson" type="button">Copia JSON viaggio</button>
@@ -358,7 +392,7 @@ html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-
      <button class="tbtn" id="trcopylink" type="button">Copia link viaggio</button>
      <button class="tbtn" id="trclose" type="button">Chiudi</button>
     </div>
-    <p class="trhint">Ogni tappa ha <b>durata</b> (secondi per arrivarci dalla tappa precedente; nella prima tappa non conta), <b>pausa</b>, <b>easing</b> (lineare, inOutCubic, inOutSine) e <b>rotta</b> (ottimale, lineare, spline). Per modificarle incolla il JSON e premi «Applica JSON».</p>
+    <p class="trhint">Ogni tappa ha <b>durata</b> (secondi per arrivarci dalla tappa precedente; nella prima tappa non conta), <b>pausa</b>, <b>easing</b> (lineare, inOutCubic, inOutSine) e <b>rotta</b> (ottimale, lineare, spline). Seleziona una tappa per modificarle; in alternativa incolla il JSON e premi «Applica JSON».</p>
    </div>
   </div>
   <p id="status"></p>
@@ -2825,6 +2859,20 @@ function syncGridUI(){
 }
 function setGrid(on){S.grid=!!on;syncGridUI();}
 function toggleGrid(){if(!gridAvail())return;setGrid(!S.grid);}
+/* 2.0.5: anteprima del percorso del viaggio (solo overlay, nessun ricalcolo del frattale) */
+function drawTripPath(M,ctx,W,H){
+ const d=window.TRIPAPI&&window.TRIPAPI.preview&&window.TRIPAPI.preview();if(!d)return;
+ const v=M.view,P=p=>ptToScreen(v,W,H,p),ok=q=>isFinite(q[0])&&isFinite(q[1])&&Math.abs(q[0])<1e6&&Math.abs(q[1])<1e6;
+ ctx.beginPath();
+ for(const leg of d.legs){let pen=false;for(const p of leg){const q=P(p);if(!ok(q)){pen=false;continue;}if(pen)ctx.lineTo(q[0],q[1]);else{ctx.moveTo(q[0],q[1]);pen=true;}}}
+ frStroke(ctx,'#ff9500',[7,5]);
+ d.marks.forEach((p,i)=>{
+  const q=P(p);if(!ok(q)||q[0]<-20||q[1]<-20||q[0]>W+20||q[1]>H+20)return;
+  const on=i===d.sel;
+  ctx.beginPath();ctx.arc(q[0],q[1],on?7:5,0,6.2832);frStroke(ctx,'#ff9500');ctx.fillStyle=on?'#ff9500':'#ffffff';ctx.fill();
+  frBadge(ctx,q[0]+8,q[1]-20,String(i+1),on?'#ff9500':'#ffffff','#000000',W,H);
+ });
+}
 function drawFramesOn(M){
  const cv=M.fr,ctx=M.frx;if(!cv||!ctx)return;
  try{
@@ -2834,6 +2882,7 @@ function drawFramesOn(M){
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
   if(W<8||H<8)return;
   if(S.grid&&gridAvail()){try{drawGrid(M,ctx,W,H);}catch(e){/* la griglia non deve bloccare le cornici */}}
+  try{drawTripPath(M,ctx,W,H);}catch(e){/* l'anteprima non deve bloccare le cornici */}
   if(!FRAMES_ON||VPS.length<2)return;
   for(const N of VPS){
    if(N===M)continue;
@@ -3960,7 +4009,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='2.0.0',APP_VERSION_SHORT='2.0.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='2.0.5',APP_VERSION_SHORT='2.0.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -4387,7 +4436,78 @@ async function decode(s){
   return fromJSON(new TextDecoder().decode(bytes));
  }catch(e){return {ok:false,error:'Link viaggio non valido'};}
 }
-return {travelToState,where,duration,timeline,tappaState,diffState,normalize,create,addTappa,toJSON,fromJSON,compact,encode,decode,pilotId,
+/* ---------- 2.0.5 · editor delle tappe: operazioni pure sull'elenco ---------- */
+function arrival(trip,i){ // istante in cui si raggiunge la tappa i (inizio della sua pausa)
+ let t=0;
+ for(let j=0;j<=i&&j<trip.tappe.length;j++){const tp=trip.tappe[j];if(j>0&&tp.durata>0)t+=tp.durata;if(j<i&&tp.pausa>0)t+=tp.pausa;}
+ return t;
+}
+function absStates(trip){return trip.tappe.map((_,i)=>tappaState(trip,i));}
+function canon(trip,abs){ // base = stato della prima tappa; diff di tutte le altre rispetto ad essa
+ if(!trip.tappe.length)return trip;
+ abs=abs||absStates(trip);
+ trip.base=clone(abs[0]);
+ const pid=pilotId(trip);
+ trip.tappe.forEach((t,j)=>{t.diff=j===0?{}:diffState(trip.base,abs[j],pid);});
+ return trip;
+}
+function fixFirst(trip){if(trip.tappe.length)trip.tappe[0].durata=0;return trip;}
+function insertTappa(trip,idx,cur,nome){
+ const n=trip.tappe.length;
+ if(!n)return addTappa(trip,cur,nome);
+ idx=Math.max(1,Math.min(n,idx|0));
+ trip.tappe.splice(idx,0,normTappa({nome:nome||'Tappa '+(n+1),durata:4,pausa:0.5,easing:'inOutCubic',rotta:'ottimale',diff:diffState(trip.base,cur,pilotId(trip)),fx:{spirale:0,dissolvenza:0}},idx));
+ return trip;
+}
+function duplicateTappa(trip,i){
+ const c=clone(trip.tappe[i]);c.nome=(c.nome+' (copia)').slice(0,80);if(!(c.durata>0))c.durata=4;
+ trip.tappe.splice(i+1,0,c);return trip;
+}
+function removeTappa(trip,i){
+ const abs=(i===0&&trip.tappe.length>1)?absStates(trip):null;
+ trip.tappe.splice(i,1);
+ if(abs){abs.splice(0,1);canon(trip,abs);}
+ return fixFirst(trip);
+}
+function moveTappa(trip,i,j){
+ const n=trip.tappe.length;
+ if(i===j||i<0||j<0||i>=n||j>=n)return trip;
+ const abs=(i===0||j===0)?absStates(trip):null,t=trip.tappe.splice(i,1)[0];
+ trip.tappe.splice(j,0,t);
+ if(abs){const a=abs.splice(i,1)[0];abs.splice(j,0,a);canon(trip,abs);}
+ if(i===0&&!(t.durata>0))t.durata=4;
+ return fixFirst(trip);
+}
+function updateTappa(trip,i,cur){ // sostituisce lo stato della tappa i con quello corrente
+ if(i>0){trip.tappe[i].diff=diffState(trip.base,cur,pilotId(trip));return trip;}
+ const abs=absStates(trip);abs[0]=clone(cur);return canon(trip,abs);
+}
+function setField(trip,i,f,v){
+ const t=trip.tappe[i];if(!t)return trip;
+ if(f==='nome'){v=String(v).trim().slice(0,80);t.nome=v||'Tappa '+(i+1);}
+ else if(f==='durata'||f==='pausa')t[f]=cleanNum(v,0,MAX_DUR,t[f]);
+ else if(f==='easing'&&EASINGS[v])t.easing=v;
+ else if(f==='rotta'&&ROTTE.includes(v))t.rotta=v;
+ return i===0?fixFirst(trip):trip;
+}
+function pathSamples(trip,per){ // traiettoria del centro (stringhe decimali): una polilinea per tratta, senza easing; centers = centro di ogni tappa
+ const n=trip.tappe.length,pid=pilotId(trip),legs=[],centers=[];let minSpan=Infinity;
+ for(let i=0;i<n;i++){const v=pilotView(tappaState(trip,i),pid)||{};minSpan=Math.min(minSpan,+v.span>0?+v.span:3);centers.push([String(v.cx!=null?v.cx:0),String(v.cy!=null?v.cy:0)]);}
+ for(let i=1;i<n;i++){
+  const tp=trip.tappe[i],v0=pilotView(tappaState(trip,i-1),pid)||{},v1=pilotView(tappaState(trip,i),pid)||{};
+  const sp0=Math.max(MIN_SPAN,+v0.span>0?+v0.span:3),sp1=Math.max(MIN_SPAN,+v1.span>0?+v1.span:3),K=kFor(Math.min(sp0,sp1));
+  const pz=x=>{const p=N.parse(x,K);return p===null?N.zero:p;};
+  const c0=[pz(v0.cx),pz(v0.cy)],c1=[pz(v1.cx),pz(v1.cy)];
+  const d=Math.hypot(N.toNum(N.sub(c1[0],c0[0]),K),N.toNum(N.sub(c1[1],c0[1]),K));
+  const route=ROTTE.includes(tp.rotta)?tp.rotta:'ottimale',vw=route==='ottimale'?vwSetup(sp0,sp1,d):null,geom={c0,c1,vw};
+  if(route==='spline')geom.ctrl=splineCtrl(trip,i,c0,c1,K,pid);
+  const pts=[centers[i-1]];
+  for(let k=1;k<per;k++){const fp=k/per;pts.push(centerAt(route==='ottimale'&&!vw?'lineare':route,fp,1-fp,geom,K));}
+  pts.push(centers[i]);legs.push(pts);
+ }
+ return {legs,centers,minSpan:isFinite(minSpan)?minSpan:3};
+}
+return {arrival,pathSamples,insertTappa,duplicateTappa,removeTappa,moveTappa,updateTappa,setField,travelToState,where,duration,timeline,tappaState,diffState,normalize,create,addTappa,toJSON,fromJSON,compact,encode,decode,pilotId,
  _vwSetup:vwSetup,_vwAt:vwAt,_N:N,EASINGS,ROTTE,DEF_VIDEO,MIN_SPAN};
 })();
 
@@ -4596,7 +4716,7 @@ function buildShareLink(){
    else showMsg('Copia fallita: seleziona e copia manualmente');
   });
  });
- window.__openShare=openShare;
+ window.__openShare=openShare;window.__closeShare=closeShare;
  // Pulsante in barra: apre/chiude il pannello stato
  $('sharestate').addEventListener('click',()=>{if(open)closeShare();else openShare();});
  $('closeshare').addEventListener('click',closeShare);
@@ -4614,7 +4734,7 @@ function buildShareLink(){
 var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li leggono (se ancora non dichiarati valgono undefined e sono ignorati)
 (function(){
  const OPTS={paramKind:(fam,k)=>{const d=paramDefOf(k,fam);if(d&&d.options)return 'disc';if(d&&d.step===1)return 'int';return 'num';}};
- const R={trip:null,t:0,playing:false,raf:0,aT:0,aN:0,pending:false,sentAt:0,ema:0,scrubbing:false,scrubHist:false};
+ const R={trip:null,t:0,playing:false,raf:0,aT:0,aN:0,pending:false,sentAt:0,ema:0,scrubbing:false,scrubHist:false,sel:-1,undo:[],redo:[],pv:null,prev:false};
  const el=id=>$(id);
  const fT=x=>(Math.round(x*10)/10).toFixed(1).replace('.',',');
  const T=()=>R.trip?Trip.duration(R.trip):0;
@@ -4626,7 +4746,7 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
   if(!R.scrubbing)sc.value=tt>0?Math.round(1000*Math.min(1,R.t/tt)):0;
   sc.disabled=!(tt>0);
   el('trplay').textContent=R.playing?'⏸ Pausa':'▶ Riproduci';
-  el('trplay').disabled=!(tt>0);el('trstop').disabled=!n;el('trclear').disabled=!n;
+  el('trplay').disabled=!(tt>0);el('trstop').disabled=!n;el('trclear').disabled=!n;el('trundo').disabled=!R.undo.length;el('trredo').disabled=!R.redo.length;
   let s;
   if(!n)s='Nessuna tappa: sposta la vista e premi «Aggiungi tappa da qui».';
   else{
@@ -4675,14 +4795,14 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
   const v=w==='viaggio';
   el('pnstato').style.display=v?'none':'';el('pnviaggio').style.display=v?'':'none';
   [['tabstato',!v],['tabviaggio',v]].forEach(([id,on])=>{const b=el(id);b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
-  if(v){if(R.trip)el('trtxt').value=Trip.toJSON(R.trip,true);ui();}else pause(); // senza viaggio il testo incollato non viene cancellato
+  if(v){refresh();}else pause(); // senza viaggio il testo incollato non viene cancellato
  }
  function loadTrip(trip){
   if(R.playing){cancelAnimationFrame(R.raf);R.playing=false;TRIPQ.on=false;TRIPQ.k=1;}
   R.trip=trip;R.t=0;R.pending=false;
   el('trtxt').value=Trip.toJSON(trip,true);
   applyState(trip.tappe.length?stateAt(0):trip.base); // non silenzioso: «Indietro» torna allo stato precedente
-  ui();
+  R.sel=-1;R.pv=null;refresh();
   showMsg('Viaggio «'+trip.nome+'» caricato: '+trip.tappe.length+(trip.tappe.length===1?' tappa, ':' tappe, ')+fT(Trip.duration(trip))+' s');
  }
  el('tabstato').addEventListener('click',()=>showTab('stato'));
@@ -4690,26 +4810,16 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
  el('trclose').addEventListener('click',()=>{pause();el('closeshare').click();});
  el('trplay').addEventListener('click',()=>{if(R.playing)pause();else play();});
  el('trstop').addEventListener('click',stop);
- el('traddtappa').addEventListener('click',()=>{
-  pause();
-  const cur=getState();delete cur.profile;
-  if(!R.trip)R.trip=Trip.create(cur,'Viaggio');
-  const i=R.trip.tappe.length;
-  Trip.addTappa(R.trip,cur);
-  const p=Trip.timeline(R.trip).seg.filter(s=>s.kind==='pausa'&&s.i===i)[0];
-  R.t=p?p.t0:T();
-  el('trtxt').value=Trip.toJSON(R.trip,true);ui();
-  showMsg('Tappa '+(i+1)+' aggiunta · durata totale '+fT(T())+' s');
- });
+ /* 2.0.5: «Aggiungi tappa da qui» e l'editor sono definiti più sotto */
  el('trclear').addEventListener('click',()=>{
   if(!R.trip)return;
   if(!window.confirm('Svuotare il viaggio? Le tappe andranno perse (resta lo stato corrente).'))return;
-  stop();R.trip=null;R.t=0;el('trtxt').value='';ui();
+  mutate(()=>{stop();R.trip=null;R.t=0;R.sel=-1;});el('trtxt').value='';refresh();
  });
  el('trapply').addEventListener('click',()=>{
   const r=Trip.fromJSON(el('trtxt').value);
   if(!r.ok){showMsg(r.error,6000);return;}
-  loadTrip(r.trip);
+  mutate(()=>loadTrip(r.trip));
  });
  el('trcopyjson').addEventListener('click',()=>{
   if(!R.trip){showMsg('Nessun viaggio da copiare');return;}
@@ -4739,7 +4849,108 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
   if(!R.playing){TRIPQ.on=false;TRIPQ.k=1;full();}
   ui();
  });
- window.TRIPAPI={pause,showTab,
+ /* ---- 2.0.5 · editor delle tappe ---- */
+ const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const snap=()=>JSON.stringify({trip:R.trip,sel:R.sel});
+ const curState=()=>{const c=getState();delete c.profile;return c;};
+ function mutate(fn){const b=snap();fn();if(snap()!==b){R.undo.push(b);if(R.undo.length>30)R.undo.shift();R.redo.length=0;R.pv=null;}}
+ function refresh(keep){
+  const n=R.trip?R.trip.tappe.length:0;if(R.sel>=n)R.sel=n-1;
+  if(R.trip)el('trtxt').value=Trip.toJSON(R.trip,true);
+  if(!keep)renderList();
+  renderTL();ui();scheduleFrames();
+ }
+ function commitSel(i,jmp){R.sel=i;if(R.trip&&i>=0){R.t=Trip.arrival(R.trip,i);if(jmp)full();}else R.t=Math.min(R.t,T());refresh();}
+ function select(i){if(!R.trip||i<0||i>=R.trip.tappe.length)return;pause();commitSel(i,true);}
+ function moveTo(i,j){if(!R.trip||j<0||j>=R.trip.tappe.length||i===j)return;mutate(()=>{Trip.moveTappa(R.trip,i,j);R.sel=j;});commitSel(R.sel,false);}
+ function restore(st){pause();const o=JSON.parse(st);R.trip=o.trip;R.pv=null;if(!R.trip)el('trtxt').value='';commitSel(Math.min(o.sel,R.trip?R.trip.tappe.length-1:-1),true);}
+ const numF=(f,lab,v,dis)=>'<label>'+lab+'<input type="number" data-f="'+f+'" min="0" max="600" step="0.1" value="'+(Math.round(v*100)/100)+'"'+(dis?' disabled title="Non conta nella prima tappa"':'')+'></label>';
+ const selF=(f,lab,opts,v,dis)=>'<label>'+lab+'<select data-f="'+f+'"'+(dis?' disabled title="Non conta nella prima tappa"':'')+'>'+opts.map(o=>'<option value="'+o+'"'+(o===v?' selected':'')+'>'+o+'</option>').join('')+'</select></label>';
+ function renderList(){
+  const L=el('trlist'),tr=R.trip,n=tr?tr.tappe.length:0;
+  L.innerHTML=n?tr.tappe.map((t,i)=>{
+   const on=i===R.sel,f0=i===0;
+   let h='<div class="trrow'+(on?' on':'')+'" role="listitem" data-i="'+i+'"><div class="trhead"><span class="trh" data-act="drag" title="Trascina per riordinare" aria-hidden="true">⠿</span>'
+    +'<button type="button" class="trn" data-act="sel" aria-label="Seleziona la tappa '+(i+1)+'">'+(i+1)+'</button>'
+    +'<input class="trname" data-f="nome" value="'+esc(t.nome)+'" maxlength="80" aria-label="Nome della tappa '+(i+1)+'">'
+    +'<button type="button" class="tbtn trmv" data-act="up" aria-label="Sposta su"'+(f0?' disabled':'')+'>▲</button>'
+    +'<button type="button" class="tbtn trmv" data-act="down" aria-label="Sposta giù"'+(i===n-1?' disabled':'')+'>▼</button></div>';
+   if(on)h+='<div class="trdet">'+numF('durata','Durata (s)',t.durata,f0)+numF('pausa','Pausa (s)',t.pausa,false)
+    +selF('easing','Easing',Object.keys(Trip.EASINGS),t.easing,f0)+selF('rotta','Rotta',Trip.ROTTE,t.rotta,f0)
+    +'<div class="trbtns"><button type="button" class="tbtn" data-act="upd" title="Sostituisce lo stato di questa tappa con quello corrente">Aggiorna da qui</button>'
+    +'<button type="button" class="tbtn" data-act="dup">Duplica</button><button type="button" class="tbtn" data-act="del">Elimina</button></div></div>';
+   return h+'</div>';
+  }).join(''):'';
+ }
+ function renderTL(){
+  const tl=el('trtl'),n=R.trip?R.trip.tappe.length:0,tt=T();
+  tl.innerHTML=n?R.trip.tappe.map((t,i)=>{const p=tt>0?Trip.arrival(R.trip,i)/tt:(n>1?i/(n-1):0);
+   return '<button type="button" class="trmk'+(i===R.sel?' on':'')+'" style="left:'+(Math.min(1,p)*100)+'%" data-i="'+i+'" aria-label="Tappa '+(i+1)+': '+esc(t.nome)+'">'+(i+1)+'</button>';}).join(''):'';
+ }
+ function pvData(){
+  if(!R.prev||!R.trip||!R.trip.tappe.length)return null;
+  if(R.pv)return R.pv;
+  const n=R.trip.tappe.length,per=Math.max(6,Math.min(32,Math.floor(2400/Math.max(1,n-1)))),ps=Trip.pathSamples(R.trip,per);
+  const K=HP_BIG?hpK(ps.minSpan):0;
+  const mk=c=>{const p={x:+c[0],y:+c[1]};if(HP_BIG){const hx=hpParse(c[0],K),hy=hpParse(c[1],K);if(hx!==null&&hy!==null)p.hp={x:hx,y:hy,K};}return p;};
+  R.pv={legs:ps.legs.map(l=>l.map(mk)),marks:ps.centers.map(mk)};
+  return R.pv;
+ }
+ el('traddtappa').addEventListener('click',()=>{
+  pause();const cur=curState();
+  mutate(()=>{
+   if(!R.trip)R.trip=Trip.create(cur,'Viaggio');
+   const n=R.trip.tappe.length,idx=(R.sel>=0&&R.sel<n)?R.sel+1:n;
+   Trip.insertTappa(R.trip,idx,cur);R.sel=idx;
+  });
+  commitSel(R.sel,false);
+  showMsg('Tappa '+(R.sel+1)+' aggiunta · durata totale '+fT(T())+' s');
+ });
+ el('trundo').addEventListener('click',()=>{if(!R.undo.length)return;const st=R.undo.pop();R.redo.push(snap());restore(st);});
+ el('trredo').addEventListener('click',()=>{if(!R.redo.length)return;const st=R.redo.pop();R.undo.push(snap());restore(st);});
+ el('trpreview').addEventListener('click',()=>{R.prev=!R.prev;const b=el('trpreview');b.classList.toggle('on',R.prev);b.setAttribute('aria-pressed',R.prev?'true':'false');scheduleFrames();});
+ el('trtl').addEventListener('click',e=>{const b=e.target.closest('.trmk');if(b)select(+b.dataset.i);});
+ const list=el('trlist');
+ list.addEventListener('click',e=>{
+  if(!R.trip)return;
+  const row=e.target.closest('.trrow');if(!row)return;
+  const i=+row.dataset.i,b=e.target.closest('[data-act]'),a=b&&b.dataset.act;
+  if(!a){if(!e.target.closest('input,select,label')&&i!==R.sel)select(i);return;}
+  if(b.disabled)return;
+  if(a==='sel')select(i);
+  else if(a==='up')moveTo(i,i-1);
+  else if(a==='down')moveTo(i,i+1);
+  else if(a==='dup'){mutate(()=>{Trip.duplicateTappa(R.trip,i);R.sel=i+1;});commitSel(R.sel,false);showMsg('Tappa duplicata');}
+  else if(a==='del'){mutate(()=>{Trip.removeTappa(R.trip,i);R.sel=Math.min(i,R.trip.tappe.length-1);});commitSel(R.sel,true);showMsg('Tappa eliminata (Annulla la ripristina)');}
+  else if(a==='upd'){pause();mutate(()=>Trip.updateTappa(R.trip,i,curState()));commitSel(i,false);showMsg('Tappa '+(i+1)+' aggiornata dallo stato corrente');}
+ });
+ list.addEventListener('change',e=>{ // niente rirenderizzazione della lista: un click subito dopo il blur andrebbe perso
+  const f=e.target.dataset.f,row=e.target.closest('.trrow');if(!f||!row||!R.trip)return;
+  const i=+row.dataset.i;
+  mutate(()=>Trip.setField(R.trip,i,f,e.target.value));
+  e.target.value=R.trip.tappe[i][f];
+  if(R.sel>=0)R.t=Trip.arrival(R.trip,R.sel);else R.t=Math.min(R.t,T());
+  refresh(true);
+ });
+ list.addEventListener('pointerdown',e=>{ // riordino a trascinamento dalla maniglia (mouse e touch)
+  const h=e.target.closest('.trh');if(!h||!R.trip)return;
+  e.preventDefault();
+  const rows=[...list.children],i=+h.closest('.trrow').dataset.i;let to=i;
+  rows[i].classList.add('drag');
+  try{h.setPointerCapture(e.pointerId);}catch(_){}
+  const mv=ev=>{
+   to=rows.length-1;
+   for(let k=0;k<rows.length;k++){const r=rows[k].getBoundingClientRect();if(ev.clientY<r.top+r.height/2){to=k;break;}}
+   rows.forEach((r,k)=>{r.classList.toggle('dropu',k===to&&to<i);r.classList.toggle('dropd',k===to&&to>i);});
+  };
+  const end=ev=>{
+   h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',end);h.removeEventListener('pointercancel',end);
+   rows.forEach(r=>r.classList.remove('drag','dropu','dropd'));
+   if(ev.type==='pointerup'&&to!==i)moveTo(i,to);
+  };
+  h.addEventListener('pointermove',mv);h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
+ });
+ window.TRIPAPI={pause,showTab,preview(){const d=pvData();return d?{legs:d.legs,marks:d.marks,sel:R.sel}:null;},
   async loadLink(code){
    const r=await Trip.decode(code);
    if(!r.ok){showMsg(r.error,6000);return false;}
@@ -4749,7 +4960,7 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
    return true;
   },
   get trip(){return R.trip;}};
- ui();
+ refresh();
 })();
 
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
@@ -5322,7 +5533,7 @@ function profCopyCSV(){
  const cb=document.createElement('button');cb.type='button';cb.className='tbtn';cb.id='ctlbtn';cb.title='Controlli';cb.setAttribute('aria-controls','panel');cb.setAttribute('aria-expanded','false');
  cb.innerHTML=ic('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>')+'<span>Controlli</span>';
  bar.appendChild(cb);
- function openSheet(v){v=!!v;panel.classList.toggle('open',v);cb.setAttribute('aria-expanded',v?'true':'false');cb.classList.toggle('on',v);}
+ function openSheet(v){v=!!v;if(v&&window.__closeShare)window.__closeShare();panel.classList.toggle('open',v);cb.setAttribute('aria-expanded',v?'true':'false');cb.classList.toggle('on',v);}
  cb.addEventListener('click',()=>openSheet(!panel.classList.contains('open')));
  $('sclose').addEventListener('click',()=>openSheet(false));
  // chiusura: solo ✕, Esc, swipe-down sulla maniglia o azioni che richiedono la vista libera (un tap sulla vista mette un marker, non chiude)

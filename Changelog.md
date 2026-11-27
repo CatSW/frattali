@@ -16,6 +16,26 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 2.0.5 - 2026-11-27
+
+- Editor delle tappe
+
+### Novità
+- Pannello «Viaggio»: lista delle tappe con aggiungi da qui, duplica, elimina, riordino (trascinamento dalla maniglia ⠿ e pulsanti ▲/▼), rinomina; la selezione porta la vista allo stato della tappa.
+- Per la tappa selezionata: durata, pausa, easing, rotta e «Aggiorna da qui».
+- Timeline con segnaposto proporzionali all'istante di arrivo, scrub (lo slider esistente, `#trscrub`) e durata totale.
+- «Anteprima percorso»: polilinea tratteggiata della traiettoria del centro e segnaposto numerati sull'overlay delle viste (solo overlay, nessun ricalcolo del frattale; coordinate ad alta precisione a zoom profondo).
+- Annulla/Ripeti (pila, max 30) per tutte le modifiche all'elenco, incluse «Applica JSON» e «Svuota viaggio».
+- Su compact/short il pannello Condividi/Viaggio è ora un bottom sheet / drawer; aprire i Controlli lo chiude.
+
+### Comportamento da conoscere
+- «Aggiungi tappa da qui» inserisce dopo la tappa selezionata (in coda se nessuna è selezionata).
+- Se un'operazione cambia la prima tappa (elimina, sposta da/verso la prima posizione, aggiorna), la base viene ricalcolata e i diff delle altre tappe rigenerati; gli stati assoluti restano uguali.
+- La prima tappa ha sempre durata 0; una tappa spostata fuori dalla prima posizione riceve durata 4 s.
+
+### Schema
+Nessuna modifica: viaggio v1 (2.0.0).
+
 ## 2.0.0 - 2026-11-27
 
 ### Novità
