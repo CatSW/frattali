@@ -252,6 +252,13 @@ html:not([data-ui=wide]) .ctl{grid-template-columns:minmax(0,1fr) 84px;row-gap:2
 html:not([data-ui=wide]) .ctl .cl{grid-column:1;grid-row:1}
 html:not([data-ui=wide]) .ctl input[type=number]{grid-column:2;grid-row:1}
 html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-height:36px}
+.trtabs{margin:0 0 4px}
+.trplayer{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 2px}
+.trplayer input[type=range]{flex:1 1 180px;min-width:120px;accent-color:var(--ink)}
+.trplayer .tbtn:disabled,#pnviaggio .tbtn:disabled{opacity:.45;cursor:default}
+.trmono{font:13px var(--mono);color:var(--muted);white-space:nowrap}
+.trinfo{margin:2px 0 6px;font-size:13px;color:var(--muted)}
+.trhint{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
 </style>
 </head>
 <body><div class="wrap">
@@ -260,7 +267,7 @@ html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
   <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 1.17.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 1.17.0 · 26 novembre 2026</p>
+<p class="updated">Versione 2.0.0 · 27 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -317,13 +324,41 @@ html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-
    <button class="tbtn" id="sharestate" type="button">Esporta JSON</button>
   </div>
   <div id="sharepanel" class="card" style="display:none;margin:10px 0 6px">
-   <h3>Esporta / importa stato</h3>
+   <div class="bar trtabs" role="tablist" aria-label="Condividi">
+    <button class="tbtn on" id="tabstato" type="button" role="tab" aria-selected="true">Stato</button>
+    <button class="tbtn" id="tabviaggio" type="button" role="tab" aria-selected="false">Viaggio</button>
+   </div>
+   <div id="pnstato">
+    <h3>Esporta / importa stato</h3>
 
-   <textarea id="sharetxt" rows="8" style="width:100%;font:12px/1.4 var(--mono);padding:8px;border:1px solid var(--rule);border-radius:10px;background:var(--ground);color:var(--ink);resize:vertical" spellcheck="false"></textarea>
-   <div class="bar" style="margin-top:8px">
-    <button class="tbtn" id="copyjson" type="button">Copia JSON</button>
-    <button class="tbtn" id="applyjson" type="button">Applica</button>
-    <button class="tbtn" id="closeshare" type="button">Chiudi</button>
+    <textarea id="sharetxt" rows="8" style="width:100%;font:12px/1.4 var(--mono);padding:8px;border:1px solid var(--rule);border-radius:10px;background:var(--ground);color:var(--ink);resize:vertical" spellcheck="false"></textarea>
+    <div class="bar" style="margin-top:8px">
+     <button class="tbtn" id="copyjson" type="button">Copia JSON</button>
+     <button class="tbtn" id="applyjson" type="button">Applica</button>
+     <button class="tbtn" id="closeshare" type="button">Chiudi</button>
+    </div>
+   </div>
+   <div id="pnviaggio" style="display:none">
+    <h3>Viaggio nel frattale</h3>
+    <div class="bar" style="margin:0">
+     <button class="tbtn" id="traddtappa" type="button" title="Aggiunge come tappa lo stato corrente (la prima tappa fissa lo stato di base)">Aggiungi tappa da qui</button>
+     <button class="tbtn" id="trclear" type="button">Svuota viaggio</button>
+    </div>
+    <div class="trplayer">
+     <button class="tbtn" id="trplay" type="button">▶ Riproduci</button>
+     <button class="tbtn" id="trstop" type="button">■ Stop</button>
+     <input type="range" id="trscrub" min="0" max="1000" value="0" step="1" aria-label="Posizione nel viaggio">
+     <span class="trmono" id="trtime">0,0 / 0,0 s</span>
+    </div>
+    <p class="trinfo" id="trinfo" role="status"></p>
+    <textarea id="trtxt" rows="8" style="width:100%;font:12px/1.4 var(--mono);padding:8px;border:1px solid var(--rule);border-radius:10px;background:var(--ground);color:var(--ink);resize:vertical" spellcheck="false" aria-label="JSON del viaggio"></textarea>
+    <div class="bar" style="margin-top:8px">
+     <button class="tbtn" id="trcopyjson" type="button">Copia JSON viaggio</button>
+     <button class="tbtn" id="trapply" type="button">Applica JSON</button>
+     <button class="tbtn" id="trcopylink" type="button">Copia link viaggio</button>
+     <button class="tbtn" id="trclose" type="button">Chiudi</button>
+    </div>
+    <p class="trhint">Ogni tappa ha <b>durata</b> (secondi per arrivarci dalla tappa precedente; nella prima tappa non conta), <b>pausa</b>, <b>easing</b> (lineare, inOutCubic, inOutSine) e <b>rotta</b> (ottimale, lineare, spline). Per modificarle incolla il JSON e premi «Applica JSON».</p>
    </div>
   </div>
   <p id="status"></p>
@@ -2925,7 +2960,7 @@ class Viewport{
   if(this.fro){try{this.fro.disconnect();}catch(_){}}
   this.el.remove();
  }
- setSt(m){this.st=m;refreshStatus();}
+ setSt(m){this.st=m;refreshStatus();if(TRIP_HOOK&&m.startsWith('Pronto'))TRIP_HOOK(this);}
  // nuova generazione di job per questa vista: i risultati in volo diventano obsoleti e i job in coda vengono scartati
  cancel(){this.jobId=++jobSeq;queue=queue.filter(j=>j.target!==this.id);}
  dims(){
@@ -2937,13 +2972,16 @@ class Viewport{
   const sh=VPS.length>=3?VPS.length:1,k0=Math.sqrt(q[1]/(W*H)),k=Math.sqrt(q[1]/sh/(W*H));
   this.qAdapt=sh>1&&k<1&&k<k0;
   if(k<1){W=Math.round(W*k);H=Math.round(H*k);}
+  if(TRIPQ&&TRIPQ.on&&TRIPQ.k<1){W=Math.max(48,Math.round(W*TRIPQ.k));H=Math.max(48,Math.round(H*TRIPQ.k));} // 2.0.0: qualita' dinamica durante la riproduzione del viaggio
   return {W,H};
  }
  begin(){
   this.cancel();
   const {W,H}=this.dims();
-  this.gpuHide();
-  this.cv.width=W;this.cv.height=H;this.t0=performance.now();{const rr=this.cv.getBoundingClientRect();this.lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
+  const pb=!!(TRIPQ&&TRIPQ.on); // 2.0.0: in riproduzione il fotogramma precedente resta visibile finche' non arriva il nuovo (niente lampo nero)
+  if(!pb)this.gpuHide();
+  if(!(pb&&this.cv.width===W&&this.cv.height===H)){this.cv.width=W;this.cv.height=H;}
+  this.t0=performance.now();{const rr=this.cv.getBoundingClientRect();this.lastRS=Math.round(rr.width)+'x'+Math.round(rr.height);}
   if(S.fam==='ifs'||S.fam==='buddha'||S.fam==='strange'||S.fam==='bif'||S.fam==='geo'){if(this.gpu)this.gpu.release();this.renderIFS(W,H);return null;}
   const pw=Math.max(32,Math.round(W/4)),ph=Math.max(32,Math.round(H/4));
   const pre=newBuf(pw,ph),full=newBuf(W,H),cur=this.cur={pre,full,id:this.jobId,W,H,left:0};
@@ -3922,7 +3960,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='1.17.0',APP_VERSION_SHORT='1.17.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='2.0.0',APP_VERSION_SHORT='2.0.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -3972,6 +4010,387 @@ function nwExport(){
  for(const k of NW_KEYS.concat(['divergenceColor','singularityColor']))if(nw[k]!==undefined)b[k]=nw[k];
  return Object.keys(b).length?b:undefined;
 }
+/* ===== VIAGGI 2.0.0 · modulo puro (nessun accesso a S, VPS, DOM) ===== */
+const Trip=(function(){
+'use strict';
+const RHO=Math.SQRT2,MIN_SPAN=1e-250,MAX_TAPPE=200,MAX_DUR=600;
+const HAS_BIG=typeof BigInt==='function';
+const EASINGS={
+ lineare:t=>t,
+ inOutCubic:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,
+ inOutSine:t=>-(Math.cos(Math.PI*t)-1)/2
+};
+const ROTTE=['ottimale','lineare','spline'];
+const DEF_VIDEO={aspect:'16:9',customRatio:[16,9],fps:30,resolution:{preset:'1080p',w:1920,h:1080},audio:{enabled:false,source:'procedural',seed:7,volume:0.6,syncToWaypoints:true}};
+const LIN=['dens','off','glow','light','el','relief','shin','irid']; // numerici dei colori: lineari
+const clamp01=t=>t<0?0:t>1?1:t;
+const isNum=v=>typeof v==='number'&&isFinite(v);
+const clone=o=>JSON.parse(JSON.stringify(o));
+function deepEq(a,b){
+ if(a===b)return true;
+ if(typeof a!=='object'||typeof b!=='object'||!a||!b)return false;
+ if(Array.isArray(a)!==Array.isArray(b))return false;
+ const ka=Object.keys(a),kb=Object.keys(b);
+ if(ka.length!==kb.length)return false;
+ for(const k of ka)if(!deepEq(a[k],b[k]))return false;
+ return true;
+}
+
+/* ---------- aritmetica dei centri: BigInt a virgola fissa 10^-K (ripiego: double) ---------- */
+const N=HAS_BIG?{
+ parse(s,K){
+  s=String(s).trim().replace(',','.');
+  const m=/^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(s);
+  if(!m||(m[2]===''&&(m[3]===undefined||m[3]==='')))return null;
+  let ip=m[2]||'0',fp=m[3]||'',e=m[4]?parseInt(m[4],10):0;
+  if(Math.abs(e)>400)return null;
+  if(e>0){const mv=Math.min(e,fp.length);ip+=fp.slice(0,mv);fp=fp.slice(mv);if(e>mv)ip+='0'.repeat(e-mv);}
+  else if(e<0){const t=-e;if(ip.length>=t){fp=ip.slice(ip.length-t)+fp;ip=ip.slice(0,ip.length-t)||'0';}else{fp='0'.repeat(t-ip.length)+ip+fp;ip='0';}}
+  fp=fp.length>=K?fp.slice(0,K):fp+'0'.repeat(K-fp.length);
+  const v=BigInt(ip+fp);return m[1]==='-'?-v:v;
+ },
+ fmt(x,K){
+  const neg=x<0n;if(neg)x=-x;
+  let s=x.toString();if(s.length<=K)s='0'.repeat(K-s.length+1)+s;
+  let ip=s.slice(0,s.length-K),fp=s.slice(s.length-K).replace(/0+$/,'');
+  return (neg&&(ip!=='0'||fp)?'-':'')+ip+(fp?'.'+fp:'');
+ },
+ sub:(a,b)=>a-b,add:(a,b)=>a+b,
+ zero:0n,
+ toNum(a,K){ // a·10^-K come double (K<=300)
+  if(a===0n)return 0;
+  const neg=a<0n;if(neg)a=-a;
+  const s=a.toString(),dig=s.length;
+  const m=parseFloat(s.slice(0,17)+'e'+(dig-Math.min(17,dig)-K));
+  return neg?-m:m;
+ },
+ fromNum(d,K){ // double -> fisso (17 cifre significative)
+  if(!isFinite(d)||d===0)return 0n;
+  return N.parse(d.toExponential(16),K)||0n;
+ },
+ mulf(a,f){ // a·f con f double (anche molto piccolo: mantissa a 53 bit + esponente)
+  if(a===0n||f===0||!isFinite(f))return 0n;
+  const neg=f<0;if(neg)f=-f;
+  if(f<1e-300)return 0n;
+  let e=Math.floor(Math.log2(f))+1,mant=f/Math.pow(2,Math.max(-1000,Math.min(1000,e)));
+  if(e<-1000)mant=f*Math.pow(2,1000)/Math.pow(2,e+1000);
+  const mi=BigInt(Math.round(mant*9007199254740992)); // 2^53
+  const sh=53-e;let r=sh>=0?(a*mi)>>BigInt(sh):(a*mi)<<BigInt(-sh);
+  return neg?-r:r;
+ }
+}:{
+ parse(s){const v=parseFloat(String(s).replace(',','.'));return isFinite(v)?v:null;},
+ fmt:x=>String(x),sub:(a,b)=>a-b,add:(a,b)=>a+b,zero:0,toNum:a=>a,fromNum:d=>d,mulf:(a,f)=>a*f
+};
+function kFor(span){return Math.max(18,Math.ceil(-Math.log10(Math.max(MIN_SPAN,span)))+18);}
+
+/* ---------- easing e curve ---------- */
+function easeFG(name,t){ // f = progresso, g = 1-f (accurato agli estremi: gli easing sono simmetrici)
+ const e=EASINGS[name]||EASINGS.inOutCubic;t=clamp01(t);return [e(t),e(1-t)];
+}
+const lc=x=>{x=Math.abs(x);return x+Math.log1p(Math.exp(-2*x))-Math.LN2;}; // ln cosh
+const ls=x=>x+Math.log(-Math.expm1(-2*x))-Math.LN2; // ln sinh, x>0
+/* Percorso ottimale van Wijk–Nuij (2003), rho = sqrt2. u = distanza lungo la retta, w = larghezza (qui: span).
+   b_i=(w1²-w0²+(-1)^i rho⁴d²)/(2 w_i rho² d), r_i=asinh(-b_i), S=(r1-r0)/rho,
+   w(s)=w0 cosh r0/cosh(rho s+r0), u(s)=(w0/rho²)[cosh r0 tanh(rho s+r0)-sinh r0].
+   Frazione di pan f=u(s)/d=sinh(rho s)cosh r1/(cosh(rho s+r0) sinh(rho S)) e complemento
+   g=1-f=cosh r0 sinh(rho(S-s))/(cosh(rho s+r0) sinh(rho S)): niente cancellazioni (sono calcolati in log). */
+function vwSetup(w0,w1,d){
+ if(!(d>1e-12*Math.min(w0,w1)))return null;
+ const R2=RHO*RHO,R4=R2*R2,dd=d;
+ const b0=(w1*w1-w0*w0+R4*dd*dd)/(2*w0*R2*dd),b1=(w1*w1-w0*w0-R4*dd*dd)/(2*w1*R2*dd);
+ const r0=-Math.asinh(b0),r1=-Math.asinh(b1),S=(r1-r0)/RHO;
+ if(!(S>1e-9)||!isFinite(S)||!isFinite(r0)||!isFinite(r1))return null;
+ return {w0,r0,r1,S};
+}
+function vwAt(P,fp){ // fp in [0,1] -> {w,f,g}
+ const s=fp*P.S,b=RHO*s+P.r0,lw=Math.log(P.w0)+lc(P.r0)-lc(b);
+ let f,g;
+ if(s<=0){f=0;g=1;}
+ else if(s>=P.S){f=1;g=0;}
+ else{
+  const den=lc(b)+ls(RHO*P.S);
+  f=Math.exp(ls(RHO*s)+lc(P.r1)-den);
+  g=Math.exp(lc(P.r0)+ls(RHO*(P.S-s))-den);
+ }
+ return {w:Math.exp(lw),f:Math.min(1,f),g:Math.min(1,g)};
+}
+function crOff(p0,p1,p2,p3,t){ // Catmull-Rom uniforme, p1 = origine locale (0): offset a t in [0,1] tra p1 e p2
+ const t2=t*t,t3=t2*t;
+ return 0.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t2+(-p0+3*p1-3*p2+p3)*t3);
+}
+
+/* ---------- stati delle tappe ---------- */
+function pilotId(trip){const a=trip.base&&trip.base.active;return Number.isInteger(+a)&&+a>=0?+a:0;}
+function pilotView(st,pid){const vs=st.views||[];return vs.find(v=>+v.id===pid)||vs[0];}
+function applyDiff(base,diff,pid){
+ const o=Object.assign({},base);
+ diff=diff||{};
+ for(const k of Object.keys(diff)){
+  const v=diff[k];
+  if(k==='views'){
+   if(!Array.isArray(v))continue;
+   const pe=v.find(e=>e&&(e.id==null||+e.id===pid));
+   if(!pe)continue;
+   o.views=(base.views||[]).map(w=>(+w.id===pid)?Object.assign({},w,{cx:pe.cx!=null?pe.cx:w.cx,cy:pe.cy!=null?pe.cy:w.cy,span:pe.span!=null?pe.span:w.span,rot:pe.rot!=null?pe.rot:w.rot}):w);
+  }else if(k==='P'){
+   o.P=(diff.fam&&diff.fam!==base.fam)?Object.assign({},v):Object.assign({},base.P,v);
+  }else if(v===null)delete o[k];
+  else o[k]=v;
+ }
+ if(diff.fam&&diff.fam!==base.fam&&diff.P===undefined)o.P={};
+ return o;
+}
+function tappaState(trip,i){return applyDiff(trip.base,trip.tappe[i].diff,pilotId(trip));}
+
+/* ---------- linea del tempo ---------- */
+function timeline(trip){
+ const seg=[];let t=0;
+ trip.tappe.forEach((tp,i)=>{
+  if(i>0&&tp.durata>0){seg.push({kind:'tratta',i,t0:t,t1:t+tp.durata});t+=tp.durata;}
+  if(tp.pausa>0){seg.push({kind:'pausa',i,t0:t,t1:t+tp.pausa});t+=tp.pausa;}
+ });
+ return {seg,T:t};
+}
+function duration(trip){return trip&&trip.tappe&&trip.tappe.length?timeline(trip).T:0;}
+function where(trip,t){
+ const n=trip.tappe.length;if(!n)return {i:-1,fase:'vuoto',f:0,t:0,T:0};
+ const {seg,T}=timeline(trip);t=Math.max(0,Math.min(T,+t||0));
+ for(const s of seg)if(t<s.t1)return {i:s.i,fase:s.kind,f:(t-s.t0)/(s.t1-s.t0),t,T,seg:s};
+ return {i:n-1,fase:'fine',f:1,t,T,seg:null};
+}
+
+/* ---------- interpolazione ---------- */
+function lerpN(a,b,f,g){return f<0.5?a+(b-a)*f:b-(b-a)*g;}
+function hex2rgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+const isHex=h=>typeof h==='string'&&/^#[0-9a-fA-F]{6}$/.test(h);
+function lerpHex(a,b,f){
+ const A=hex2rgb(a),B=hex2rgb(b);
+ return '#'+A.map((x,k)=>Math.round(x+(B[k]-x)*f).toString(16).padStart(2,'0')).join('');
+}
+function centerAt(route,fp,fg,geom,K){
+ // restituisce [cx,cy] come stringhe decimali; vicino a ciascun estremo si somma/sottrae lo scarto piccolo (nessuna perdita di cifre)
+ const {c0,c1,vw}=geom;
+ let f=fp,g=fg;
+ if(route==='ottimale'&&vw){const a=vwAt(vw,fp);f=a.f;g=a.g;}
+ const out=[];
+ for(let ax=0;ax<2;ax++){
+  const a=c0[ax],b=c1[ax],D=N.sub(b,a);
+  let v;
+  if(route==='spline'){
+   const P=geom.ctrl[ax];
+   v=f<0.5?N.add(a,N.fromNum(crOff(P.a0[0],P.a0[1],P.a0[2],P.a0[3],f),K)):N.add(b,N.fromNum(crOff(P.a1[0],P.a1[1],P.a1[2],P.a1[3],g),K));
+  }else v=f<0.5?N.add(a,N.mulf(D,f)):N.sub(b,N.mulf(D,g));
+  out.push(N.fmt(v,K));
+ }
+ return out;
+}
+function splineCtrl(trip,i,c0,c1,K,pid){ // punti di controllo come double relativi all'estremo piu' vicino
+ // punti: p_{i-2}, p_{i-1}=c0, p_i=c1, p_{i+1}; riflessione agli estremi. Relativi a c0 e a c1, in double.
+ const cOf=j=>{const st=tappaState(trip,j),v=pilotView(st,pid)||{};const x=N.parse(v.cx,K),y=N.parse(v.cy,K);return [x===null?N.zero:x,y===null?N.zero:y];};
+ const n=trip.tappe.length;
+ const res=[];
+ for(let ax=0;ax<2;ax++){
+  const pm=i-2>=0?cOf(i-2)[ax]:null,pp=i+1<n?cOf(i+1)[ax]:null;
+  const A=c0[ax],B=c1[ax];
+  const m2=pm===null?N.sub(N.add(A,A),B):pm,p2=pp===null?N.sub(N.add(B,B),A):pp;
+  const rel=(O,x)=>N.toNum(N.sub(x,O),K);
+  // verso f<.5: origine c0, ordine (m2,A,B,p2)
+  const a0=[rel(A,m2),0,rel(A,B),rel(A,p2)];
+  // verso f>=.5: curva percorsa al contrario dall'estremo c1 (tau=g): ordine (p2,B,A,m2), origine c1
+  const a1=[rel(B,p2),0,rel(B,A),rel(B,m2)];
+  res.push({a0,a1});
+ }
+ return res;
+}
+
+function travelToState(trip,t,opts){
+ opts=opts||{};
+ const n=trip.tappe.length;
+ if(!n)return clone(trip.base);
+ const w=where(trip,t),pid=pilotId(trip);
+ if(w.fase==='fine'||w.fase==='pausa'){
+  const st=tappaState(trip,w.i);return clone(st);
+ }
+ // tratta verso la tappa i, partendo da i-1
+ const i=w.i,tp=trip.tappe[i],S0=tappaState(trip,i-1),S1=tappaState(trip,i);
+ const [fp,fg]=easeFG(tp.easing,w.f);
+ const out=clone(S0);
+ const f=fp,g=fg;
+ const v0=pilotView(S0,pid)||{},v1=pilotView(S1,pid)||{};
+ const sp0=Math.max(MIN_SPAN,+v0.span>0?+v0.span:3),sp1=Math.max(MIN_SPAN,+v1.span>0?+v1.span:3);
+ const K=kFor(Math.min(sp0,sp1));
+ const pz=s=>{const p=N.parse(s,K);return p===null?N.zero:p;};
+ const c0=[pz(v0.cx),pz(v0.cy)],c1=[pz(v1.cx),pz(v1.cy)];
+ const dx=N.toNum(N.sub(c1[0],c0[0]),K),dy=N.toNum(N.sub(c1[1],c0[1]),K),d=Math.hypot(dx,dy);
+ const route=ROTTE.includes(tp.rotta)?tp.rotta:'ottimale';
+ let vw=null,span,cen;
+ if(route==='ottimale')vw=vwSetup(sp0,sp1,d);
+ const geom={c0,c1,vw};
+ if(route==='spline')geom.ctrl=splineCtrl(trip,i,c0,c1,K,pid);
+ if(f<=0){cen=[v0.cx,v0.cy];span=+v0.span;}
+ else if(g<=0){cen=[v1.cx,v1.cy];span=+v1.span;}
+ else{
+  cen=centerAt(route==='ottimale'&&!vw?'lineare':route,fp,fg,geom,K);
+  span=(route==='ottimale'&&vw)?vwAt(vw,fp).w:Math.exp(Math.log(sp0)+(Math.log(sp1)-Math.log(sp0))*f);
+  span=Math.max(span,MIN_SPAN);
+ }
+ const pv=(out.views||[]).find(x=>+x.id===pid)||out.views[0];
+ pv.cx=cen[0];pv.cy=cen[1];pv.span=span;pv.rot=0;
+ // numerici lineari dei colori
+ for(const k of LIN)if(isNum(S0[k])&&isNum(S1[k]))out[k]=lerpN(S0[k],S1[k],f,g);
+ if(isNum(S0.az)&&isNum(S1.az)){ // azimut: arco piu' corto
+  let da=((S1.az-S0.az)%360+540)%360-180;out.az=((S0.az+da*f)%360+360)%360;
+ }
+ if(isNum(S0.iterBase)&&isNum(S1.iterBase))out.iterBase=Math.round(lerpN(S0.iterBase,S1.iterBase,f,g));
+ {const a0=isNum(S0.alpha)?S0.alpha:1,a1=isNum(S1.alpha)?S1.alpha:1;
+  if(S0.alpha!==undefined||S1.alpha!==undefined)out.alpha=Math.round(lerpN(a0,a1,f,g)*1000)/1000;
+  const s0=isNum(S0.stripeS)?S0.stripeS:5,s1=isNum(S1.stripeS)?S1.stripeS:5;
+  if(S0.stripeS!==undefined||S1.stripeS!==undefined)out.stripeS=Math.round(lerpN(s0,s1,f,g));}
+ if(isHex(S0.incol)&&isHex(S1.incol))out.incol=lerpHex(S0.incol,S1.incol,f);
+ // famiglia e parametri
+ const sameFam=S0.fam===S1.fam,late=f>=0.5;
+ if(sameFam){
+  const P={},keys=new Set(Object.keys(S0.P||{}).concat(Object.keys(S1.P||{})));
+  for(const k of keys){
+   const a=(S0.P||{})[k],b=(S1.P||{})[k];
+   if(isNum(a)&&isNum(b)){
+    const kind=opts.paramKind?opts.paramKind(S0.fam,k):'num';
+    if(kind==='disc')P[k]=late?b:a;
+    else{const x=lerpN(a,b,f,g);P[k]=kind==='int'?Math.round(x):x;}
+   }else P[k]=late?(b!==undefined?b:a):(a!==undefined?a:b);
+  }
+  out.P=P;
+ }else{
+  out.fam=late?S1.fam:S0.fam;out.P=clone(late?(S1.P||{}):(S0.P||{}));
+ }
+ // discreti: cambiano a meta' tratta
+ for(const k of ['pal','mode','inmode','auto','qual','src','levels','newton','grid','custom','profile']){
+  if(k==='custom'&&Array.isArray(S0.custom)&&Array.isArray(S1.custom)&&S0.pal===S1.pal){
+   out.custom=S0.custom.map((c,j)=>isHex(c)&&isHex(S1.custom[j])?lerpHex(c,S1.custom[j],f):c);continue;
+  }
+  const src=late?S1:S0;
+  if(src[k]===undefined)delete out[k];else out[k]=clone(src[k]);
+ }
+ // c di Julia ad alta precisione: valido solo ai fotogrammi chiave
+ delete out.chp;
+ out.layout=String((out.views||[]).length);out.active=pid;
+ return out;
+}
+
+/* ---------- diff, normalizzazione, JSON ---------- */
+function diffState(base,cur,pid){
+ const d={};
+ const keys=new Set(Object.keys(base).concat(Object.keys(cur)));
+ for(const k of keys){
+  if(k==='v'||k==='layout'||k==='active'||k==='profile'||k==='views'||k==='P')continue;
+  if(!deepEq(base[k],cur[k]))d[k]=cur[k]===undefined?null:clone(cur[k]);
+ }
+ if(cur.fam===base.fam){
+  const P={};for(const k of Object.keys(cur.P||{}))if(!deepEq((base.P||{})[k],cur.P[k]))P[k]=cur.P[k];
+  if(Object.keys(P).length)d.P=P;
+ }else d.P=clone(cur.P||{});
+ const bv=pilotView(base,pid),cv=pilotView(cur,pid);
+ if(bv&&cv&&(String(bv.cx)!==String(cv.cx)||String(bv.cy)!==String(cv.cy)||+bv.span!==+cv.span||(+bv.rot||0)!==(+cv.rot||0)))
+  d.views=[{cx:String(cv.cx),cy:String(cv.cy),span:+cv.span,rot:+cv.rot||0}];
+ return d;
+}
+function cleanNum(v,lo,hi,def){v=+v;return isFinite(v)?Math.min(hi,Math.max(lo,v)):def;}
+function normTappa(t,i){
+ t=t&&typeof t==='object'?t:{};
+ const o={nome:String(t.nome!=null?t.nome:'Tappa '+(i+1)).slice(0,80),
+  durata:cleanNum(t.durata,0,MAX_DUR,i===0?0:4),pausa:cleanNum(t.pausa,0,MAX_DUR,0.5),
+  easing:EASINGS[t.easing]?t.easing:'inOutCubic',rotta:ROTTE.includes(t.rotta)?t.rotta:'ottimale',diff:{}};
+ const d=t.diff&&typeof t.diff==='object'&&!Array.isArray(t.diff)?t.diff:{};
+ for(const k of Object.keys(d)){
+  if(k==='views'){
+   if(!Array.isArray(d.views))continue;
+   const vs=[];
+   for(const e of d.views){
+    if(!e||typeof e!=='object')continue;
+    const w={};
+    if(e.id!=null&&Number.isInteger(+e.id))w.id=+e.id;
+    if(e.cx!=null&&N.parse(e.cx,20)!==null)w.cx=typeof e.cx==='number'?e.cx:String(e.cx);
+    if(e.cy!=null&&N.parse(e.cy,20)!==null)w.cy=typeof e.cy==='number'?e.cy:String(e.cy);
+    if(+e.span>0)w.span=Math.max(MIN_SPAN,+e.span);
+    if(e.rot!=null&&isFinite(+e.rot))w.rot=+e.rot;
+    vs.push(w);
+   }
+   if(vs.length)o.diff.views=vs;
+  }else o.diff[k]=clone(d[k]);
+ }
+ const fx=t.fx&&typeof t.fx==='object'?t.fx:{};
+ o.fx={spirale:cleanNum(fx.spirale,0,1,0),dissolvenza:cleanNum(fx.dissolvenza,0,1,0)};
+ return o;
+}
+function normalize(obj){
+ try{
+  if(!obj||typeof obj!=='object'||Array.isArray(obj))return {ok:false,error:'Viaggio non valido'};
+  if(obj.v!==1)return {ok:false,error:'Versione viaggio non supportata (v='+(obj.v!=null?obj.v:'?')+')'};
+  const b=obj.base;
+  if(!b||typeof b!=='object'||b.v!==1||typeof b.fam!=='string'||!Array.isArray(b.views)||!b.views.length)return {ok:false,error:'Viaggio: «base» deve essere uno stato completo (v:1, fam, views)'};
+  if(!Array.isArray(obj.tappe))return {ok:false,error:'Viaggio: «tappe» deve essere una lista'};
+  if(obj.tappe.length>MAX_TAPPE)return {ok:false,error:'Viaggio: massimo '+MAX_TAPPE+' tappe'};
+  const vc=obj.videoConfig&&typeof obj.videoConfig==='object'?clone(obj.videoConfig):clone(DEF_VIDEO);
+  const trip={v:1,nome:String(obj.nome!=null?obj.nome:'Viaggio').slice(0,80),videoConfig:vc,base:clone(b),tappe:obj.tappe.map(normTappa)};
+  return {ok:true,trip};
+ }catch(e){return {ok:false,error:'Viaggio non valido'};}
+}
+function create(base,nome){return {v:1,nome:nome||'Viaggio',videoConfig:clone(DEF_VIDEO),base:clone(base),tappe:[]};}
+function addTappa(trip,cur,nome){ // aggiunge lo stato corrente; la prima tappa fissa la base se il viaggio e' vuoto
+ const pid=pilotId(trip),i=trip.tappe.length;
+ const t={nome:nome||'Tappa '+(i+1),durata:i===0?0:4,pausa:0.5,easing:'inOutCubic',rotta:'ottimale',diff:i===0?{}:diffState(trip.base,cur,pid),fx:{spirale:0,dissolvenza:0}};
+ if(i===0){trip.base=clone(cur);}
+ trip.tappe.push(normTappa(t,i));
+ return trip;
+}
+function toJSON(trip,pretty){return JSON.stringify(trip,null,pretty?2:0);}
+function fromJSON(text){
+ let o;try{o=JSON.parse(text);}catch(e){return {ok:false,error:'JSON non valido'};}
+ return normalize(o);
+}
+function compact(trip){ // toglie i campi uguali al predefinito (normalize li ripristina)
+ const c=clone(trip);
+ if(deepEq(c.videoConfig,DEF_VIDEO))delete c.videoConfig;
+ c.tappe.forEach((t,i)=>{
+  if(t.easing==='inOutCubic')delete t.easing;if(t.rotta==='ottimale')delete t.rotta;
+  if(t.fx&&!t.fx.spirale&&!t.fx.dissolvenza)delete t.fx;
+  if(!Object.keys(t.diff).length)delete t.diff;
+  if(t.nome==='Tappa '+(i+1))delete t.nome;
+ });
+ return c;
+}
+
+/* ---------- link ?t= (prefisso d. = deflate+base64url, j. = JSON puro base64url) ---------- */
+function b64enc(bytes){let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function b64dec(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+async function pipe(bytes,stream){
+ const w=stream.writable.getWriter();w.write(bytes).catch(()=>{});w.close().catch(()=>{}); // gli errori di flusso arrivano da readable (catturati dal chiamante)
+ return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+}
+async function encode(trip){
+ const raw=new TextEncoder().encode(JSON.stringify(compact(trip)));
+ if(typeof CompressionStream==='function'){
+  try{const z=await pipe(raw,new CompressionStream('deflate'));return 'd.'+b64enc(z);}catch(e){}
+ }
+ return 'j.'+b64enc(raw);
+}
+async function decode(s){
+ try{
+  s=String(s||'').trim();
+  const pre=s.slice(0,2),body=s.slice(2);
+  let bytes=b64dec(body);
+  if(pre==='d.'){
+   if(typeof DecompressionStream!=='function')return {ok:false,error:'Link compresso: questo browser non supporta la decompressione'};
+   bytes=await pipe(bytes,new DecompressionStream('deflate'));
+  }else if(pre!=='j.')return {ok:false,error:'Link viaggio non riconosciuto'};
+  return fromJSON(new TextDecoder().decode(bytes));
+ }catch(e){return {ok:false,error:'Link viaggio non valido'};}
+}
+return {travelToState,where,duration,timeline,tappaState,diffState,normalize,create,addTappa,toJSON,fromJSON,compact,encode,decode,pilotId,
+ _vwSetup:vwSetup,_vwAt:vwAt,_N:N,EASINGS,ROTTE,DEF_VIDEO,MIN_SPAN};
+})();
+
 function getState(){
  const fam=S.fam,P={...S.P[fam]},vs=VPS.map(vp=>{const s=viewStr(vp.view);return {id:vp.id,cx:s[0],cy:s[1],span:+vp.view.span,rot:0};});
  const st={v:1,fam,layout:String(VPS.length),active:AV?AV.id:0,views:vs,P,iterBase:S.iterBase[fam],auto:!!S.auto,qual:S.qual,
@@ -3996,7 +4415,8 @@ function getState(){
  return st;
 }
 function clamp(v,lo,hi){v=+v;if(!isFinite(v))return lo;return Math.min(hi,Math.max(lo,v));}
-function applyState(obj){
+function applyState(obj,opt){
+ const silent=!!(opt&&opt.silent); // 2.0.0: riproduzione viaggio = nessuna voce di cronologia, nessun messaggio, qualita' e auto invariate
  if(!obj||typeof obj!=='object'){const m='Stato non valido';$('headmsg').textContent=m;setStatus(m);return false;}
  if(obj.v!==1){const m='Versione stato non supportata (v='+(obj.v??'?')+')';$('headmsg').textContent=m;setStatus(m);return false;}
  const fam=obj.fam; if(!fam||!FAM[fam]){const m='Famiglia sconosciuta: '+(fam||'?');$('headmsg').textContent=m;setStatus(m);return false;}
@@ -4040,9 +4460,10 @@ function applyState(obj){
  let spanLim=null;
  if(deepFamOf(fam,P))specs.forEach(sp=>{if(sp.span<DEEP_MIN_SPAN){if(spanLim===null||sp.span<spanLim)spanLim=sp.span;sp.span=DEEP_MIN_SPAN;}});
  let iterBase=obj.iterBase!=null?Math.round(clamp(obj.iterBase,20,50000)):S.iterBase[fam];
- const auto=obj.auto!=null?!!obj.auto:S.auto;
- const qual=['veloce','normale','alta','ultra'].includes(obj.qual)?obj.qual:S.qual;
+ const auto=(!silent&&obj.auto!=null)?!!obj.auto:S.auto;
+ const qual=(!silent&&['veloce','normale','alta','ultra'].includes(obj.qual))?obj.qual:S.qual;
  let pal=obj.pal&&PALS[obj.pal]?obj.pal:S.pal;
+ const custBefore=PALS.custom.c.join(',');
  if(pal==='custom'&&Array.isArray(obj.custom)&&obj.custom.length){
   for(let i=0;i<5&&i<obj.custom.length;i++){const c=obj.custom[i];if(typeof c==='string'&&/^#[0-9a-fA-F]{6}$/.test(c))PALS.custom.c[i]=c;}
  }
@@ -4064,8 +4485,27 @@ function applyState(obj){
  const alphaN=(srcN!=='iter'&&obj.alpha!=null)?clamp(obj.alpha,0,1):1;
  const stripeN=(srcN==='stripe'&&obj.stripeS!=null)?Math.round(clamp(obj.stripeS,1,32)):5;
  const levelsN=(srcN==='final'&&(obj.levels===2||obj.levels==='2'))?2:0;
+ // 2.0.0: percorso veloce per i fotogrammi del viaggio (stessa famiglia, stesse viste, nessun cambio discreto): niente setFam/buildParams/UI;
+ // si ricalcola solo se cambiano vista o parametri di calcolo, altrimenti si ricolora soltanto
+ if(silent&&opt.fast&&fam===S.fam&&!cut.length&&spanLim===null&&specs.length===VPS.length&&specs.every(sp=>vpById(sp.id))){
+  const discr=pal!==S.pal||mode!==S.mode||inmode!==S.inmode||srcN!==S.src||levelsN!==S.levels||grid!==S.grid;
+  if(!discr){
+   const prevR=JSON.stringify([S.P[fam],S.iterBase[fam],S.stripeS,S.jc,S.nw||{}]),newR=JSON.stringify([P,iterBase,stripeN,jcN,nw]);
+   const colCh=dens!==S.dens||off!==S.off||glow!==S.glow||light!==S.light||az!==S.az||el!==S.el||relief!==S.relief||shin!==S.shin||irid!==S.irid||incol!==S.incol||alphaN!==S.alpha||PALS.custom.c.join(',')!==custBefore;
+   S.P[fam]=P;S.jc=jcN;S.nw=nw;S.iterBase[fam]=iterBase;S.incol=incol;
+   S.dens=dens;S.off=off;S.glow=glow;S.light=light;S.az=az;S.el=el;S.relief=relief;S.shin=shin;S.irid=irid;S.alpha=alphaN;S.stripeS=stripeN;
+   const r=setViews(specs,actId);
+   let done=[];
+   if(prevR!==newR){render();done=VPS.slice();}
+   else if(r.changed.length){render(r.changed);done=r.changed;}
+   if(colCh){buildLUT();VPS.forEach(v=>{if(done.indexOf(v)<0)v.recolor();});try{legendSync();}catch(e){}}
+   applyState._rendered=done.length>0;
+   return true;
+  }
+ }
  // applica
- pushHist();fvSave();
+ if(!silent)pushHist();
+ fvSave();
  S.P[fam]=P; S.jc=jcN; S.nw=nw; S.iterBase[fam]=iterBase; S.auto=auto; S.qual=qual;
  S.pal=pal; S.mode=mode; S.inmode=inmode; S.incol=incol;
  S.dens=dens; S.off=off; S.glow=glow; S.light=light; S.az=az; S.el=el; S.relief=relief; S.shin=shin; S.irid=irid; S.grid=grid;
@@ -4094,7 +4534,7 @@ function applyState(obj){
  }
  $('fam').value=fam; $('qual').value=qual; $('auto').checked=auto;
 
- $('style').value=''; $('preset').value='-1'; showPresetDesc('');
+ if(!silent){$('style').value=''; $('preset').value='-1'; showPresetDesc('');}
  // aggiorna color inputs custom
  if(pal==='custom'){const inps=$('custom').querySelectorAll('input[type=color]');PALS.custom.c.forEach((c,i)=>{if(inps[i])inps[i].value=c;});}
  syncColorUI(); buildLUT();
@@ -4103,6 +4543,7 @@ function applyState(obj){
  render();
  VPS.forEach(v=>v.drawProfile());
  try{const pv=VPS.find(v=>v.profile);if(pv)profChartsOnChange(pv);else setProfPanelOpen(false);}catch(e){}
+ if(silent){applyState._rendered=true;return true;}
  const m='Stato applicato';$('headmsg').textContent=m;
  viewNote=cut.length?'schermo stretto: max '+specs.length+' viste, '+(cut.length>1?'chiuse le viste ':'chiusa la vista ')+cut.join(', '):'';
  setStatus(m+(viewNote?' · '+viewNote:''));
@@ -4144,8 +4585,8 @@ function buildShareLink(){
  const g=$('guide');g.textContent='Guida - Ver. '+APP_VERSION_SHORT;g.href=GUIDE_URL;g.target='_blank';g.rel='noopener noreferrer';
  const panel=$('sharepanel'),txt=$('sharetxt');
  let open=false;
- function closeShare(){open=false;panel.style.display='none';}
- function openShare(){open=true;panel.style.display='';txt.value=JSON.stringify(getState(),null,2);}
+ function closeShare(){open=false;panel.style.display='none';if(window.TRIPAPI)window.TRIPAPI.pause();}
+ function openShare(){open=true;panel.style.display='';txt.value=JSON.stringify(getState(),null,2);if(window.TRIPAPI)window.TRIPAPI.showTab('stato');}
  // Header «Condividi» (icona): copia solo il link
  $('share').addEventListener('click',()=>{
   const link=buildShareLink();
@@ -4155,6 +4596,7 @@ function buildShareLink(){
    else showMsg('Copia fallita: seleziona e copia manualmente');
   });
  });
+ window.__openShare=openShare;
  // Pulsante in barra: apre/chiude il pannello stato
  $('sharestate').addEventListener('click',()=>{if(open)closeShare();else openShare();});
  $('closeshare').addEventListener('click',closeShare);
@@ -4168,6 +4610,148 @@ function buildShareLink(){
   applyState(o);
  });
 })();
+/* ===== VIAGGI 2.0.0 · integrazione: player, pannello «Viaggio» ===== */
+var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li leggono (se ancora non dichiarati valgono undefined e sono ignorati)
+(function(){
+ const OPTS={paramKind:(fam,k)=>{const d=paramDefOf(k,fam);if(d&&d.options)return 'disc';if(d&&d.step===1)return 'int';return 'num';}};
+ const R={trip:null,t:0,playing:false,raf:0,aT:0,aN:0,pending:false,sentAt:0,ema:0,scrubbing:false,scrubHist:false};
+ const el=id=>$(id);
+ const fT=x=>(Math.round(x*10)/10).toFixed(1).replace('.',',');
+ const T=()=>R.trip?Trip.duration(R.trip):0;
+ const pilotVp=()=>(R.trip&&vpById(Trip.pilotId(R.trip)))||AV;
+ const stateAt=t=>Trip.travelToState(R.trip,t,OPTS);
+ function ui(){
+  const tt=T(),n=R.trip?R.trip.tappe.length:0,sc=el('trscrub');
+  el('trtime').textContent=fT(R.t)+' / '+fT(tt)+' s';
+  if(!R.scrubbing)sc.value=tt>0?Math.round(1000*Math.min(1,R.t/tt)):0;
+  sc.disabled=!(tt>0);
+  el('trplay').textContent=R.playing?'⏸ Pausa':'▶ Riproduci';
+  el('trplay').disabled=!(tt>0);el('trstop').disabled=!n;el('trclear').disabled=!n;
+  let s;
+  if(!n)s='Nessuna tappa: sposta la vista e premi «Aggiungi tappa da qui».';
+  else{
+   const w=Trip.where(R.trip,R.t),nm=R.trip.tappe[w.i].nome;
+   s=n+(n===1?' tappa':' tappe')+' · '+fT(tt)+' s'+(n===1?' · ne servono almeno due per riprodurre':' · '+(w.fase==='tratta'?'verso «'+nm+'» ('+(w.i+1)+'/'+n+')':'sosta a «'+nm+'» ('+(w.i+1)+'/'+n+')'));
+  }
+  el('trinfo').textContent=s;
+ }
+ function showAt(t){applyState._rendered=false;applyState(stateAt(t),{silent:true,fast:true});return applyState._rendered;}
+ function full(){if(R.trip)applyState(stateAt(R.t),{silent:true});} // qualita' piena + interfaccia risincronizzata
+ function tick(now){
+  if(!R.playing)return;
+  const Tt=T(),tt=Math.min(Tt,R.aT+(now-R.aN)/1000);
+  R.t=tt;
+  if(tt>=Tt){pause();return;}
+  if(!R.pending||now-R.sentAt>1500){R.pending=showAt(tt);R.sentAt=now;} // un solo calcolo in volo: salto di fotogrammi, il tempo scorre in tempo reale
+  ui();
+  R.raf=requestAnimationFrame(tick);
+ }
+ TRIP_HOOK=function(vp){
+  if(!R.playing||!R.pending||vp!==pilotVp())return;
+  R.pending=false;
+  const ms=performance.now()-R.sentAt;
+  R.ema=R.ema?0.6*R.ema+0.4*ms:ms;
+  if(R.ema>180){TRIPQ.k=Math.max(0.2,TRIPQ.k*0.8);R.ema=0;} // non regge: abbassa la risoluzione
+  else if(R.ema<70&&TRIPQ.k<1){TRIPQ.k=Math.min(1,TRIPQ.k*1.15);R.ema=0;}
+ };
+ function play(){
+  if(R.playing||T()<=0)return;
+  {const w0=Trip.where(R.trip,R.t);if(R.t>=T()-1e-6||(w0.i===R.trip.tappe.length-1&&w0.fase!=='tratta'))R.t=0;} // da fermo sull'ultima tappa: riparte dall'inizio
+  if(R.t<=1e-6)pushHist(); // una sola voce: «Indietro» riporta allo stato precedente la riproduzione
+  R.playing=true;R.pending=false;R.ema=0;TRIPQ.on=true;TRIPQ.k=0.6;
+  R.aT=R.t;R.aN=performance.now();
+  R.raf=requestAnimationFrame(tick);ui();
+ }
+ function pause(){
+  if(!R.playing)return;
+  cancelAnimationFrame(R.raf);R.playing=false;R.pending=false;TRIPQ.on=false;TRIPQ.k=1;
+  full();ui();
+ }
+ function stop(){
+  cancelAnimationFrame(R.raf);R.playing=false;R.pending=false;TRIPQ.on=false;TRIPQ.k=1;
+  R.t=0;if(R.trip&&R.trip.tappe.length)full();ui();
+ }
+ function showTab(w){
+  const v=w==='viaggio';
+  el('pnstato').style.display=v?'none':'';el('pnviaggio').style.display=v?'':'none';
+  [['tabstato',!v],['tabviaggio',v]].forEach(([id,on])=>{const b=el(id);b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+  if(v){if(R.trip)el('trtxt').value=Trip.toJSON(R.trip,true);ui();}else pause(); // senza viaggio il testo incollato non viene cancellato
+ }
+ function loadTrip(trip){
+  if(R.playing){cancelAnimationFrame(R.raf);R.playing=false;TRIPQ.on=false;TRIPQ.k=1;}
+  R.trip=trip;R.t=0;R.pending=false;
+  el('trtxt').value=Trip.toJSON(trip,true);
+  applyState(trip.tappe.length?stateAt(0):trip.base); // non silenzioso: «Indietro» torna allo stato precedente
+  ui();
+  showMsg('Viaggio «'+trip.nome+'» caricato: '+trip.tappe.length+(trip.tappe.length===1?' tappa, ':' tappe, ')+fT(Trip.duration(trip))+' s');
+ }
+ el('tabstato').addEventListener('click',()=>showTab('stato'));
+ el('tabviaggio').addEventListener('click',()=>showTab('viaggio'));
+ el('trclose').addEventListener('click',()=>{pause();el('closeshare').click();});
+ el('trplay').addEventListener('click',()=>{if(R.playing)pause();else play();});
+ el('trstop').addEventListener('click',stop);
+ el('traddtappa').addEventListener('click',()=>{
+  pause();
+  const cur=getState();delete cur.profile;
+  if(!R.trip)R.trip=Trip.create(cur,'Viaggio');
+  const i=R.trip.tappe.length;
+  Trip.addTappa(R.trip,cur);
+  const p=Trip.timeline(R.trip).seg.filter(s=>s.kind==='pausa'&&s.i===i)[0];
+  R.t=p?p.t0:T();
+  el('trtxt').value=Trip.toJSON(R.trip,true);ui();
+  showMsg('Tappa '+(i+1)+' aggiunta · durata totale '+fT(T())+' s');
+ });
+ el('trclear').addEventListener('click',()=>{
+  if(!R.trip)return;
+  if(!window.confirm('Svuotare il viaggio? Le tappe andranno perse (resta lo stato corrente).'))return;
+  stop();R.trip=null;R.t=0;el('trtxt').value='';ui();
+ });
+ el('trapply').addEventListener('click',()=>{
+  const r=Trip.fromJSON(el('trtxt').value);
+  if(!r.ok){showMsg(r.error,6000);return;}
+  loadTrip(r.trip);
+ });
+ el('trcopyjson').addEventListener('click',()=>{
+  if(!R.trip){showMsg('Nessun viaggio da copiare');return;}
+  const j=Trip.toJSON(R.trip,true);el('trtxt').value=j;
+  copyText(j).then(ok=>showMsg(ok?'JSON del viaggio copiato':'Copia fallita: seleziona e copia manualmente'));
+ });
+ el('trcopylink').addEventListener('click',async()=>{
+  if(!R.trip||!R.trip.tappe.length){showMsg('Nessun viaggio da condividere');return;}
+  const z=await Trip.encode(R.trip),link=location.href.split(/[?#]/)[0]+'?t='+z;
+  const ok=await copyText(link);
+  showMsg(ok?'Link viaggio copiato ('+link.length+' caratteri'+(z.startsWith('j.')?', non compresso':'')+')':'Copia fallita');
+ });
+ const sc=el('trscrub');
+ sc.addEventListener('input',()=>{
+  if(!R.trip)return;
+  R.scrubbing=true;
+  const tt=T()*(+sc.value)/1000;R.t=tt;
+  if(R.playing){R.aT=tt;R.aN=performance.now();}
+  else{
+   if(!R.scrubHist){pushHist();R.scrubHist=true;}
+   TRIPQ.on=true;TRIPQ.k=0.5;showAt(tt);
+  }
+  ui();
+ });
+ sc.addEventListener('change',()=>{
+  R.scrubbing=false;R.scrubHist=false;
+  if(!R.playing){TRIPQ.on=false;TRIPQ.k=1;full();}
+  ui();
+ });
+ window.TRIPAPI={pause,showTab,
+  async loadLink(code){
+   const r=await Trip.decode(code);
+   if(!r.ok){showMsg(r.error,6000);return false;}
+   loadTrip(r.trip);
+   if(window.__openShare)window.__openShare();
+   showTab('viaggio');
+   return true;
+  },
+  get trip(){return R.trip;}};
+ ui();
+})();
+
 $('qual').addEventListener('change',e=>{S.qual=e.target.value;render();});
 $('auto').addEventListener('change',e=>{S.auto=e.target.checked;render();});
 function resetView(vp){vp=vp||AV;pushHist();if(S.fam==='ifs')fitIFS(vp);else if(S.fam==='strange')fitStrange(vp);else if(S.fam==='geo')fitGeo(vp);else vp.view={...FAM[S.fam].view,rot:0};render([vp]);}
@@ -4758,7 +5342,7 @@ function profCopyCSV(){
   if(wide)openSheet(false);
   else{const a=$('app');if(a&&a.classList.contains('full')){a.classList.remove('full');ptog.textContent='Nascondi pannello';}if(!panel.dataset.tab)setTab('f');}
   const g=$('guide');if(g)g.textContent=wide?'Guida - Ver. '+APP_VERSION_SHORT:'Guida';
-  vi.textContent='Versione '+APP_VERSION+' \u00b7 26 novembre 2026';
+  vi.textContent='Versione '+APP_VERSION+' \u00b7 27 novembre 2026';
  }
  setTab('f');applyMode();addEventListener('uimode',applyMode);
 })();
@@ -4892,7 +5476,12 @@ syncColorUI();buildLUT();applyCaps();
 (function(){
  let loaded=false;
  try{
-  const m=location.search.match(/[?&]s=([^&]*)/);
+  const mt=location.search.match(/[?&]t=([^&]*)/);
+  if(mt&&window.TRIPAPI){ // 2.0.0: link viaggio (async: decompressione); in caso di errore si ripiega sul preset iniziale
+   loaded=true;
+   window.TRIPAPI.loadLink(decodeURIComponent(mt[1])).then(ok=>{if(!ok)applyPreset(0);},()=>applyPreset(0));
+  }
+  const m=mt?null:location.search.match(/[?&]s=([^&]*)/);
   if(m){
    const raw=fromB64url(decodeURIComponent(m[1]));
    if(raw){

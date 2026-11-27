@@ -16,6 +16,35 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 2.0.0 - 2026-11-27
+
+### Novità
+- **Scheda «Viaggio»** nel pannello Condividi (tab *Stato* | *Viaggio*): «Aggiungi tappa da qui», «Svuota viaggio», ▶/⏸, ■, cursore di scrub con tempo, JSON del viaggio (Copia / Applica), «Copia link viaggio».
+- **Modello dati** (schema v:1, Appendice A): `base` = stato completo; ogni tappa = `{nome, durata, pausa, easing, rotta, diff, fx}`, con `diff` che contiene solo le differenze rispetto a `base` (`views[0]` = vista pilota, cioè quella con id `base.active`; poi `P`, `fam` e i campi di colore). `videoConfig` e `fx` sono conservati e fanno round-trip, ma non sono ancora usati.
+- **Semantica del tempo**: la tappa *i* ≥ 1 è una tratta da *i−1* a *i* della durata `durata`, con easing e rotta della tappa *i*, poi `pausa`. Per la prima tappa `durata` non conta (non ha tratta in ingresso). Durata totale = Σ durata (i ≥ 1) + Σ pausa.
+- **Modulo puro `Trip`**: `travelToState(viaggio, t[, opts])` → stato completo, senza accesso a S/VPS/DOM (l'app passa solo `opts.paramKind` per distinguere parametri a opzioni/interi/continui).
+- **Interpolazione**: zoom in scala logaritmica; rotte *ottimale* (van Wijk–Nuij 2003, ρ = √2, formule riscritte in forma logaritmica per evitare cancellazioni e overflow), *lineare*, *spline* (Catmull-Rom sul centro, riflessione agli estremi). Easing lineare, inOutCubic, inOutSine. Centri in BigInt a virgola fissa con precisione adattiva: funziona fino a span 1e-250 senza perdere cifre. Numerici dei colori lineari; `incol` e `custom` in RGB lineare; discreti (palette, modi, sorgente fase, livelli, newton, griglia) cambiano a metà tratta; se cambia la famiglia, nessuna interpolazione dei suoi parametri: cambio netto a metà tratta, con i `P` della nuova famiglia presi interi.
+- **Player**: tempo reale con salto di fotogrammi (un solo calcolo in volo per volta), qualità dinamica (fattore di risoluzione 0,2–1 tramite `dims()`) che si abbassa se il frame supera ~180 ms e risale sotto ~70 ms; in pausa/stop/fine qualità piena e interfaccia risincronizzata. Il fotogramma precedente resta visibile finché non arriva il successivo (niente lampo nero). Una sola voce in cronologia per riproduzione. Scrub a qualità ridotta e piena al rilascio.
+- **`applyState(obj, {silent, fast})`**: `silent` = niente `pushHist`, niente messaggi, `qual` e `auto` dell'utente invariati; `fast` = per i fotogrammi, salta `setFam`/`buildParams`/sincronizzazione UI e ricalcola solo se cambiano vista o parametri di calcolo, altrimenti ricolora soltanto. Senza opzioni il comportamento è identico a prima.
+- **Link `?t=`**: JSON compatto, `d.` + base64url del deflate (`CompressionStream`), oppure `j.` + base64url del JSON puro se la compressione non c'è. Se `?t=` e `?s=` sono presenti insieme vince `?t=`. `?s=` invariato.
+- Versione 2.0.0 (APP_VERSION, pulsante «Guida - Ver. 2.0.0», data in intestazione).
+
+### Correzioni
+- Nessuna in questa release.
+
+### Limiti noti
+- Provato solo con jsdom (canvas e worker simulati) e con test numerici in Node; fluidità reale, eventuale sfarfallio con colorazione GPU e adattamento della qualità vanno verificati in un browser vero (checklist).
+- Con più viste aperte, se durante il viaggio cambiano parametri di calcolo (P, iterazioni, Newton, stripe) si ricalcolano tutte le viste a ogni fotogramma; se cambia solo la vista pilota, solo quella. Con la «Regia» (1 vista) il problema sparisce.
+- Parametri e colori nell'interfaccia non si aggiornano durante la riproduzione, ma alla pausa.
+- `chp` (c di Julia ad alta precisione) non viene interpolato: omesso tra le tappe, presente solo ai fotogrammi chiave.
+- Le tappe cambiano solo la vista pilota; eventuali differenze sulle altre viste e sul layout sono ignorate.
+- `videoConfig` e `fx` non sono ancora usati; `audio.enabled` vale `false` nei viaggi nuovi.
+
+### Test eseguiti
+- Round-trip viaggio → JSON → viaggio → JSON identico: 3 viaggi con stati reali (zoom profondo Mandelbrot 4 tappe; Julia con cambio famiglia, spline e inOutSine 3 tappe; Newton 2 tappe), sia via JSON sia via link.
+- Link per 10 tappe (zoom fino a 1e-30): JSON compatto 1764 B, `?t=` compresso 678 caratteri (senza compressione circa 2350).
+- Percorso ottimale: w(S) = w1, u(S) = d, f monotona e f + g = 1 su 7 configurazioni (fino a span 3 → 1e-250); zoom 3 → 1e-80: il bersaglio resta in vista (distanza/span ≤ 0,07) e al fotogramma 0,9999 è a 1e-18 span.
+
 ## 1.17.0 — 2026-11-26
 
 - UI adattiva
