@@ -16,6 +16,27 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), ver
 
 Le date sono nel formato `AAAA-MM-GG`.
 
+## 2.1.0 · 28/11/2026 · Regia: form factor, Safe Frame, letterbox
+
+### Novità
+- **Form factor del viaggio** (`videoConfig`): aspect ratio (16:9, 16:10, 21:9, 9:16, 4:3, 1:1, personalizzato con rapporto L : A), frame rate (24/30/60 fps) e risoluzione (480p–2160p, riferita al lato corto), nel nuovo pannello «Regia» della scheda Viaggio. «Aggancia alla vista attiva» copia il rapporto della vista attiva. I valori non validi nel JSON tornano al predefinito; l'audio e gli eventuali campi futuri passano invariati.
+- **Safe Frame (mirino)** sulla vista pilota in modalità progetto (scheda Viaggio aperta): rettangolo del formato inscritto nella vista e centrato, con passepartout (fuori dal rettangolo la vista resta calcolata ma oscurata) e bordo netto. Resta fisso sullo schermo. Interruttore «Mirino».
+- **Ancoraggio al Safe Frame**: `span` è l'altezza, in unità del piano, dell'area inquadrata (come già nel codice: `s = span/H`); nelle tappe è ora misurato sul Safe Frame, il centro coincide col suo centro. La composizione non cambia ridimensionando la finestra o cambiando dispositivo.
+- **Riproduzione in letterbox/pillarbox**: durante la riproduzione il canvas della vista pilota si riduce al Safe Frame, senza stiramento né ritaglio; si calcolano solo i pixel del Safe Frame, fuori è nero.
+- **«Adatta a un altro formato»**: crea una copia del viaggio riancorata a un nuovo aspect ratio con regola «contieni» (predefinita: la nuova inquadratura include per intero la composizione precedente), «mantieni larghezza» o «mantieni altezza». Il JSON dell'originale può essere copiato negli appunti prima dell'adattamento; «Annulla» ripristina l'originale.
+- Diagnostica: `TRIPAPI.sfInfo()` restituisce il rettangolo del mondo inquadrato dal Safe Frame.
+
+### Correzioni
+- Nessuna.
+
+### Limiti noti
+- I viaggi 2.0.x senza `videoConfig` sono letti come 16:9 con span misurato sul Safe Frame: su finestre non 16:9 l'inquadratura delle tappe può differire da quella della 2.0.x.
+- Cambiare l'aspect ratio di un viaggio già costruito dal selettore mantiene l'altezza dell'inquadratura (la larghezza cambia); per conservare la composizione usare «Adatta a un altro formato».
+- In riproduzione, sulla vista pilota, sono nascosti cornici, anteprima del percorso, profilo e marker; con più viste solo la pilota va in letterbox. All'avvio e alla pausa può comparire per un istante il fotogramma precedente adattato alla nuova forma del canvas.
+- Frame rate e risoluzione sono memorizzati e validati ma non ancora usati: serviranno all'export video.
+- La rotazione della vista è oggi sempre 0 nell'interfaccia: il Safe Frame è fisso sullo schermo per costruzione, ma il caso rot ≠ 0 non è verificabile da UI.
+- Il confronto pixel su tre istanti (16:9, 9:16, 1:1) non è stato eseguito in un browser; verificata l'identità del rettangolo di mondo inquadrato (vedi checklist).
+
 ## 2.0.5 - 2026-11-27
 
 - Editor delle tappe

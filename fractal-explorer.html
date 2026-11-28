@@ -259,6 +259,22 @@ html:not([data-ui=wide]) .ctl input[type=range]{grid-column:1/-1;grid-row:2;min-
 .trmono{font:13px var(--mono);color:var(--muted);white-space:nowrap}
 .trinfo{margin:2px 0 6px;font-size:13px;color:var(--muted)}
 .trhint{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+/* 2.1.0 · regia: letterbox in riproduzione (il canvas si riduce al Safe Frame, il resto resta nero) e pannello */
+.vp.sfl>canvas{position:absolute;left:var(--sfx,0);top:var(--sfy,0);width:var(--sfw,100%);height:var(--sfh,100%)}
+.vp.sfl .vfr,.vp.sfl .vpr,.vp.sfl .vmk{display:none}
+.trreg{margin:8px 0 2px;border:1px solid var(--rule);border-radius:10px;padding:6px 10px 8px}
+.trreg>summary{cursor:pointer;font-weight:600;font-size:13.5px;min-height:28px}
+.trreg .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin-top:6px}
+.trreg label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.trreg input[type=number],.trreg select{height:36px;padding:0 6px;border:1px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink);font:14px var(--sans)}
+.trreg .rgcr{display:flex;align-items:center;gap:4px}
+.trreg .rgcr input{width:100%;min-width:0}
+.trreg .tbtn:disabled{opacity:.45;cursor:default}
+.trfork{margin-top:8px;padding:8px 10px;border:1px solid var(--rule);border-radius:10px;background:var(--ground)}
+.trfork h4{margin:0 0 4px;font-size:13.5px}
+.trfork fieldset{border:0;margin:8px 0 4px;padding:0;display:flex;flex-direction:column;gap:4px}
+.trfork legend{font-size:12px;color:var(--muted);padding:0;margin-bottom:2px}
+.trfork fieldset label,.trfork .fkchk{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink)}
 /* 2.0.5 — editor delle tappe */
 .trtlw{margin:8px 0 2px}
 .trtl{position:relative;height:30px;margin:0 9px}
@@ -295,9 +311,9 @@ html[data-ui=short] #sharepanel{top:0;right:0;bottom:0;width:min(360px,70vw);bor
 <div class="head"><h1>Esploratore di Frattali</h1>
  <div class="headbtn"><span id="headmsg" role="status" aria-live="polite"></span>
   <button class="tbtn" id="share" type="button" title="Condividi questa vista" aria-label="Condividi questa vista" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg><span>Condividi</span></button>
-  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 2.0.5</a></div></div>
+  <a class="tbtn" id="guide" href="https://github.com/CatSW/frattali/blob/main/Readme.md" target="_blank" rel="noopener noreferrer" title="Apri la guida su GitHub">Guida - Ver. 2.1.0</a></div></div>
 <p class="kicker">Mandelbrot, Julia, Newton e altre famiglie, con luce e rilievo simulati</p>
-<p class="updated">Versione 2.0.5 · 27 novembre 2026</p>
+<p class="updated">Versione 2.1.0 · 28 novembre 2026</p>
 <p class="lede">Scegli una famiglia e uno stile, poi trascina, pizzica o fai doppio tocco per esplorare. Per ingrandire un rettangolo, con il mouse trascina sulla vista; su touch usa «Zoom area». Con il mouse un clic singolo fissa un marker (un clic sul marker lo toglie).<span class="tchint"> Su touch un dito sposta la vista, due dita pizzicano, un tocco breve fissa un marker (un tocco sul marker lo toglie) e la pressione prolungata apre un menu.</span> Con «Viste» (1, 2 o 4) confronti più punti di vista sullo stesso frattale: una nuova vista duplica quella attiva e la ✕ chiude la singola vista. La vista col bordo colorato è quella attiva, e a lei rispondono tastiera, «Salva PNG» e i pulsanti della barra. «Cornici» mostra o nasconde su ogni vista il riquadro delle altre. Tastiera: + / − zoom, R vista iniziale, B indietro, F schermo intero, P pannello.</p>
 
 <div class="app" id="app">
@@ -377,6 +393,37 @@ html[data-ui=short] #sharepanel{top:0;right:0;bottom:0;width:min(360px,70vw);bor
      <button class="tbtn" id="trpreview" type="button" aria-pressed="false" title="Mostra sulla vista la traiettoria del centro e le tappe">Anteprima percorso</button>
      <button class="tbtn" id="trclear" type="button">Svuota viaggio</button>
     </div>
+    <details class="trreg" id="trreg" open>
+     <summary>Regia · formato di destinazione</summary>
+     <div class="rgrid">
+      <label>Aspect ratio<select id="rgaspect"></select></label>
+      <label>Frame rate (fps)<select id="rgfps"><option value="24">24</option><option value="30">30</option><option value="60">60</option></select></label>
+      <label>Risoluzione (lato corto)<select id="rgres"></select></label>
+      <label id="rgcustom" style="display:none">Rapporto L : A<span class="rgcr"><input id="rgcw" type="number" min="0.1" step="any" aria-label="Larghezza del rapporto"> : <input id="rgch" type="number" min="0.1" step="any" aria-label="Altezza del rapporto"></span></label>
+     </div>
+     <div class="bar" style="margin:8px 0 0">
+      <button class="tbtn" id="rglock" type="button" title="Imposta il rapporto personalizzato uguale a quello della vista attiva">Aggancia alla vista attiva</button>
+      <button class="tbtn on" id="rgsf" type="button" aria-pressed="true" title="Mostra o nasconde il mirino (Safe Frame) sulla vista">Mirino</button>
+      <button class="tbtn" id="rgfork" type="button" title="Crea una copia del viaggio riancorata a un altro aspect ratio">Adatta a un altro formato…</button>
+     </div>
+     <p class="trinfo" id="rgdims" role="status"></p>
+     <div class="trfork" id="rgdlg" role="dialog" aria-label="Adatta a un altro formato" style="display:none">
+      <h4>Adatta a un altro formato</h4>
+      <div class="rgrid">
+       <label>Nuovo aspect ratio<select id="fkaspect"></select></label>
+       <label id="fkcustom" style="display:none">Rapporto L : A<span class="rgcr"><input id="fkcw" type="number" min="0.1" step="any" aria-label="Larghezza del rapporto"> : <input id="fkch" type="number" min="0.1" step="any" aria-label="Altezza del rapporto"></span></label>
+      </div>
+      <fieldset>
+       <legend>Regola di ancoraggio</legend>
+       <label><input type="radio" name="fkrule" value="contieni" checked> Contieni: la nuova inquadratura include per intero la composizione precedente</label>
+       <label><input type="radio" name="fkrule" value="larghezza"> Mantieni larghezza</label>
+       <label><input type="radio" name="fkrule" value="altezza"> Mantieni altezza</label>
+      </fieldset>
+      <label class="fkchk"><input type="checkbox" id="fkcopy" checked> Copia negli appunti il JSON dell'originale prima di adattare</label>
+      <div class="bar" style="margin:8px 0 0"><button class="tbtn" id="fkok" type="button">Crea la copia adattata</button><button class="tbtn" id="fkcancel" type="button">Annulla</button></div>
+     </div>
+     <p class="trhint">Il <b>Safe Frame</b> è il rettangolo del formato scelto, inscritto nella vista e centrato; fuori da esso la vista resta calcolata ma oscurata. Centro e ampiezza (<code>span</code>, altezza in unità del piano) di ogni tappa sono misurati sul Safe Frame: la composizione non cambia ridimensionando la finestra. In riproduzione il canvas si riduce al Safe Frame (barre nere sugli altri lati, nessuno stiramento né ritaglio). Cambiare formato a un viaggio già fatto mantiene l'altezza dell'inquadratura; per conservare la composizione usa «Adatta a un altro formato».</p>
+    </details>
     <div class="trplayer">
      <button class="tbtn" id="trplay" type="button">▶ Riproduci</button>
      <button class="tbtn" id="trstop" type="button">■ Stop</button>
@@ -2873,6 +2920,15 @@ function drawTripPath(M,ctx,W,H){
   frBadge(ctx,q[0]+8,q[1]-20,String(i+1),on?'#ff9500':'#ffffff','#000000',W,H);
  });
 }
+/* 2.1.0: Safe Frame (mirino) in modalità progetto: passepartout + bordo netto, solo overlay */
+function drawSafeFrame(M,ctx,W,H){
+ const g=window.TRIPAPI&&window.TRIPAPI.safe&&window.TRIPAPI.safe(M);if(!g)return;
+ const a=g.a;let w,h;if(W/H>a){h=H;w=H*a;}else{w=W;h=W/a;}
+ const x=(W-w)/2,y=(H-h)/2;
+ if(w<W-0.5||h<H-0.5){ctx.beginPath();ctx.rect(0,0,W,H);ctx.rect(x,y,w,h);ctx.fillStyle='rgba(0,0,0,.55)';ctx.fill('evenodd');}
+ ctx.beginPath();ctx.rect(x+2,y+2,Math.max(1,w-4),Math.max(1,h-4));frStroke(ctx,'#ffffff');
+ frBadge(ctx,x+w/2-26,y+8,g.label,'#ffffff','#000000',W,H);
+}
 function drawFramesOn(M){
  const cv=M.fr,ctx=M.frx;if(!cv||!ctx)return;
  try{
@@ -2881,6 +2937,7 @@ function drawFramesOn(M){
   if(cv.width!==bw||cv.height!==bh){cv.width=bw;cv.height=bh;}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
   if(W<8||H<8)return;
+  try{drawSafeFrame(M,ctx,W,H);}catch(e){/* il mirino non deve bloccare le cornici */}
   if(S.grid&&gridAvail()){try{drawGrid(M,ctx,W,H);}catch(e){/* la griglia non deve bloccare le cornici */}}
   try{drawTripPath(M,ctx,W,H);}catch(e){/* l'anteprima non deve bloccare le cornici */}
   if(!FRAMES_ON||VPS.length<2)return;
@@ -3679,7 +3736,7 @@ function reflow(){
  VPS.forEach(v=>{
   if(v.dead)return;
   const r=v.cv.getBoundingClientRect();if(Math.round(r.width)+'x'+Math.round(r.height)===v.lastRS)return;
-  if(S.fam==='ifs')fitIFS(v);else if(S.fam==='strange')fitStrange(v);
+  if(!SFLB){if(S.fam==='ifs')fitIFS(v);else if(S.fam==='strange')fitStrange(v);}
   list.push(v);
  });
  if(list.length)render(list);
@@ -4009,7 +4066,7 @@ function syncSrcUI(){
  u.rowA.style.display=on?'':'none';u.rowA._show();
  u.note.style.display=on?'':'none';u.note.textContent=SRC_NOTE[S.src]||'';
 }
-const APP_VERSION='2.0.5',APP_VERSION_SHORT='2.0.5',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
+const APP_VERSION='2.1.0',APP_VERSION_SHORT='2.1.0',GUIDE_URL='https://github.com/CatSW/frattali/blob/main/Readme.md';
 /* ---------- stato serializzabile + Condividi ---------- */
 /* ---------- Newton: override soglie (blocco opzionale `newton`) ---------- */
 const NW_DEF={divergenceRadius:1e6,convergenceTolerance:1e-6,minDerivativeThreshold:1e-14};
@@ -4372,6 +4429,46 @@ function normTappa(t,i){
  o.fx={spirale:cleanNum(fx.spirale,0,1,0),dissolvenza:cleanNum(fx.dissolvenza,0,1,0)};
  return o;
 }
+/* ---------- 2.1.0 · form factor (videoConfig) e riancoraggio ---------- */
+const ASPECTS=['16:9','16:10','21:9','9:16','4:3','1:1','custom'],FPS=[24,30,60],RES={'480p':480,'720p':720,'1080p':1080,'1440p':1440,'2160p':2160};
+function aspectOf(vc){ // larghezza/altezza del formato di destinazione
+ if(vc&&ASPECTS.includes(vc.aspect)&&vc.aspect!=='custom'){const q=vc.aspect.split(':');return +q[0]/+q[1];}
+ const c=vc&&vc.customRatio;
+ if(Array.isArray(c)&&+c[0]>0&&+c[1]>0){const r=+c[0]/+c[1];if(r>=0.1&&r<=10)return r;}
+ return 16/9;
+}
+const even=x=>Math.max(2,2*Math.round(x/2));
+function resDims(vc){ // «lato corto» = preset (1080p: 1920x1080 in orizzontale, 1080x1920 in verticale)
+ const r=vc&&vc.resolution;
+ if(r&&r.preset==='custom'&&+r.w>=16&&+r.h>=16)return [even(+r.w),even(+r.h)];
+ const a=aspectOf(vc),sh=RES[r&&r.preset]||1080;
+ return a>=1?[even(sh*a),even(sh)]:[even(sh),even(sh/a)];
+}
+function normVC(v){ // valida un videoConfig: campi non validi tornano al predefinito; l'audio (e campi futuri) passano invariati
+ const o=clone(DEF_VIDEO);
+ if(!v||typeof v!=='object'||Array.isArray(v))return o;
+ if(ASPECTS.includes(v.aspect))o.aspect=v.aspect;
+ const c=v.customRatio;
+ if(Array.isArray(c)&&isNum(+c[0])&&isNum(+c[1])&&+c[0]>0&&+c[1]>0){const r=+c[0]/+c[1];if(r>=0.1&&r<=10)o.customRatio=[Math.round(+c[0]*1e4)/1e4,Math.round(+c[1]*1e4)/1e4];}
+ if(FPS.includes(+v.fps))o.fps=+v.fps;
+ const r=v.resolution;
+ if(r&&typeof r==='object'){
+  if(RES[r.preset])o.resolution.preset=r.preset;
+  else if(+r.w>=16&&+r.w<=8192&&+r.h>=16&&+r.h<=8192)o.resolution={preset:'custom',w:even(+r.w),h:even(+r.h)};
+ }
+ if(o.resolution.preset!=='custom'){const d=resDims(o);o.resolution.w=d[0];o.resolution.h=d[1];}
+ if(v.audio&&typeof v.audio==='object'&&!Array.isArray(v.audio))o.audio=Object.assign(o.audio,clone(v.audio));
+ for(const k of Object.keys(v))if(!(k in o))o[k]=clone(v[k]); // campi di release successive
+ return o;
+}
+function refit(trip,vc,rule){ // riancora le tappe a un nuovo form factor; span = altezza del Safe Frame, centro invariato
+ const nv=normVC(vc),r=aspectOf(trip.videoConfig)/aspectOf(nv); // r = larghezza vecchia / nuova a parita' di altezza
+ const f=rule==='altezza'?1:rule==='larghezza'?r:Math.max(1,r);
+ const abs=absStates(trip).map(clone),pid=pilotId(trip);
+ abs.forEach(st=>{const v=pilotView(st,pid);if(v&&+v.span>0)v.span=Math.max(MIN_SPAN,+v.span*f);});
+ trip.videoConfig=nv;canon(trip,abs);
+ return {trip,factor:f};
+}
 function normalize(obj){
  try{
   if(!obj||typeof obj!=='object'||Array.isArray(obj))return {ok:false,error:'Viaggio non valido'};
@@ -4380,7 +4477,7 @@ function normalize(obj){
   if(!b||typeof b!=='object'||b.v!==1||typeof b.fam!=='string'||!Array.isArray(b.views)||!b.views.length)return {ok:false,error:'Viaggio: «base» deve essere uno stato completo (v:1, fam, views)'};
   if(!Array.isArray(obj.tappe))return {ok:false,error:'Viaggio: «tappe» deve essere una lista'};
   if(obj.tappe.length>MAX_TAPPE)return {ok:false,error:'Viaggio: massimo '+MAX_TAPPE+' tappe'};
-  const vc=obj.videoConfig&&typeof obj.videoConfig==='object'?clone(obj.videoConfig):clone(DEF_VIDEO);
+  const vc=normVC(obj.videoConfig);
   const trip={v:1,nome:String(obj.nome!=null?obj.nome:'Viaggio').slice(0,80),videoConfig:vc,base:clone(b),tappe:obj.tappe.map(normTappa)};
   return {ok:true,trip};
  }catch(e){return {ok:false,error:'Viaggio non valido'};}
@@ -4507,7 +4604,7 @@ function pathSamples(trip,per){ // traiettoria del centro (stringhe decimali): u
  }
  return {legs,centers,minSpan:isFinite(minSpan)?minSpan:3};
 }
-return {arrival,pathSamples,insertTappa,duplicateTappa,removeTappa,moveTappa,updateTappa,setField,travelToState,where,duration,timeline,tappaState,diffState,normalize,create,addTappa,toJSON,fromJSON,compact,encode,decode,pilotId,
+return {aspectOf,resDims,normVC,refit,ASPECTS,FPS,RES,arrival,pathSamples,insertTappa,duplicateTappa,removeTappa,moveTappa,updateTappa,setField,travelToState,where,duration,timeline,tappaState,diffState,normalize,create,addTappa,toJSON,fromJSON,compact,encode,decode,pilotId,
  _vwSetup:vwSetup,_vwAt:vwAt,_N:N,EASINGS,ROTTE,DEF_VIDEO,MIN_SPAN};
 })();
 
@@ -4731,15 +4828,15 @@ function buildShareLink(){
  });
 })();
 /* ===== VIAGGI 2.0.0 · integrazione: player, pannello «Viaggio» ===== */
-var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li leggono (se ancora non dichiarati valgono undefined e sono ignorati)
+var TRIPQ={on:false,k:1},TRIP_HOOK=null,SFLB=false; // var: Viewport.dims/begin/setSt li leggono (se ancora non dichiarati valgono undefined e sono ignorati)
 (function(){
  const OPTS={paramKind:(fam,k)=>{const d=paramDefOf(k,fam);if(d&&d.options)return 'disc';if(d&&d.step===1)return 'int';return 'num';}};
- const R={trip:null,t:0,playing:false,raf:0,aT:0,aN:0,pending:false,sentAt:0,ema:0,scrubbing:false,scrubHist:false,sel:-1,undo:[],redo:[],pv:null,prev:false};
+ const R={trip:null,t:0,playing:false,raf:0,aT:0,aN:0,pending:false,sentAt:0,ema:0,scrubbing:false,scrubHist:false,sel:-1,undo:[],redo:[],pv:null,prev:false,vc:Trip.normVC(null),sf:true,lbVp:null,lbRO:null};
  const el=id=>$(id);
  const fT=x=>(Math.round(x*10)/10).toFixed(1).replace('.',',');
  const T=()=>R.trip?Trip.duration(R.trip):0;
  const pilotVp=()=>(R.trip&&vpById(Trip.pilotId(R.trip)))||AV;
- const stateAt=t=>Trip.travelToState(R.trip,t,OPTS);
+ const stateAt=t=>fromSF(Trip.travelToState(R.trip,t,OPTS)); // span delle tappe (Safe Frame) -> span del canvas
  function ui(){
   const tt=T(),n=R.trip?R.trip.tappe.length:0,sc=el('trscrub');
   el('trtime').textContent=fT(R.t)+' / '+fT(tt)+' s';
@@ -4780,28 +4877,31 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
   if(R.t<=1e-6)pushHist(); // una sola voce: «Indietro» riporta allo stato precedente la riproduzione
   R.playing=true;R.pending=false;R.ema=0;TRIPQ.on=true;TRIPQ.k=0.6;
   R.aT=R.t;R.aN=performance.now();
+  lb(true);
   R.raf=requestAnimationFrame(tick);ui();
  }
  function pause(){
   if(!R.playing)return;
   cancelAnimationFrame(R.raf);R.playing=false;R.pending=false;TRIPQ.on=false;TRIPQ.k=1;
+  lb(false);
   full();ui();
  }
  function stop(){
   cancelAnimationFrame(R.raf);R.playing=false;R.pending=false;TRIPQ.on=false;TRIPQ.k=1;
+  lb(false);
   R.t=0;if(R.trip&&R.trip.tappe.length)full();ui();
  }
  function showTab(w){
   const v=w==='viaggio';
   el('pnstato').style.display=v?'none':'';el('pnviaggio').style.display=v?'':'none';
   [['tabstato',!v],['tabviaggio',v]].forEach(([id,on])=>{const b=el(id);b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
-  if(v){refresh();}else pause(); // senza viaggio il testo incollato non viene cancellato
+  if(v){refresh();}else{pause();scheduleFrames();} // senza viaggio il testo incollato non viene cancellato
  }
  function loadTrip(trip){
-  if(R.playing){cancelAnimationFrame(R.raf);R.playing=false;TRIPQ.on=false;TRIPQ.k=1;}
+  if(R.playing){cancelAnimationFrame(R.raf);R.playing=false;TRIPQ.on=false;TRIPQ.k=1;lb(false);}
   R.trip=trip;R.t=0;R.pending=false;
   el('trtxt').value=Trip.toJSON(trip,true);
-  applyState(trip.tappe.length?stateAt(0):trip.base); // non silenzioso: «Indietro» torna allo stato precedente
+  applyState(trip.tappe.length?stateAt(0):fromSF(JSON.parse(JSON.stringify(trip.base)))); // non silenzioso: «Indietro» torna allo stato precedente
   R.sel=-1;R.pv=null;refresh();
   showMsg('Viaggio «'+trip.nome+'» caricato: '+trip.tappe.length+(trip.tappe.length===1?' tappa, ':' tappe, ')+fT(Trip.duration(trip))+' s');
  }
@@ -4814,7 +4914,7 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
  el('trclear').addEventListener('click',()=>{
   if(!R.trip)return;
   if(!window.confirm('Svuotare il viaggio? Le tappe andranno perse (resta lo stato corrente).'))return;
-  mutate(()=>{stop();R.trip=null;R.t=0;R.sel=-1;});el('trtxt').value='';refresh();
+  mutate(()=>{stop();if(R.trip)R.vc=Trip.normVC(R.trip.videoConfig);R.trip=null;R.t=0;R.sel=-1;});el('trtxt').value='';refresh();
  });
  el('trapply').addEventListener('click',()=>{
   const r=Trip.fromJSON(el('trtxt').value);
@@ -4852,13 +4952,13 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
  /* ---- 2.0.5 · editor delle tappe ---- */
  const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const snap=()=>JSON.stringify({trip:R.trip,sel:R.sel});
- const curState=()=>{const c=getState();delete c.profile;return c;};
+ const curState=()=>{const c=getState();delete c.profile;return toSF(c);}; // span del canvas -> span del Safe Frame
  function mutate(fn){const b=snap();fn();if(snap()!==b){R.undo.push(b);if(R.undo.length>30)R.undo.shift();R.redo.length=0;R.pv=null;}}
  function refresh(keep){
   const n=R.trip?R.trip.tappe.length:0;if(R.sel>=n)R.sel=n-1;
   if(R.trip)el('trtxt').value=Trip.toJSON(R.trip,true);
   if(!keep)renderList();
-  renderTL();ui();scheduleFrames();
+  renderTL();ui();syncRegia();scheduleFrames();
  }
  function commitSel(i,jmp){R.sel=i;if(R.trip&&i>=0){R.t=Trip.arrival(R.trip,i);if(jmp)full();}else R.t=Math.min(R.t,T());refresh();}
  function select(i){if(!R.trip||i<0||i>=R.trip.tappe.length)return;pause();commitSel(i,true);}
@@ -4899,7 +4999,7 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
  el('traddtappa').addEventListener('click',()=>{
   pause();const cur=curState();
   mutate(()=>{
-   if(!R.trip)R.trip=Trip.create(cur,'Viaggio');
+   if(!R.trip){R.trip=Trip.create(cur,'Viaggio');R.trip.videoConfig=Trip.normVC(R.vc);}
    const n=R.trip.tappe.length,idx=(R.sel>=0&&R.sel<n)?R.sel+1:n;
    Trip.insertTappa(R.trip,idx,cur);R.sel=idx;
   });
@@ -4950,7 +5050,129 @@ var TRIPQ={on:false,k:1},TRIP_HOOK=null; // var: Viewport.dims/begin/setSt li le
   };
   h.addEventListener('pointermove',mv);h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
  });
- window.TRIPAPI={pause,showTab,preview(){const d=pvData();return d?{legs:d.legs,marks:d.marks,sel:R.sel}:null;},
+/* ---- 2.1.0 · regia: form factor, Safe Frame, letterbox ----
+   span = altezza (unita' del piano) dell'area inquadrata (screenToWorld: s = span/H). Nelle tappe e' misurata sul Safe Frame:
+   span_tappa = span_canvas * h_SF / h_canvas. Il centro coincide col centro del canvas e del Safe Frame. */
+ const gcd=(a,b)=>{while(b){const t=a%b;a=b;b=t;}return a;};
+ const clone0=o=>JSON.parse(JSON.stringify(o));
+ const aspLabel=vc=>vc.aspect==='custom'?(Math.round(vc.customRatio[0]*100)/100)+':'+(Math.round(vc.customRatio[1]*100)/100):vc.aspect;
+ function vcNow(){return R.trip?R.trip.videoConfig:R.vc;}
+ function sfGeom(vp){ // rettangolo del Safe Frame (px CSS, nello spazio del contenitore) e k = h_SF / h_canvas
+  vp=vp||pilotVp();if(!vp||!vp.el||!vp.cv)return null;
+  const st=vp.el.getBoundingClientRect(),cr=vp.cv.getBoundingClientRect(),W=st.width,H=st.height;
+  if(!(W>=8&&H>=8))return null;
+  const a=Trip.aspectOf(vcNow());let w,h;if(W/H>a){h=H;w=H*a;}else{w=W;h=W/a;}
+  const k=cr.height>=8?Math.min(1,h/cr.height):1;
+  return {W,H,a,x:(W-w)/2,y:(H-h)/2,w,h,k};
+ }
+ function pidOf(st){if(R.trip)return Trip.pilotId(R.trip);const a=st&&st.active;return Number.isInteger(+a)&&+a>=0?+a:0;}
+ function scaleView(st,f){
+  if(!st||!(f>0)||!isFinite(f)||f===1)return st;
+  const vs=st.views||[],pid=pidOf(st),v=vs.find(w=>+w.id===pid)||vs[0];
+  if(v&&+v.span>0)v.span=+v.span*f;
+  return st;
+ }
+ function toSF(st){const g=sfGeom();return g?scaleView(st,g.k):st;}
+ function fromSF(st){const g=sfGeom();return g&&g.k>0?scaleView(st,1/g.k):st;}
+ // letterbox: in riproduzione il canvas della vista pilota si riduce al Safe Frame (si calcolano solo i suoi pixel; fuori e' nero)
+ function lbVars(){
+  const vp=R.lbVp,g=vp&&sfGeom(vp);if(!g)return;
+  const sty=vp.el.style;sty.setProperty('--sfx',g.x+'px');sty.setProperty('--sfy',g.y+'px');sty.setProperty('--sfw',g.w+'px');sty.setProperty('--sfh',g.h+'px');
+ }
+ function lbOff(){
+  if(R.lbRO){try{R.lbRO.disconnect();}catch(_){}R.lbRO=null;}
+  const vp=R.lbVp;R.lbVp=null;SFLB=false;
+  if(vp&&vp.el){vp.el.classList.remove('sfl');['--sfx','--sfy','--sfw','--sfh'].forEach(p=>vp.el.style.removeProperty(p));}
+ }
+ function lb(on){
+  lbOff();
+  if(on){
+   const vp=pilotVp();
+   if(vp&&vp.el){
+    R.lbVp=vp;lbVars();vp.el.classList.add('sfl');SFLB=true;
+    if(typeof ResizeObserver!=='undefined'){try{R.lbRO=new ResizeObserver(()=>lbVars());R.lbRO.observe(vp.el);}catch(_){R.lbRO=null;}}
+   }
+  }
+  scheduleFrames();
+ }
+ function safe(M){ // usato dall'overlay: Safe Frame visibile solo in modalità progetto (scheda Viaggio aperta, non in riproduzione)
+  if(!R.sf||SFLB||M!==pilotVp()||!el('pnviaggio').offsetParent)return null;
+  const vc=vcNow();return {a:Trip.aspectOf(vc),label:aspLabel(vc)};
+ }
+ function sfInfo(){ // diagnostica: rettangolo del mondo inquadrato dal Safe Frame (deve coincidere su finestre di forma diversa)
+  const vp=pilotVp(),g=sfGeom(vp);if(!vp||!g)return null;
+  const h=+vp.view.span*g.k;
+  return {aspect:aspLabel(vcNow()),stage:[g.W,g.H],frame:{x:g.x,y:g.y,w:g.w,h:g.h},k:g.k,letterbox:!!SFLB,world:{cx:vp.view.cx,cy:vp.view.cy,w:h*g.a,h:h}};
+ }
+ const aspOpts=Trip.ASPECTS.map(a=>'<option value="'+a+'">'+(a==='custom'?'Personalizzato':a)+'</option>').join('');
+ el('rgaspect').innerHTML=aspOpts;el('fkaspect').innerHTML=aspOpts;
+ function syncRegia(){
+  const vc=vcNow(),n=R.trip?R.trip.tappe.length:0,d=Trip.resDims(vc);
+  el('rgaspect').value=vc.aspect;
+  el('rgcustom').style.display=vc.aspect==='custom'?'':'none';
+  el('rgcw').value=vc.customRatio[0];el('rgch').value=vc.customRatio[1];
+  el('rgfps').value=String(vc.fps);
+  const rs=el('rgres');
+  rs.innerHTML=Object.keys(Trip.RES).concat(vc.resolution.preset==='custom'?['custom']:[]).map(k=>'<option value="'+k+'">'+(k==='custom'?'Da JSON':k)+'</option>').join('');
+  rs.value=vc.resolution.preset;
+  el('rgdims').textContent='Formato '+aspLabel(vc)+' · '+d[0]+'×'+d[1]+' px · '+vc.fps+' fps'+(R.trip?'':' · per il prossimo viaggio');
+  const b=el('rgsf');b.classList.toggle('on',R.sf);b.setAttribute('aria-pressed',R.sf?'true':'false');
+  el('rgfork').disabled=!n;
+ }
+ function setVC(fn){ // modifica il videoConfig (con Annulla se c'e' un viaggio); se una tappa e' selezionata la vista si riallinea al nuovo Safe Frame
+  pause();
+  const apply=()=>{const vc=clone0(vcNow());fn(vc);const nv=Trip.normVC(vc);if(R.trip)R.trip.videoConfig=nv;else R.vc=nv;};
+  if(R.trip)mutate(apply);else apply();
+  refresh(true);
+  if(R.trip&&R.trip.tappe.length&&R.sel>=0)full();
+ }
+ const ratioOk=(w,h)=>w>0&&h>0&&w/h>=0.1&&w/h<=10;
+ el('rgaspect').addEventListener('change',e=>{const v=e.target.value;setVC(vc=>{vc.aspect=v;});});
+ const rgCustom=()=>{
+  const w=+el('rgcw').value,h=+el('rgch').value;
+  if(!ratioOk(w,h)){showMsg('Rapporto non valido: servono due numeri positivi, tra 1:10 e 10:1',5000);syncRegia();return;}
+  setVC(vc=>{vc.aspect='custom';vc.customRatio=[w,h];});
+ };
+ el('rgcw').addEventListener('change',rgCustom);el('rgch').addEventListener('change',rgCustom);
+ el('rgfps').addEventListener('change',e=>{const v=+e.target.value;setVC(vc=>{vc.fps=v;});});
+ el('rgres').addEventListener('change',e=>{const v=e.target.value;if(v==='custom')return;setVC(vc=>{vc.resolution={preset:v,w:0,h:0};});});
+ el('rglock').addEventListener('click',()=>{
+  const vp=AV||pilotVp(),r=vp&&vp.el.getBoundingClientRect();
+  if(!r||!(r.width>=8&&r.height>=8)){showMsg('Nessuna vista attiva da agganciare');return;}
+  let w=Math.round(r.width),h=Math.round(r.height);const g=gcd(w,h);w/=g;h/=g;
+  if(!ratioOk(w,h)){showMsg('La vista attiva ha un rapporto fuori dai limiti (da 1:10 a 10:1)',5000);return;}
+  const key=w+':'+h;
+  setVC(vc=>{if(key!=='custom'&&Trip.ASPECTS.includes(key))vc.aspect=key;else{vc.aspect='custom';vc.customRatio=[w,h];}});
+  showMsg('Aspect ratio agganciato alla vista attiva: '+key);
+ });
+ el('rgsf').addEventListener('click',()=>{R.sf=!R.sf;syncRegia();scheduleFrames();});
+ const fkSync=()=>{el('fkcustom').style.display=el('fkaspect').value==='custom'?'':'none';};
+ el('fkaspect').addEventListener('change',fkSync);
+ el('rgfork').addEventListener('click',()=>{
+  if(!R.trip||!R.trip.tappe.length)return;
+  el('fkaspect').value=Trip.aspectOf(R.trip.videoConfig)>=1?'9:16':'16:9';el('fkcw').value=1;el('fkch').value=1;fkSync();
+  el('rgdlg').style.display='';
+ });
+ el('fkcancel').addEventListener('click',()=>{el('rgdlg').style.display='none';});
+ el('fkok').addEventListener('click',()=>{
+  if(!R.trip||!R.trip.tappe.length)return;
+  const nv=clone0(R.trip.videoConfig),asp=el('fkaspect').value;
+  nv.aspect=asp;
+  if(asp==='custom'){const w=+el('fkcw').value,h=+el('fkch').value;if(!ratioOk(w,h)){showMsg('Rapporto non valido: servono due numeri positivi, tra 1:10 e 10:1',5000);return;}nv.customRatio=[w,h];}
+  const nvn=Trip.normVC(nv);
+  if(Math.abs(Trip.aspectOf(R.trip.videoConfig)-Trip.aspectOf(nvn))<1e-9){showMsg('Stesso aspect ratio: nessun ancoraggio da applicare (frame rate e risoluzione si cambiano coi selettori)',6000);return;}
+  const rule=(document.querySelector('input[name="fkrule"]:checked')||{}).value||'contieni';
+  pause();
+  const orig=Trip.toJSON(R.trip,true),wantCopy=el('fkcopy').checked;
+  let fct=1;
+  mutate(()=>{fct=Trip.refit(R.trip,nvn,rule).factor;R.trip.nome=(R.trip.nome.replace(/ · [\d.,]+:[\d.,]+$/,'')+' · '+aspLabel(R.trip.videoConfig)).slice(0,80);});
+  el('rgdlg').style.display='none';
+  commitSel(R.sel>=0?R.sel:0,true);
+  const msg='Viaggio adattato a '+aspLabel(R.trip.videoConfig)+' ('+(rule==='contieni'?'contieni':'mantieni '+rule)+', span ×'+(Math.round(fct*1000)/1000).toString().replace('.',',')+'): rivedi le tappe nel nuovo Safe Frame. «Annulla» ripristina l\'originale.';
+  if(wantCopy)copyText(orig).then(ok=>showMsg(msg+(ok?' JSON originale copiato.':'')),()=>showMsg(msg));else showMsg(msg);
+ });
+ window.addEventListener('resize',()=>scheduleFrames());
+ window.TRIPAPI={pause(){pause();scheduleFrames();},showTab,safe,sfInfo,preview(){const d=pvData();return d?{legs:d.legs,marks:d.marks,sel:R.sel}:null;},
   async loadLink(code){
    const r=await Trip.decode(code);
    if(!r.ok){showMsg(r.error,6000);return false;}
@@ -5553,7 +5775,7 @@ function profCopyCSV(){
   if(wide)openSheet(false);
   else{const a=$('app');if(a&&a.classList.contains('full')){a.classList.remove('full');ptog.textContent='Nascondi pannello';}if(!panel.dataset.tab)setTab('f');}
   const g=$('guide');if(g)g.textContent=wide?'Guida - Ver. '+APP_VERSION_SHORT:'Guida';
-  vi.textContent='Versione '+APP_VERSION+' \u00b7 27 novembre 2026';
+  vi.textContent='Versione '+APP_VERSION+' \u00b7 28 novembre 2026';
  }
  setTab('f');applyMode();addEventListener('uimode',applyMode);
 })();
