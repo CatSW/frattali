@@ -1,9 +1,13 @@
 ---
-updated: 2026-11-20
+title: Guida rapida — Esploratore di Frattali
+copyright: "© 2026 Stefano Vesco (IK0VCK) - CatSW. All rights reserved."
+author: IK0VCK
+type: guide
+product: fractal-explorer
+license: MIT
+updated: 2026-11-26
 ---
-# Esploratore di Frattali - Guida Rapida
-
-copyright: © 2026 Stefano Vesco (IK0VCK) - CatSW. All rights reserved.
+# Esploratore di Frattali — Guida Rapida
 
 - code name: **fractal-explorer**
 
@@ -13,22 +17,44 @@ copyright: © 2026 Stefano Vesco (IK0VCK) - CatSW. All rights reserved.
 
 > 😺 **KubiMiao** 🐾
 
-**Benvenuto!** Scopri l'infinito mondo dei frattali con l'app Esploratore di Frattali.
+**Benvenuto!** Con **Esploratore di Frattali** (`fractal-explorer`) puoi esplorare direttamente nel browser il piano complesso, gli attrattori caotici e le figure geometriche ricorsive, passando in un attimo da una visione d'insieme a zoom profondissimi e personalizzando colori, luci e rilievi.
 
-## 1. Il Tuo Punto di Partenza: L'Insieme di Mandelbrot
-All'apertura, l'app ti accoglie con il frattale più celebre della matematica. Osserva il piano complesso: la regione scura centrale (la cardioide e i bulbi adiacenti) rappresenta i punti la cui orbita resta limitata, mentre i colori circostanti rivelano la velocità con cui i punti esterni fuggono verso l'infinito.
+---
 
-## 2. Naviga ed Esplora l'Infinito
-Prendi confidenza con i comandi di esplorazione. Trascina la visuale per spostarti sul piano complesso, usa lo zoom (rotella, pinch o i pulsanti `+` / `−`) per immergerti nei dettagli più nascosti al confine tra ordine e caos, e premi `R` in qualsiasi momento per tornare alla vista iniziale.
+## 1. Cosa puoi fare con questa app
+- **Esplorare 15 famiglie di frattali e sistemi dinamici:** dai grandi classici come *Mandelbrot*, *Julia* e *Burning Ship* ai metodi numerici (*Newton*, *Nova*), dalle mappe razionali e trascendenti (*Magnet*, *Esponenziale*, *Seno*, *Phoenix*) fino a *Buddhabrot*, *IFS/Chaos game*, *Attrattori strani*, *Biforcazione* e *Frattali geometrici*.
+- **Spingere lo zoom fino all'estremo:** oltre il limite dei normali numeri del computer (circa $10^{13}$ ingrandimenti), il motore attiva automaticamente la precisione estesa fino a $10^{-250}$ su *Mandelbrot* e *Julia* ($d = 2$).
+- **Confrontare più inquadrature insieme:** puoi affiancare fino a **4 viste** contemporanee sullo stesso frattale, visualizzando su ciascuna i riquadri delle altre per orientarti sempre.
+- **Misurare e analizzare:** puoi leggere i dati matematici punto per punto con il cursore o un **marker**, tracciare un **profilo sezionale** lungo un segmento e ispezionarne i grafici.
+- **Dipingere e illuminare i frattali:** hai a disposizione palette percettivamente uniformi, modi di colorazione basati sulla fase o sulla distanza dai filamenti, effetti di luce 3D e rilievo calcolati in tempo reale con accelerazione grafica WebGL2.
+- **Condividere e sperimentare:** puoi copiare un link che racchiude esattamente la tua esplorazione, salvare immagini PNG, esportare lo stato in JSON o seguire gli esperimenti guidati nella **Guida didattica** in fondo alla pagina.
 
-## 3. Esplora Altre Famiglie e il Legame con Julia
-Non fermarti a Mandelbrot! Dal menu delle famiglie puoi esplorare molti altri mondi matematici: gli **Insiemi di Julia**, il **Burning Ship**, il **Tricorno**, i frattali di **Newton**, **Phoenix**, **Magnet**, **Buddhabrot** e i sistemi **IFS** (come la felce di Barnsley o il triangolo di Sierpiński). Usa la funzione **«Julia da qui»** (o tocca il piano per scegliere il parametro $c$) per scoprire come ogni punto dell'insieme di Mandelbrot generi un diverso frattale di Julia.
+---
 
-## 4. Colora, Illumina e Scolpisci
-Dai forma e profondità alle strutture matematiche attraverso i controlli di visualizzazione:
-- **Palette e Modi:** Scegli tra diverse palette cromatiche, attiva la colorazione liscia (*smooth*), l'effetto *Neon* o l'animazione dei colori.
-- **Luce e Rilievo:** Attiva l'illuminazione e regola l'azimut, l'elevazione e lo stile (come *Cangiante*) per trasformare il frattale in una superficie tridimensionale scolpita.
-- **Qualità e Iterazioni:** Aumenta le iterazioni per rivelare i dettagli più fini ad alti ingrandimenti e salva le tue scoperte migliori con **Salva PNG**.
+## 2. Primo sguardo all'interfaccia
+All'apertura l'app mostra l'insieme di **Mandelbrot** nella sua vista intera:
+- La **regione nera centrale** racchiude i punti che non sfuggono mai all'infinito durante il calcolo.
+- Le **fasce colorate** intorno al bordo mostrano quanto velocemente i punti esterni si allontanano.
+- In alto trovi l'intestazione con il pulsante **Condividi** (copia il link diretto alla vista corrente) e il collegamento alla **Guida - Ver. 1.17.0**.
+- L'interfaccia si adatta automaticamente allo schermo: su computer hai il pannello dei controlli fisso di fianco alle viste; su smartphone in verticale i controlli si aprono dal basso; su schermi orizzontali bassi si aprono di lato.
 
-## Per Saperne di Più
-Questo è solo l'inizio del viaggio! Consulta il Manuale Utente per approfondire la teoria matematica dietro ciascuna famiglia e tieni d'occhio gli aggiornamenti: sono già in cantiere nuove funzioni come le viste multiple sincronizzate, il deep zoom oltre la precisione standard e i viaggi guidati.
+---
+
+## 3. Muoversi sul frattale in pochi gesti
+- **Ingrandire (Zoom):** gira la **rotella del mouse** sul punto che ti interessa, fai **doppio clic** (o **doppio tocco** su schermo touch) per raddoppiare lo zoom, oppure usa i tasti `+` e `−`.
+- **Zoom su un'area precisa:** trascina con il **tasto sinistro del mouse** per disegnare un rettangolo da ingrandire (`Esc` annulla). Su touch attiva prima **Zoom area** nella barra.
+- **Spostarsi (Pan):** trascina con il **tasto destro o centrale** del mouse (oppure tenendo premuto **Spazio**), oppure trascina con **un dito** (o due dita mentre pizzichi per lo zoom) su touch.
+- **Tornare indietro:** premi **Vista iniziale** (`R`) per tornare all'inquadratura di partenza, oppure **Indietro** (`B`) per annullare l'ultimo spostamento o cambio di stato.
+- **Piazzare un marker:** fai un **clic singolo** (o un **tocco breve**) senza trascinare per fissare un segnaposto sul piano e leggerne i valori; un nuovo clic sullo stesso punto lo rimuove.
+
+---
+
+## 4. Tre idee da provare subito
+1. **Dal Mandelbrot al suo «gemello» Julia:** piazza un marker vicino al bordo frastagliato del Mandelbrot, poi premi **Julia dal marker**. L'app passerà alla famiglia *Julia* generata proprio dalle coordinate del punto che hai scelto.
+2. **Dare profondità 3D al frattale:** apri la scheda **Colore**, prova un **Modo esterno** come *Neon (filamenti)* o *Steli (germogli)*, poi apri **Luce e rilievo** e alza i cursori di **Luce** e **Rilievo** per trasformare il frattale in una superficie scolpita.
+3. **Aprire due viste collegate:** imposta **Viste** su `2`, attiva **Cornici** e ingrandisci un dettaglio su una delle due viste. Vedrai comparire sull'altra vista il riquadro che indica dove ti trovi.
+
+---
+
+## Per saperne di più
+Per la spiegazione completa di tutti i comandi, delle 15 famiglie, del profilo sezionale, dello zoom profondo e dei termini matematici e grafici usati nell'app, consulta il **`Manuale.md`** (oppure il [`Readme.md`](https://github.com/IK0VCK/fractal-explorer/blob/main/Readme.md) del progetto).
